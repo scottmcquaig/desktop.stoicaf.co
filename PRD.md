@@ -1,360 +1,244 @@
-# **Stoic.af – Product Requirements & Design (Revised 2025)**
+# Stoic.af – Product Requirements & Style Guide
+*(Updated 2025)*
 
-*(Markdown Version)*
+## 1. Introduction
 
+### Purpose and Vision
+Stoic.af is a hybrid journaling platform that blends Stoic philosophy with modern AI tools. Users write daily entries, receive adaptive prompts and weekly reflections, and gradually build emotional resilience.
 
-## **1. Introduction**
+The app must:
+- Feel instantaneous
+- Work offline via local cache
+- Use cloud AI for summaries and analysis
+- Sustain a friendly subscription model ($5/mo)
+- Keep AI cost per user under $0.20/month using small, efficient models and deterministic fallbacks
 
-### **1.1 Purpose & Vision**
-
-Stoic.af is a mobile-first journaling and coaching platform designed to help people build the four virtues of **Money, Ego, Relationships, and Discipline** through daily reflection. Inspired by the Stoic tradition of *Meditations*, it gives users a structured *“living notebook”* where they add one entry per day, combine multiple templates, and receive adaptive suggestions tied to their focus.
-
-Modern research on journaling shows that writing about one’s experiences improves mental clarity, emotional stability and personal growth. Stoic philosophers like Marcus Aurelius used journals to think more clearly and live more virtuously. Stoic.af brings this practice into a friendly digital app that works offline, uses simple AI to remix prompts and summarise weekly themes, and encourages users to take ownership of their behaviour and choices.
-
-### **1.2 Scope**
-
-This PRD covers Stoic.af 2.0 with the four-pillar focus, including:
-
-* target users
-* program design
-* features
-* data model
-* style guide
-* architecture
-* AI strategy
-* roadmap
-* privacy & security
-
-The primary platform will be **Flutter + Firebase**, with a desktop/web version using **Next.js** released later.
+### Scope
+This document covers:
+- The public journaling client
+- A gated admin area
+- Single Next.js 14+ application deployed to Firebase App Hosting
+- Personas, features, tech stack, data model, functional requirements, and revised style guide
 
 ---
 
-## **2. Target Users & Personas**
+## 2. Target Audience & Personas
 
-Stoic.af is designed for people who want structured improvement across Money, Ego, Relationships, and Discipline.
+**Emily (32 – Busy professional)**  
+Wants quick, guided reflection around work hours. Prefers deterministic prompts. Values privacy; willing to pay for insights.
 
-### **2.1 The Rebuilder (30–55)**
+**Jay (21 – Student/creative)**  
+Journals for stress management and clarity. Cost-conscious; starts free, upgrades for AI summaries/mood charts.
 
-Professionals or parents going through a reset (burnout, divorce, career transition). They want structure and rely on consistent journaling to regain clarity.
-
-### **2.2 The Stoic-in-Training (20–50)**
-
-Users intrigued by Stoicism but bored by academic explanations. They want blunt, practical, humorous guidance.
-
-### **2.3 The High-Performer on the Edge (28–45)**
-
-Ambitious professionals/founders with internal chaos behind their success. They seek emotional balance, ego management, and disciplined routines.
-
-Each persona chooses one of the four pillars and progresses through a **30-day structured track**.
+**Sam (45 – Parent)**  
+Wants patience and emotional resilience. Needs offline capability and clear reminders.
 
 ---
 
-## **3. Programs & Content: The Four Pillars**
+## 3. Unique Selling Points
 
-Each pillar has a **30-day JSON track**:
+### Adaptive Stoic Prompts
+- Local engine selects prompts based on virtue focus, mood, tags, previous entries  
+- Pro: Remix a prompt via AI  
+- Offline fallback uses deterministic prompts
 
-* Money Track 
-* Ego Track 
-* Relationships Track 
-* Discipline Track 
+### Weekly AI Wisdom
+- Weekly summary Cloud Function  
+- Input capped to keep AI cost below $0.20/month  
+- Includes themes + a recommended practice  
+- Pro-only feature
 
-Each track contains:
+### Local-First Privacy
+- Firestore E2E encryption  
+- Offline persistence  
+- Names/dates can be scrubbed during export  
+- Strict row-level security
 
-* **Daily Theme**
-* **Stoic Quote**
-* **Bro Translation** (on-brand tone)
-* **Daily Challenge**
-* **Daily Intention**
-* **Evening Prompts**
-
-### **3.1 Daily Entry System**
-
-Users write **one living entry per day**, adding multiple templates such as:
-
-* Morning Intent
-* Dichotomy of Control
-* Evening Audit
-
-Templates define the structure/questions for each section.
-
-### **3.2 Prompt Engine**
-
-Prompts come from:
-
-1. **Pillar Track** – the user’s selected focus
-2. **Quick Audit** – based on tagged patterns in previous entries
-3. **Prompt Library** – curated evergreen prompts, optionally AI-remixed
-
-AI is used minimally.
-
-### **3.3 Modes & Streaks**
-
-* Streak tracking
-* Virtue Progress Wheel
-* Pillar scoring
-* Compassionate resets
+### Motivational Dashboard
+- Streaks
+- Mood trend line
+- Virtue progress radial gauge  
+- Quick Capture (⌘+K)
+- CHAD floating button for AI coaching
 
 ---
 
-## **4. Unique Selling Points**
+## 4. Platform & Technology
 
-### **4.1 Living Notebook**
+### 4.1 Core Stack
+- **Framework**: Next.js 14+ App Router deployed via Firebase App Hosting  
+- **Auth**: Firebase Auth (email, Google, Apple)  
+- **Data**: Firestore with offline persistence, Stripe payments sync  
+- **AI**: Genkit + Gemini 1.5 Flash; token buckets per user  
+- **Admin**: `/admin` route with admin claim middleware
 
-One daily entry that evolves across the day with stacked templates.
-
-### **4.2 Four-Pillar Programs**
-
-30-day guided programs targeting:
-
-* Money
-* Ego
-* Relationships
-* Discipline
-
-### **4.3 Adaptive Prompt Engine**
-
-Local logic + low-cost AI for remixing.
-
-### **4.4 Weekly AI Reflections**
-
-Summaries highlighting:
-
-* themes
-* progress
-* suggestions
-
-### **4.5 Privacy-First**
-
-Client-side encryption, Firestore row-level security, App Check.
-
-### **4.6 Cross-Platform**
-
-* Mobile: Flutter
-* Desktop: Next.js
+### 4.2 Additional Firebase Services
+- **Stripe**: firestore-stripe-payments extension  
+- **Crashlytics + Performance Monitoring**  
+- **App Check + Firestore Rules**  
+- **Secret Manager for API keys**
 
 ---
 
-## **5. Platform & Technology**
+## 5. Data Model
 
-### **5.1 Flutter + Firebase**
-
-* Framework: Flutter 3.x
-* State: Riverpod / Bloc
-* Backend: Firestore, Functions, Storage, Auth
-* Offline: Firestore caching + Hive
-* AI: Gemini 1.5 Flash via Genkit
-* Payments: Stripe extension + in-app purchases
-* CI/CD: GitHub Actions + Firebase App Distribution
-
-### **5.2 Next.js Web**
-
-* Next.js 14+ App Router
-* Firebase Auth + SSR
-* IndexedDB for offline
-* Shared design tokens
+| Collection        | Purpose / Key Fields |
+|------------------|----------------------|
+| **users**        | virtueFocus, tone, timezone, streak counters, subscription status, monthly token bucket |
+| **entries**      | userId, encrypted text, createdAt, mood (1–5), tags, signals, wordCount, aiUsed |
+| **weeklySummaries** | weekly AI summary in Markdown, suggestions, token usage |
+| **prompts**      | Stoic prompt library with category/context/template/cooldown |
+| **promptEvents** | promptId, remixed flag, token usage analytics |
+| **payments**     | Stripe-synced plan & status |
 
 ---
 
-## **6. Data Model**
+## 6. Functional Requirements
 
-### **Collections**
+### 6.1 Onboarding & Authentication
+- Standard sign-in/up with Firebase Auth  
+- Four-step onboarding:  
+  1. Virtue focus  
+  2. CHAD coaching tone  
+  3. Current struggle  
+  4. Reminder schedule  
+- Pro features gated with paywall overlay + Stripe Checkout
 
-#### **users**
+### 6.2 Journaling Loop
+- Local prompt selection  
+- Editor built with Tiptap, autosave, offline cache  
+- Mood slider, tags, optional attachments  
+- Cloud Function extracts topics + sentiment  
+- QuickCapture overlay (⌘+K)  
+- CHAD AI coaching button
 
-* focus
-* tone
-* timezone
-* streakCount
-* subscriptionStatus
-* tokenBucket
-* onboardingCompleted
+### 6.3 Dashboards & Insights
+- Home dashboard with streaks, mood trend, virtue radial  
+- Journal list with search  
+- Insights page with heatmaps, virtue breakdown, summaries  
+- Explore page (future, hidden behind “coming soon”)
 
-#### **entries**
-
-* userId
-* date
-* templates[]
-* encrypted content
-* mood
-* tags
-* pillarScore
-* aiUsed
-* timestamps
-
-#### **tracks**
-
-* pillar
-* dayNumber
-* theme
-* stoicQuote
-* translation
-* challenge
-* intention
-* reflectionPrompts
-
-#### **prompts**
-
-* category
-* intensity
-* templateType
-* text
-* cooldownDays
-
-#### **promptEvents**
-
-* log of prompt usage, remix requests, token consumption
-
-#### **weeklySummaries**
-
-* summaryMarkdown
-* themes
-* suggestedNextSteps
-* tokenUsage
+### 6.4 Admin Dashboard
+- Prompt CRUD  
+- User lists (no journal text)  
+- Token/cost charts  
+- Feature flags  
+- Moderation/flag review
 
 ---
 
-## **7. Functional Requirements**
+## 7. Style Guide
 
-### **7.1 Onboarding**
+### 7.1 Color Palette
 
-* Create account
-* Select pillar focus
-* Choose coaching tone (Gentle, Reality Check, Drill Sergeant, ChadGPT)
-* Configure reminders
-* Privacy consent
+| Token | Light Mode | Dark Mode | Usage |
+|-------|------------|-----------|--------|
+| Background | #F8FAFC | #1E293B | Main surfaces |
+| Stoic Blue | #4B90C8 | #4B90C8 | Primary CTAs |
+| Secondary | #E0F2FE | #0369A1 | Tags & chart fills |
+| Accent / Emerald | #ECFDF5 / #047857 | #065F46 | Success states |
+| Neutral Gray | #64748B | #94A3B8 | Body text |
+| Card | #FFFFFF | #334155 | Cards & modals |
+| Destructive | #EF4444 | #7F1D1D | Errors |
 
-### **7.2 Journaling Loop**
+Contrast must meet WCAG 4.5:1.
 
-* Daily entry stub
-* Add templates
-* Prompt engine selects questions
-* Remix (AI optional)
-* Autosave + offline
-* Mood & tags
-* QuickCapture + voice input
-* Daily intentions & challenges
-* Evening reflection
+### 7.2 Typography
+- **Body**: Inter  
+- **Headings**: Merriweather  
+- **Sizes**:  
+  - H1: 32px  
+  - H2: 24px  
+  - H3: 20px  
+  - Body: 16px (1rem), line-height 1.5  
 
-### **7.3 Dashboard**
+### 7.3 Layout & Components
+- Max content width: **768px**  
+- Rounded cards (`rounded-xl`, subtle border, `shadow-sm`)  
+- Primary button: Stoic Blue  
+- Inputs: rounded, neutral border, focus ring  
+- Tags: sky-50 bg with blue text  
+- Charts: primary + secondary colors  
+- Subtle animations only (`transition-all duration-150`)
 
-* Streak
-* Mood trend
-* Quick entry & coach
-* Daily Stoic quote
-* Journal list
-* Insights (heatmaps, virtue wheel, tag frequency)
-* Weekly summaries
-
-### **7.4 Coaching & AI**
-
-* ChadGPT chat
-* Program recommendations
-* Token budget enforcement
-* Deterministic fallback
-
-### **7.5 Admin**
-
-* Manage tracks, templates, prompt library
-* No access to journals
-* Monitor usage, AI costs, subscriptions
-* Feature flags
+### 7.4 Accessibility
+- Minimum contrast 4.5:1  
+- Visible focus rings  
+- Semantic HTML + aria-labels  
+- Timezone aware (user’s locale)
 
 ---
 
-## **8. Style Guide**
-
-### **8.1 Colors**
-
-Primary palette:
-
-| Token       | Hex         | Usage             |
-| ----------- | ----------- | ----------------- |
-| stoic.blue  | **#4B90C8** | Primary           |
-| stoic.dark  | **#1E293B** | Dark cards / text |
-| stoic.light | **#F8FAFC** | Background        |
-| stoic.gray  | **#64748B** | Secondary text    |
-
-### **8.2 Typography**
-
-* Sans: **Inter**
-* Serif quotes: **Playfair Display**
-* Display: 32px
-* Section: 24px
-* Card titles: 18px
-* Body: 15–16px
-* Overlines: 12px
-
-### **8.3 Components**
-
-* 16px padding
-* Rounded cards (10–16px)
-* Subtle shadows
-* Pill buttons (primary blue)
-* Bottom nav (mobile)
-* Sidebar (desktop)
-* Search bars + inputs with 10px radius
-* Minimal animations
-* Fully supported dark mode
-
-### **8.4 Tokens**
-
-Shared JSON tokens consumed by Flutter and Next.js.
+## 8. AI & Model Strategy
+- Genkit flows orchestrate AI  
+- Primary model: Gemini 1.5 Flash (~$0.075/million tokens)  
+- Weekly summary cost ~ $0.0012/user/month  
+- Token bucket enforces limits  
+- System prompt instructs concise Stoic tone  
+- Genkit Monitoring for latency/tokens/errors
 
 ---
 
-## **9. AI Strategy**
+## 9. Development Roadmap
 
-* Remix prompts via Gemini Flash
-* Weekly summaries generated server-side
-* Guardrailed ChadGPT
-* Cost control through token buckets
-* Offline deterministic fallback
+### Sprint 1 – Foundations
+- Repo setup  
+- Firebase config  
+- Firestore rules  
+- Onboarding flow  
+- Skeleton layout + sidebar
 
----
+### Sprint 2 – Core Journaling
+- Editor, autosave  
+- Mood slider, tags  
+- Deterministic prompt engine  
+- QuickCapture  
+- Journal list  
+- Offline persistence
 
-## **10. Roadmap**
+### Sprint 3 – AI & Insights
+- Prompt remix + weekly summaries  
+- Signal extraction  
+- Dashboard widgets  
+- Insights page
 
-### **Phase 1 – Mobile (3 Sprints)**
+### Sprint 4 – Payments & Admin
+- Stripe extension  
+- Subscription UI  
+- Paywalls  
+- Admin views  
+- Token budget charts
 
-* Sprint 1: Setup, onboarding, templates
-* Sprint 2: Prompt engine, tracks, moods/tags
-* Sprint 3: AI, summaries, cost tracking
-
-### **Phase 2 – Web/Desktop (2 Sprints)**
-
-* Sprint 4: Next.js client
-* Sprint 5: Admin + payments
-
-### **Phase 3 – Launch**
-
-* Sprint 6: QA, security, a11y
-* Sprint 7: Beta → public launch
-
----
-
-## **11. Privacy & Security**
-
-* Client-side encryption
-* Firestore row-level rules
-* AI receives only what’s necessary
-* GDPR/CCPA-ready
-* App Check enabled
-
----
-
-## **12. Monitoring**
-
-* Firebase Emulator Suite
-* Unit + widget tests
-* React Testing Library
-* Performance Monitoring
-* Accessibility testing
-* Genkit AI usage monitoring
+### Sprint 5 – Testing & Launch
+- Emulator Suite tests  
+- Security audits  
+- Load tests  
+- Beta feedback  
+- Launch prep
 
 ---
 
-## **13. Conclusion**
+## 10. Security, Privacy & Compliance
+- Row-level Firestore rules  
+- Admin never sees journal text  
+- App Check enabled  
+- PII redacted before AI calls  
+- Data encrypted at rest + transit  
+- Export/delete user data  
+- Secrets in Secret Manager
 
-Stoic.af blends timeless Stoic practice with modern digital structure to help users develop Money, Ego, Relationships, and Discipline. With adaptive prompts, a living notebook, weekly AI reflections, and a privacy-first design, it delivers a meaningful self-improvement experience grounded in virtue and daily action.
+---
+
+## 11. Monitoring & Testing
+- Local Emulator Suite  
+- Genkit local telemetry  
+- Firebase Monitoring for latency/errors/tokens  
+- Accessibility tests  
+- Dark mode QA
+
+---
+
+## 12. Conclusion
+Stoic.af combines offline-first journaling, adaptive Stoic coaching, cost-controlled AI, and a calm aesthetic aligned with the UI kit. The roadmap, design system, and data models support a small team shipping a polished, scalable product.
 
 ---

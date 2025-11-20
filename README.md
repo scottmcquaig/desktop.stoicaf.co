@@ -7,7 +7,7 @@ Stoic.af is a mobile-first journaling and coaching platform designed to help use
 
 ## 🚀 Features
 
-### **Four Pillars (30-Day Tracks)**
+### Four Pillars (30-Day Tracks)
 Each track includes:
 - Daily theme  
 - Stoic quote  
@@ -22,30 +22,30 @@ Tracks are sourced from JSON:
 - `relationships-track.json`
 - `money-track.json`
 
-### **Living Notebook**
+### Living Notebook
 Users get *one daily entry* that evolves during the day:
 - Morning Intent  
 - Dichotomy of Control  
 - Evening Audit  
 - Custom templates  
 
-### **Adaptive Prompt Engine**
+### Adaptive Prompt Engine
 Prompts are chosen from:
-- Pillar track  
-- Quick audit (tags + patterns from past entries)  
-- Prompt library  
-- Optional AI remix (Gemini Flash)
+1. Pillar track  
+2. Quick audit (tags + patterns from past entries)  
+3. Prompt library  
+4. Optional AI remix (Gemini Flash)
 
-### **Weekly AI Reflection**
+### Weekly AI Reflection
 A single Cloud Function summarises:
 - Themes  
 - Wins  
 - Struggles  
 - Suggested next steps  
 
-AI usage cost is capped to ~$0.20/user/month.
+AI usage cost is capped to ~\$0.20/user/month.
 
-### **ChadGPT AI Coach**
+### ChadGPT AI Coach
 Tone options:
 - Gentle  
 - Reality Check  
@@ -56,7 +56,7 @@ Tone options:
 
 ## 🧱 Architecture
 
-### **Mobile (Primary Platform)**
+### Mobile (Primary Platform)
 - Flutter 3.x  
 - Riverpod / Bloc  
 - Firebase Auth + Firestore  
@@ -65,7 +65,7 @@ Tone options:
 - Genkit + Gemini Flash  
 - Stripe In-App Purchases  
 
-### **Web/Desktop (Phase 2)**
+### Web/Desktop (Phase 2)
 - Next.js 14 App Router  
 - Firebase Auth SSR  
 - IndexedDB for offline  
@@ -89,11 +89,12 @@ Tone options:
 ## 🎨 Design System
 
 ### Colors
-stoic.blue #4B90C8
-stoic.dark #1E293B
-stoic.light #F8FAFC
-stoic.gray #64748B
-
+```text
+stoic.blue  #4B90C8  
+stoic.dark  #1E293B  
+stoic.light #F8FAFC  
+stoic.gray  #64748B  
+```
 
 ### Typography  
 - Inter (UI)  
