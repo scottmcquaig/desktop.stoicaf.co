@@ -19,7 +19,7 @@ const config: Config = {
         // Pillar colors
         money: '#10B981',
         ego: '#8B5CF6',
-        relationships: '#EC4899',
+        relationships: '#EF4444',
         discipline: '#F59E0B',
         // Semantic colors
         success: '#10B981',
