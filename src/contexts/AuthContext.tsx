@@ -88,17 +88,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Update the user's display name
     await updateProfile(userCredential.user, { displayName });
 
-    // Create user profile in Firestore
-    const userDocRef = doc(db, 'users', userCredential.user.uid);
-    await setDoc(userDocRef, {
-      email: userCredential.user.email,
-      displayName,
-      photoURL: null,
-      onboardingComplete: false,
-      createdAt: serverTimestamp(),
-    });
-
-    await fetchUserProfile(userCredential.user.uid);
+    // Create user profile in Firestore (non-blocking - don't fail signup if this fails)
+    try {
+      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      await setDoc(userDocRef, {
+        email: userCredential.user.email,
+        displayName,
+        photoURL: null,
+        onboardingComplete: false,
+        createdAt: serverTimestamp(),
+      });
+      await fetchUserProfile(userCredential.user.uid);
+    } catch (firestoreError) {
+      console.error('Failed to create user profile in Firestore:', firestoreError);
+      // Set a basic profile so the app can continue
+      setUserProfile({
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName,
+        photoURL: null,
+        onboardingComplete: false,
+      });
+    }
   };
 
   const signInWithGoogle = async () => {
