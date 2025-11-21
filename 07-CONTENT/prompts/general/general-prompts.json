@@ -1,0 +1,391 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-20",
+  "prompts": [
+    {
+      "id": "gp_001",
+      "title": "Gratitude in Small Moments",
+      "description": "Reflect on three small wins from today",
+      "pillars": ["any"],
+      "difficulty": "beginner",
+      "mood_match": [3, 4, 5],
+      "prompt_text": "List three small moments from today that you're grateful for. They don't need to be big—a good cup of coffee, a kind word, or a moment of peace all count.",
+      "follow_up_questions": [
+        "Which of these moments surprised you?",
+        "How can you create more moments like these tomorrow?",
+        "Who contributed to these moments, and have you thanked them?"
+      ],
+      "stoic_wisdom": {
+        "quote": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+        "author": "Epictetus",
+        "translation": "Focus on what you have, not what you're missing."
+      },
+      "cooldown_days": 7,
+      "priority": 8,
+      "tags": ["gratitude", "mindfulness", "beginner-friendly"]
+    },
+    {
+      "id": "gp_002",
+      "title": "Control vs. Concern",
+      "description": "Practice the Dichotomy of Control",
+      "pillars": ["any"],
+      "difficulty": "beginner",
+      "mood_match": [1, 2, 3],
+      "prompt_text": "Write about something that's bothering you. Draw two columns: one for what you can control about it, one for what you can't. Where should you focus your energy?",
+      "follow_up_questions": [
+        "What's one action you can take today on what you can control?",
+        "Can you let go of what you can't control?",
+        "How does this shift in focus feel?"
+      ],
+      "stoic_wisdom": {
+        "quote": "The chief task in life is simply this: to identify and separate matters so that I can say clearly to myself which are externals not under my control, and which have to do with the choices I actually control.",
+        "author": "Epictetus",
+        "translation": "Focus only on what you can actually control—let go of everything else."
+      },
+      "cooldown_days": 5,
+      "priority": 9,
+      "tags": ["stoic-core", "dichotomy-of-control", "stress-relief"]
+    },
+    {
+      "id": "gp_003",
+      "title": "Daily Wins Review",
+      "description": "Celebrate your accomplishments",
+      "pillars": ["discipline", "ego"],
+      "difficulty": "beginner",
+      "mood_match": [3, 4, 5],
+      "prompt_text": "What are three things you accomplished today? They can be big or small—finishing a task, showing up for someone, or just getting through a tough day.",
+      "follow_up_questions": [
+        "Which accomplishment are you most proud of?",
+        "What made these wins possible?",
+        "How can you build on this momentum tomorrow?"
+      ],
+      "cooldown_days": 3,
+      "priority": 7,
+      "tags": ["accomplishment", "motivation", "progress"]
+    },
+    {
+      "id": "gp_004",
+      "title": "Energy Inventory",
+      "description": "Identify energy drains and sources",
+      "pillars": ["relationships", "discipline"],
+      "difficulty": "intermediate",
+      "mood_match": [2, 3, 4],
+      "prompt_text": "List the people, activities, and thoughts that gave you energy today. Then list what drained your energy. What patterns do you notice?",
+      "follow_up_questions": [
+        "Can you reduce or eliminate any energy drains?",
+        "How can you create more space for energy sources?",
+        "What's one boundary you need to set?"
+      ],
+      "cooldown_days": 10,
+      "priority": 7,
+      "tags": ["self-care", "boundaries", "awareness"]
+    },
+    {
+      "id": "gp_005",
+      "title": "Future Self Check-In",
+      "description": "Consider long-term impact",
+      "pillars": ["discipline", "money"],
+      "difficulty": "intermediate",
+      "mood_match": [3, 4, 5],
+      "prompt_text": "Think about the version of yourself one year from now. What would future you thank you for doing (or not doing) today?",
+      "follow_up_questions": [
+        "What small action can you take today that future you will appreciate?",
+        "What habit is future you grateful you started or stopped?",
+        "Are your daily choices aligned with who you want to become?"
+      ],
+      "stoic_wisdom": {
+        "quote": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.",
+        "author": "Marcus Aurelius",
+        "translation": "Think big picture—your daily choices shape your entire life."
+      },
+      "cooldown_days": 14,
+      "priority": 6,
+      "tags": ["future-thinking", "planning", "habits"]
+    },
+    {
+      "id": "gp_006",
+      "title": "Difficult Conversation Prep",
+      "description": "Navigate challenging relationships",
+      "pillars": ["relationships"],
+      "difficulty": "advanced",
+      "mood_match": [2, 3],
+      "prompt_text": "Is there a conversation you've been avoiding? Write about why it's difficult, what you hope to achieve, and how you want to show up in that conversation.",
+      "follow_up_questions": [
+        "What's the worst that could happen if you have this conversation?",
+        "What's the cost of continuing to avoid it?",
+        "How can you approach this with respect and clarity?"
+      ],
+      "cooldown_days": 30,
+      "priority": 5,
+      "tags": ["communication", "relationships", "courage"]
+    },
+    {
+      "id": "gp_007",
+      "title": "Spending Reflection",
+      "description": "Examine your financial choices",
+      "pillars": ["money"],
+      "difficulty": "beginner",
+      "mood_match": [3, 4],
+      "prompt_text": "Review your spending this week. Which purchases aligned with your values? Which didn't? No judgment—just awareness.",
+      "follow_up_questions": [
+        "What motivated your best financial decision this week?",
+        "What triggered any regrettable purchases?",
+        "What's one spending habit you want to change?"
+      ],
+      "cooldown_days": 7,
+      "priority": 6,
+      "tags": ["money", "awareness", "values"]
+    },
+    {
+      "id": "gp_008",
+      "title": "Emotional Weather Report",
+      "description": "Name and explore your feelings",
+      "pillars": ["any"],
+      "difficulty": "beginner",
+      "mood_match": [1, 2, 3, 4, 5],
+      "prompt_text": "Describe your emotional state today as if it were weather. Are you sunny and clear? Cloudy with chance of rain? A thunderstorm passing through? What caused this weather?",
+      "follow_up_questions": [
+        "Is this weather temporary or has it been around for a while?",
+        "What do you need when you're in this emotional weather?",
+        "Can you accept this weather without trying to force it to change?"
+      ],
+      "cooldown_days": 2,
+      "priority": 8,
+      "tags": ["emotions", "awareness", "acceptance"]
+    },
+    {
+      "id": "gp_009",
+      "title": "Values Check-In",
+      "description": "Realign with what matters",
+      "pillars": ["any"],
+      "difficulty": "intermediate",
+      "mood_match": [2, 3, 4],
+      "prompt_text": "Name your top three values (e.g., honesty, growth, connection). How did your actions today reflect these values? Where did you drift?",
+      "follow_up_questions": [
+        "When you acted in alignment with your values, how did it feel?",
+        "What pulled you away from your values today?",
+        "What's one way to live more aligned tomorrow?"
+      ],
+      "stoic_wisdom": {
+        "quote": "If it is not right, do not do it. If it is not true, do not say it.",
+        "author": "Marcus Aurelius",
+        "translation": "Live by your principles, always."
+      },
+      "cooldown_days": 14,
+      "priority": 7,
+      "tags": ["values", "integrity", "alignment"]
+    },
+    {
+      "id": "gp_010",
+      "title": "Obstacle as Opportunity",
+      "description": "Reframe challenges",
+      "pillars": ["discipline", "ego"],
+      "difficulty": "intermediate",
+      "mood_match": [2, 3, 4],
+      "prompt_text": "What obstacle or challenge did you face today? Write about how this obstacle might actually be helping you grow stronger, wiser, or more resilient.",
+      "follow_up_questions": [
+        "What skill is this challenge forcing you to develop?",
+        "Will this matter in a year? Five years?",
+        "How would a stronger version of you handle this?"
+      ],
+      "stoic_wisdom": {
+        "quote": "The impediment to action advances action. What stands in the way becomes the way.",
+        "author": "Marcus Aurelius",
+        "translation": "Every obstacle is a chance to get better."
+      },
+      "cooldown_days": 7,
+      "priority": 8,
+      "tags": ["resilience", "growth-mindset", "stoic-core"]
+    },
+    {
+      "id": "gp_011",
+      "title": "Kindness Audit",
+      "description": "Reflect on compassion",
+      "pillars": ["relationships"],
+      "difficulty": "beginner",
+      "mood_match": [3, 4, 5],
+      "prompt_text": "Write about a moment today when someone showed you kindness, or when you showed kindness to someone else (including yourself).",
+      "follow_up_questions": [
+        "How did this act of kindness impact you or them?",
+        "Who in your life could use more kindness from you?",
+        "How can you be kinder to yourself tomorrow?"
+      ],
+      "cooldown_days": 5,
+      "priority": 7,
+      "tags": ["kindness", "relationships", "compassion"]
+    },
+    {
+      "id": "gp_012",
+      "title": "Judgment Detox",
+      "description": "Notice and release judgment",
+      "pillars": ["ego", "relationships"],
+      "difficulty": "advanced",
+      "mood_match": [2, 3, 4],
+      "prompt_text": "Who or what did you judge today (including yourself)? Write about that judgment without defending it. Just observe it. Where did it come from?",
+      "follow_up_questions": [
+        "What would happen if you released this judgment?",
+        "Is this judgment protecting you from something?",
+        "Can you replace judgment with curiosity?"
+      ],
+      "stoic_wisdom": {
+        "quote": "When you wake up in the morning, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, dishonest, jealous, and surly. But I have seen the beauty of good, and the ugliness of evil.",
+        "author": "Marcus Aurelius",
+        "translation": "Expect others to be flawed—and practice understanding anyway."
+      },
+      "cooldown_days": 10,
+      "priority": 6,
+      "tags": ["ego", "acceptance", "perspective"]
+    },
+    {
+      "id": "gp_013",
+      "title": "Progress Over Perfection",
+      "description": "Celebrate small steps",
+      "pillars": ["discipline", "ego"],
+      "difficulty": "beginner",
+      "mood_match": [2, 3, 4],
+      "prompt_text": "Where did you expect perfection from yourself today? Write about one area where you made progress, even if it wasn't perfect.",
+      "follow_up_questions": [
+        "What's the difference between striving and suffering?",
+        "If you treated yourself like a good friend, what would you say?",
+        "What's one thing you can celebrate about today's effort?"
+      ],
+      "cooldown_days": 5,
+      "priority": 7,
+      "tags": ["self-compassion", "progress", "perfectionism"]
+    },
+    {
+      "id": "gp_014",
+      "title": "Mortality Meditation",
+      "description": "Remember your time is limited",
+      "pillars": ["any"],
+      "difficulty": "advanced",
+      "mood_match": [3, 4],
+      "prompt_text": "If today were your last day, what would you regret not doing? Not saying? Not experiencing? This isn't morbid—it's clarity.",
+      "follow_up_questions": [
+        "What's stopping you from doing these things now?",
+        "How would you live differently if you truly believed your time was limited?",
+        "What matters most when you think about the end?"
+      ],
+      "stoic_wisdom": {
+        "quote": "You could leave life right now. Let that determine what you do and say and think.",
+        "author": "Marcus Aurelius",
+        "translation": "Live like your time is limited—because it is."
+      },
+      "cooldown_days": 30,
+      "priority": 5,
+      "tags": ["mortality", "priorities", "meaning"]
+    },
+    {
+      "id": "gp_015",
+      "title": "Boundary Setting",
+      "description": "Protect your energy",
+      "pillars": ["relationships", "discipline"],
+      "difficulty": "intermediate",
+      "mood_match": [2, 3],
+      "prompt_text": "Where did you feel your boundaries were crossed today? Or where did you need to set a boundary but didn't? Write about what happened and what you need.",
+      "follow_up_questions": [
+        "What's the cost of not setting this boundary?",
+        "What are you afraid will happen if you set it?",
+        "How can you communicate this boundary clearly and kindly?"
+      ],
+      "cooldown_days": 10,
+      "priority": 7,
+      "tags": ["boundaries", "self-care", "relationships"]
+    },
+    {
+      "id": "gp_016",
+      "title": "Money Mindset Check",
+      "description": "Examine beliefs about wealth",
+      "pillars": ["money"],
+      "difficulty": "intermediate",
+      "mood_match": [3, 4],
+      "prompt_text": "Finish this sentence: 'Money is...' Write whatever comes to mind. Then explore where that belief came from and whether it's serving you.",
+      "follow_up_questions": [
+        "What did your family teach you about money?",
+        "How does your current money mindset affect your decisions?",
+        "What healthier belief about money would you like to adopt?"
+      ],
+      "cooldown_days": 14,
+      "priority": 6,
+      "tags": ["money", "beliefs", "mindset"]
+    },
+    {
+      "id": "gp_017",
+      "title": "Evening Wind-Down",
+      "description": "Close your day with intention",
+      "pillars": ["any"],
+      "difficulty": "beginner",
+      "mood_match": [2, 3, 4, 5],
+      "prompt_text": "As you end your day, write about: one thing that went well, one thing that was hard, and one thing you learned.",
+      "follow_up_questions": [
+        "What are you grateful for from today?",
+        "What do you want to release before sleep?",
+        "What intention do you want to set for tomorrow?"
+      ],
+      "cooldown_days": 1,
+      "priority": 8,
+      "tags": ["reflection", "evening", "closure"]
+    },
+    {
+      "id": "gp_018",
+      "title": "Comparison Trap",
+      "description": "Notice when you compare yourself",
+      "pillars": ["ego"],
+      "difficulty": "intermediate",
+      "mood_match": [2, 3],
+      "prompt_text": "Who did you compare yourself to today? Write about how that comparison made you feel and what it revealed about what you value or want.",
+      "follow_up_questions": [
+        "What would change if you stopped comparing?",
+        "Are you comparing your behind-the-scenes to someone's highlight reel?",
+        "What's one unique strength you have that no comparison can take away?"
+      ],
+      "stoic_wisdom": {
+        "quote": "How much more harmful are the consequences of anger and grief than the circumstances that aroused them in us!",
+        "author": "Marcus Aurelius",
+        "translation": "Your reaction hurts you more than the thing you're reacting to."
+      },
+      "cooldown_days": 10,
+      "priority": 6,
+      "tags": ["ego", "comparison", "self-worth"]
+    },
+    {
+      "id": "gp_019",
+      "title": "Presence Practice",
+      "description": "Notice when you were fully present",
+      "pillars": ["any"],
+      "difficulty": "beginner",
+      "mood_match": [3, 4, 5],
+      "prompt_text": "Describe one moment today when you were fully present—not thinking about the past or future, just here. What did you notice?",
+      "follow_up_questions": [
+        "How did being present feel different than being distracted?",
+        "What pulls you away from the present moment most often?",
+        "How can you create more present moments tomorrow?"
+      ],
+      "cooldown_days": 3,
+      "priority": 7,
+      "tags": ["mindfulness", "presence", "awareness"]
+    },
+    {
+      "id": "gp_020",
+      "title": "Virtue in Action",
+      "description": "Practice a stoic virtue",
+      "pillars": ["any"],
+      "difficulty": "advanced",
+      "mood_match": [3, 4],
+      "prompt_text": "Choose one Stoic virtue (wisdom, courage, justice, or temperance). How did you practice it today? Where could you have practiced it better?",
+      "follow_up_questions": [
+        "What made it easy or hard to practice this virtue today?",
+        "Who do you know who embodies this virtue?",
+        "How can you practice this virtue more tomorrow?"
+      ],
+      "stoic_wisdom": {
+        "quote": "Waste no more time arguing what a good man should be. Be one.",
+        "author": "Marcus Aurelius",
+        "translation": "Stop thinking about virtue—start practicing it."
+      },
+      "cooldown_days": 14,
+      "priority": 7,
+      "tags": ["virtue", "stoic-core", "character"]
+    }
+  ]
+}

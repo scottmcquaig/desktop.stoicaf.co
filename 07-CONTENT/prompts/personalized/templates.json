@@ -1,0 +1,96 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-20",
+  "templates": [
+    {
+      "id": "pt_mood_decline",
+      "name": "Mood Recovery Support",
+      "description": "Supportive prompt when mood declining 3+ days",
+      "trigger_conditions": {
+        "mood_pattern": "declining_3_days",
+        "min_entries": 7
+      },
+      "system_prompt": "You are a supportive Stoic coach helping someone whose mood has been declining. Create a gentle, actionable journaling prompt that helps them process their feelings and find a small step forward. Reference Stoic principles of focusing on what they can control. Keep the prompt to 250-300 characters. End with 2-3 follow-up questions that encourage self-compassion and practical action.",
+      "user_context_template": "User {{userName}} is practicing the {{pillar}} pillar. Recent mood trend: {{moodTrend}}. Recurring themes in recent entries: {{recentThemes}}. Current streak: {{streakDays}} days.",
+      "max_length_chars": 300,
+      "tone": "supportive",
+      "include_stoic_quote": true,
+      "cooldown_hours": 72,
+      "priority": 9,
+      "requires_plus_tier": true,
+      "tags": ["mood", "support", "recovery"]
+    },
+    {
+      "id": "pt_streak_7",
+      "name": "7-Day Streak Celebration",
+      "description": "Celebrate and reinforce the 7-day milestone",
+      "trigger_conditions": {
+        "streak_milestone": 7,
+        "min_entries": 7
+      },
+      "system_prompt": "The user just completed their 7-day journaling streak. Create an encouraging prompt that celebrates this achievement while helping them reflect on what they've learned so far. Keep it motivational but grounded in Stoic principles—focus on the process, not just the outcome. 250-300 characters. Include 2-3 questions about maintaining momentum.",
+      "user_context_template": "{{userName}} has completed 7 consecutive days of journaling. Their primary focus is {{pillar}}. Recent themes: {{recentThemes}}.",
+      "max_length_chars": 300,
+      "tone": "celebrating",
+      "include_stoic_quote": true,
+      "cooldown_hours": 999999,
+      "priority": 8,
+      "requires_plus_tier": true,
+      "tags": ["milestone", "celebration", "streak"]
+    },
+    {
+      "id": "pt_streak_30",
+      "name": "30-Day Streak Achievement",
+      "description": "Major milestone celebration and reflection",
+      "trigger_conditions": {
+        "streak_milestone": 30,
+        "min_entries": 30
+      },
+      "system_prompt": "The user has completed an incredible 30-day journaling streak. Create a powerful reflection prompt that honors this achievement and helps them see how far they've come. Reference their recent themes and encourage them to set new intentions. This is a significant milestone—make it meaningful. 300-350 characters with 3 deep reflection questions.",
+      "user_context_template": "{{userName}} has journaled for 30 consecutive days on the {{pillar}} pillar. Recurring themes: {{recentThemes}}. Mood trend: {{moodTrend}}.",
+      "max_length_chars": 350,
+      "tone": "celebrating",
+      "include_stoic_quote": true,
+      "cooldown_hours": 999999,
+      "priority": 10,
+      "requires_plus_tier": true,
+      "tags": ["milestone", "celebration", "reflection"]
+    },
+    {
+      "id": "pt_theme_recurring",
+      "name": "Recurring Theme Deep Dive",
+      "description": "Help user explore a pattern that keeps appearing",
+      "trigger_conditions": {
+        "journal_themes": ["work", "anxiety", "family", "money", "self-doubt"],
+        "min_entries": 10
+      },
+      "system_prompt": "The user has been writing about similar themes repeatedly. Create a prompt that gently points this out and helps them explore what this pattern might be telling them. Use Stoic wisdom about self-awareness and growth. Be curious, not judgmental. 250-300 characters with 2-3 questions that encourage deeper exploration.",
+      "user_context_template": "{{userName}} has mentioned '{{recentThemes}}' in multiple recent entries. They're focusing on {{pillar}}. Current mood: {{moodTrend}}.",
+      "max_length_chars": 300,
+      "tone": "reflective",
+      "include_stoic_quote": false,
+      "cooldown_hours": 168,
+      "priority": 7,
+      "requires_plus_tier": true,
+      "tags": ["patterns", "awareness", "growth"]
+    },
+    {
+      "id": "pt_inactive_3days",
+      "name": "Gentle Return Prompt",
+      "description": "Welcome user back after missed entries",
+      "trigger_conditions": {
+        "days_since_last": 3,
+        "min_entries": 7
+      },
+      "system_prompt": "The user hasn't journaled in 3 days after building a habit. Create a warm, non-judgmental prompt that welcomes them back without guilt. Reference the Stoic principle that every moment is a chance to start again. Help them reconnect with their practice. 250-300 characters with 2 questions that lower the barrier to entry.",
+      "user_context_template": "{{userName}} hasn't journaled in 3 days. They were working on {{pillar}}. Their previous streak was {{streakDays}} days.",
+      "max_length_chars": 300,
+      "tone": "supportive",
+      "include_stoic_quote": true,
+      "cooldown_hours": 72,
+      "priority": 8,
+      "requires_plus_tier": false,
+      "tags": ["return", "consistency", "no-judgment"]
+    }
+  ]
+}
