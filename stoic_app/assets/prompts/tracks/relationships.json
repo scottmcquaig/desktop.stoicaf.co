@@ -1,0 +1,29 @@
+{
+  "trackId": "relationships",
+  "trackName": "Relationship Mastery",
+  "duration": 30,
+  "pillar": "relationships",
+  "days": [
+    {
+      "day": 1,
+      "title": "Connection Audit",
+      "prompt": "List the five most important relationships in your life. For each one, rate the quality of connection on a scale of 1-10. What patterns do you notice?",
+      "promptType": "reflection",
+      "focusArea": "awareness"
+    },
+    {
+      "day": 2,
+      "title": "Communication Patterns",
+      "prompt": "Reflect on how you communicate in your closest relationships. What habits serve you well? What would you like to improve?",
+      "promptType": "reflection",
+      "focusArea": "communication"
+    },
+    {
+      "day": 3,
+      "title": "Gratitude Expression",
+      "prompt": "Choose one important person in your life. What do you appreciate about them that you've never directly expressed? How can you share this with them?",
+      "promptType": "action",
+      "focusArea": "gratitude"
+    }
+  ]
+}

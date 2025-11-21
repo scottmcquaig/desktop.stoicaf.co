@@ -1,0 +1,29 @@
+{
+  "trackId": "ego",
+  "trackName": "Ego Transcendence",
+  "duration": 30,
+  "pillar": "ego",
+  "days": [
+    {
+      "day": 1,
+      "title": "Self-Awareness",
+      "prompt": "When do you notice your ego most active? Reflect on a recent situation where your ego might have influenced your behavior or decisions.",
+      "promptType": "reflection",
+      "focusArea": "awareness"
+    },
+    {
+      "day": 2,
+      "title": "Humility Practice",
+      "prompt": "Write about something you don't know or aren't good at. How does it feel to acknowledge this? What can you learn from this admission?",
+      "promptType": "reflection",
+      "focusArea": "humility"
+    },
+    {
+      "day": 3,
+      "title": "Perspective Shift",
+      "prompt": "Think of a recent conflict or disagreement. Try to see it entirely from the other person's perspective. What might you have missed?",
+      "promptType": "reflection",
+      "focusArea": "perspective"
+    }
+  ]
+}

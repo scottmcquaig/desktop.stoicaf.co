@@ -1,0 +1,29 @@
+{
+  "trackId": "money",
+  "trackName": "Money Mastery",
+  "duration": 30,
+  "pillar": "money",
+  "days": [
+    {
+      "day": 1,
+      "title": "Financial Awareness",
+      "prompt": "Take a moment to reflect on your current financial situation. What emotions come up when you think about money? Write about your relationship with money without judgment.",
+      "promptType": "reflection",
+      "focusArea": "awareness"
+    },
+    {
+      "day": 2,
+      "title": "Money Mindset",
+      "prompt": "What beliefs about money did you learn growing up? Which of these beliefs serve you today, and which might be holding you back?",
+      "promptType": "reflection",
+      "focusArea": "mindset"
+    },
+    {
+      "day": 3,
+      "title": "Financial Goals",
+      "prompt": "Describe your ideal financial situation one year from now. What specific steps can you take this month to move closer to that vision?",
+      "promptType": "planning",
+      "focusArea": "goals"
+    }
+  ]
+}
