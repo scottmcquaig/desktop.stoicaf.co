@@ -1,6 +1,6 @@
 # AI Agent Instructions - START HERE
 
-## Project: Stoic.af - Mobile-First Stoic Journaling App
+## Project: Stoic.af - Desktop Web Stoic Journaling App
 
 This directory contains all instructions organized for optimal AI agent comprehension. Read these files in sequence for complete context.
 
@@ -20,9 +20,9 @@ This directory contains all instructions organized for optimal AI agent comprehe
 
 ## Quick Context for AI Agents
 
-**Product**: Mobile-first Stoic journaling app with AI coaching
-**Tech Stack**: Flutter (mobile), Next.js (web), Firebase, Gemini AI
-**Current Phase**: Pre-development UI/UX Design
+**Product**: Desktop web Stoic journaling app with AI coaching
+**Tech Stack**: Next.js 14, Tailwind CSS, shadcn/ui, Firebase, Gemini AI
+**Current Phase**: Ready for Development
 **Key Features**:
 - Daily journaling with adaptive prompts
 - Four pillars: Money, Ego, Relationships, Discipline
@@ -30,7 +30,7 @@ This directory contains all instructions organized for optimal AI agent comprehe
 - ChadGPT AI coach
 - Offline-first with encryption
 
-## Design Process Order
+## Development Process Order
 
 1. Read PROJECT-BRIEF.md in 01-PROJECT-OVERVIEW
 2. Review DESIGN-SYSTEM.md in 02-UI-UX-DESIGN
@@ -40,22 +40,45 @@ This directory contains all instructions organized for optimal AI agent comprehe
 
 ## Important Notes for AI Agents
 
-- This is a MOBILE-FIRST design (Flutter primary, Next.js secondary)
+- This is a **DESKTOP-FIRST** design (Next.js web app)
 - Privacy is critical - all journal entries are encrypted
 - AI costs must stay under $0.20/user/month
-- Offline functionality is mandatory
+- Offline functionality is mandatory (service workers)
 - Follow Stoic philosophy principles in all design decisions
+- Use shadcn/ui for component primitives
+- Optimize for keyboard navigation
 
 ## Current Status
 
-- [ ] UI/UX Design Phase (IN PROGRESS)
-- [ ] Component Library Definition
-- [ ] User Flow Diagrams
-- [ ] Mockup Creation
-- [ ] Design System Tokens
-- [ ] Development Phase (NOT STARTED)
+- [x] UI/UX Design Phase (COMPLETE)
+- [x] Component Library Definition (COMPLETE)
+- [x] User Flow Diagrams (COMPLETE)
+- [x] Design System Tokens (COMPLETE)
+- [ ] Development Phase (READY TO START)
+
+## Technology Stack
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **Components**: shadcn/ui
+- **State**: Zustand or React Context
+- **Forms**: React Hook Form + Zod
+
+### Backend
+- **Auth**: Firebase Authentication
+- **Database**: Firestore
+- **Functions**: Firebase Cloud Functions
+- **AI**: Genkit + Gemini Flash
+- **Storage**: Firebase Storage (encrypted)
+
+### Development
+- **Language**: TypeScript
+- **Package Manager**: npm or pnpm
+- **Linting**: ESLint + Prettier
+- **Testing**: Jest + React Testing Library
 
 ## Contact
 
 Project Owner: Scott McQuaig
-Repository: github.com/scottmcquaig/app.stoicaf.co
+Repository: github.com/scottmcquaig/desktop.stoicaf.co
