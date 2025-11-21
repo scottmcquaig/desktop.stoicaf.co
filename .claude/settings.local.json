@@ -4,7 +4,12 @@
       "Bash(git clone:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(flutter --version:*)",
+      "Bash(dir:*)",
+      "Bash(powershell.exe -Command \"cd C:\\Users\\scott\\develop; dir\")",
+      "Bash(powershell.exe -Command:*)",
+      "Bash(flutter emulators:*)"
     ],
     "deny": [],
     "ask": []
