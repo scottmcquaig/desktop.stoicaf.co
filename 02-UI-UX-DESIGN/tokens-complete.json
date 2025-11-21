@@ -1,0 +1,307 @@
+{
+  "$schema": "https://schemas.designtokens.org/0.1.0/tokens.json",
+  "meta": {
+    "description": "Complete design tokens for Stoic.af - Mobile & Web",
+    "version": "1.0.0",
+    "platforms": ["Flutter", "Next.js"]
+  },
+  "color": {
+    "brand": {
+      "primary": "#4B90C8",
+      "primaryHover": "#3A7AAE",
+      "primaryPressed": "#2D5F8A",
+      "primaryLight": "#E0F2FE",
+      "primaryLighter": "#F0F9FF"
+    },
+    "semantic": {
+      "success": "#10B981",
+      "successLight": "#D1FAE5",
+      "successDark": "#059669",
+      "warning": "#F59E0B",
+      "warningLight": "#FEF3C7",
+      "warningDark": "#D97706",
+      "error": "#EF4444",
+      "errorLight": "#FEE2E2",
+      "errorDark": "#DC2626",
+      "info": "#3B82F6",
+      "infoLight": "#DBEAFE",
+      "infoDark": "#2563EB"
+    },
+    "pillar": {
+      "money": "#10B981",
+      "moneyLight": "#D1FAE5",
+      "ego": "#8B5CF6",
+      "egoLight": "#EDE9FE",
+      "relationships": "#EC4899",
+      "relationshipsLight": "#FCE7F3",
+      "discipline": "#F59E0B",
+      "disciplineLight": "#FEF3C7"
+    },
+    "text": {
+      "primary": "#1E293B",
+      "secondary": "#64748B",
+      "tertiary": "#94A3B8",
+      "disabled": "#CBD5E1",
+      "inverse": "#FFFFFF",
+      "link": "#4B90C8",
+      "linkHover": "#3A7AAE"
+    },
+    "background": {
+      "app": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "surfaceElevated": "#FFFFFF",
+      "overlay": "rgba(15, 23, 42, 0.6)",
+      "disabled": "#F1F5F9",
+      "hover": "#F8FAFC",
+      "pressed": "#E2E8F0"
+    },
+    "border": {
+      "default": "#E2E8F0",
+      "light": "#F1F5F9",
+      "medium": "#CBD5E1",
+      "strong": "#94A3B8",
+      "focus": "#4B90C8",
+      "error": "#EF4444",
+      "success": "#10B981"
+    },
+    "dark": {
+      "background": {
+        "app": "#0F172A",
+        "surface": "#1E293B",
+        "surfaceElevated": "#334155",
+        "overlay": "rgba(0, 0, 0, 0.7)",
+        "disabled": "#334155",
+        "hover": "#334155",
+        "pressed": "#475569"
+      },
+      "text": {
+        "primary": "#F1F5F9",
+        "secondary": "#CBD5E1",
+        "tertiary": "#94A3B8",
+        "disabled": "#64748B",
+        "inverse": "#0F172A",
+        "link": "#60A5FA",
+        "linkHover": "#93C5FD"
+      },
+      "border": {
+        "default": "#334155",
+        "light": "#1E293B",
+        "medium": "#475569",
+        "strong": "#64748B",
+        "focus": "#60A5FA",
+        "error": "#F87171",
+        "success": "#34D399"
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "sans": "Inter",
+      "serifQuote": "Playfair Display",
+      "mono": "SF Mono, Monaco, Consolas, monospace"
+    },
+    "fontSize": {
+      "xs": 12,
+      "sm": 14,
+      "base": 16,
+      "md": 16,
+      "lg": 18,
+      "xl": 20,
+      "2xl": 24,
+      "3xl": 28,
+      "4xl": 32,
+      "5xl": 40
+    },
+    "fontWeight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "lineHeight": {
+      "tight": 1.25,
+      "normal": 1.5,
+      "relaxed": 1.75,
+      "loose": 2
+    },
+    "letterSpacing": {
+      "tight": -0.5,
+      "normal": 0,
+      "wide": 0.5
+    }
+  },
+  "spacing": {
+    "0": 0,
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "5": 20,
+    "6": 24,
+    "8": 32,
+    "10": 40,
+    "12": 48,
+    "16": 64,
+    "20": 80,
+    "24": 96
+  },
+  "radius": {
+    "none": 0,
+    "sm": 6,
+    "md": 10,
+    "lg": 16,
+    "xl": 20,
+    "2xl": 24,
+    "full": 9999,
+    "pill": 9999
+  },
+  "shadow": {
+    "none": "none",
+    "sm": {
+      "elevation": 2,
+      "offsetX": 0,
+      "offsetY": 1,
+      "blur": 2,
+      "spread": 0,
+      "color": "rgba(0, 0, 0, 0.05)"
+    },
+    "md": {
+      "elevation": 4,
+      "offsetX": 0,
+      "offsetY": 2,
+      "blur": 4,
+      "spread": -1,
+      "color": "rgba(0, 0, 0, 0.1)"
+    },
+    "lg": {
+      "elevation": 8,
+      "offsetX": 0,
+      "offsetY": 4,
+      "blur": 8,
+      "spread": -2,
+      "color": "rgba(0, 0, 0, 0.15)"
+    },
+    "xl": {
+      "elevation": 16,
+      "offsetX": 0,
+      "offsetY": 8,
+      "blur": 16,
+      "spread": -4,
+      "color": "rgba(0, 0, 0, 0.2)"
+    },
+    "card": {
+      "elevation": 2,
+      "offsetX": 0,
+      "offsetY": 1,
+      "blur": 3,
+      "spread": 0,
+      "color": "rgba(0, 0, 0, 0.08)"
+    },
+    "cardHover": {
+      "elevation": 4,
+      "offsetX": 0,
+      "offsetY": 4,
+      "blur": 8,
+      "spread": 0,
+      "color": "rgba(0, 0, 0, 0.12)"
+    }
+  },
+  "animation": {
+    "duration": {
+      "instant": 100,
+      "fast": 200,
+      "normal": 300,
+      "slow": 400,
+      "slower": 500
+    },
+    "easing": {
+      "linear": "cubic-bezier(0, 0, 1, 1)",
+      "easeIn": "cubic-bezier(0.4, 0, 1, 1)",
+      "easeOut": "cubic-bezier(0, 0, 0.2, 1)",
+      "easeInOut": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    }
+  },
+  "breakpoint": {
+    "mobile": 375,
+    "mobileLarge": 428,
+    "tablet": 768,
+    "desktop": 1024,
+    "desktopLarge": 1440,
+    "desktopXL": 1920
+  },
+  "zIndex": {
+    "base": 0,
+    "dropdown": 1000,
+    "sticky": 1100,
+    "fixed": 1200,
+    "modalBackdrop": 1300,
+    "modal": 1400,
+    "popover": 1500,
+    "toast": 1600,
+    "tooltip": 1700
+  },
+  "size": {
+    "icon": {
+      "xs": 12,
+      "sm": 16,
+      "md": 20,
+      "lg": 24,
+      "xl": 32,
+      "2xl": 40
+    },
+    "touchTarget": {
+      "mobile": 44,
+      "tablet": 40,
+      "desktop": 32
+    },
+    "avatar": {
+      "xs": 24,
+      "sm": 32,
+      "md": 40,
+      "lg": 48,
+      "xl": 64,
+      "2xl": 96
+    },
+    "sidebar": {
+      "collapsed": 64,
+      "expanded": 240
+    },
+    "header": {
+      "mobile": 56,
+      "desktop": 64
+    },
+    "bottomNav": {
+      "mobile": 56
+    },
+    "maxWidth": {
+      "content": 768,
+      "modal": 600,
+      "modalLarge": 800,
+      "page": 1200,
+      "pageWide": 1440
+    }
+  },
+  "opacity": {
+    "disabled": 0.4,
+    "hover": 0.8,
+    "overlay": 0.6,
+    "divider": 0.12
+  },
+  "border": {
+    "width": {
+      "none": 0,
+      "thin": 1,
+      "medium": 2,
+      "thick": 3,
+      "focus": 3
+    }
+  },
+  "transition": {
+    "all": "all",
+    "colors": "background-color, border-color, color, fill, stroke",
+    "opacity": "opacity",
+    "shadow": "box-shadow",
+    "transform": "transform"
+  }
+}
