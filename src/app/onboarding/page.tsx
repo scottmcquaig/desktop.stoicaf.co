@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -79,8 +79,28 @@ export default function OnboardingPage() {
   const [emailReminders, setEmailReminders] = useState(true);
   const [browserNotifications, setBrowserNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { updateUserProfile } = useAuth();
+  const { user, userProfile, loading: authLoading, updateUserProfile } = useAuth();
   const router = useRouter();
+
+  // Protect onboarding route - redirect if not authenticated or already completed
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        router.push('/auth/signin');
+      } else if (userProfile?.onboardingComplete) {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, userProfile, authLoading, router]);
+
+  // Show loading while checking auth
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stoic-blue"></div>
+      </div>
+    );
+  }
 
   const handleNext = () => {
     if (step < 4) {

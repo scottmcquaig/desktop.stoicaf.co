@@ -9,7 +9,6 @@ import {
   Edit,
   CircleUser,
   ChevronLeft,
-  ChevronRight,
   LogOut,
   Home,
   BarChart3,
@@ -28,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from './ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NavItem = ({
   href,
@@ -82,6 +82,19 @@ export function AppSidebar({
   isCollapsed: boolean;
   setCollapsed: (isCollapsed: boolean) => void;
 }) {
+  const { user, userProfile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const displayName = userProfile?.displayName || user?.displayName || 'User';
+  const isPro = userProfile?.onboardingComplete; // For now, treat onboarding complete as "Pro"
+
   return (
     <aside
       className={cn(
@@ -176,9 +189,9 @@ export function AppSidebar({
               </div>
               <div className={cn('overflow-hidden transition-opacity', isCollapsed ? 'sr-only opacity-0' : 'opacity-100')}>
                 <p className="text-sm font-bold truncate text-slate-700 group-hover:text-slate-900">
-                  Marcus Aurelius
+                  {displayName}
                 </p>
-                <p className="text-xs text-slate-500 truncate">Pro Member</p>
+                <p className="text-xs text-slate-500 truncate">{isPro ? 'Pro Member' : 'Free'}</p>
               </div>
             </div>
           </DropdownMenuTrigger>
@@ -192,11 +205,12 @@ export function AppSidebar({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500 focus:text-red-500" asChild>
-              <Link href="/" className="flex items-center gap-2">
-                <LogOut size={16} />
-                <span>Log Out</span>
-              </Link>
+            <DropdownMenuItem
+              className="text-red-500 focus:text-red-500 cursor-pointer"
+              onClick={handleSignOut}
+            >
+              <LogOut size={16} className="mr-2" />
+              <span>Log Out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
