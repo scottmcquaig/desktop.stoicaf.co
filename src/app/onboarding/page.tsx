@@ -1,308 +1,319 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAppStore } from '@/lib/store'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Wallet, Brain, Heart, Target, ChevronRight, ChevronLeft, Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { Pillar } from '@/lib/mock-data'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Brain, Flame, Scale, Gavel, Loader2 } from 'lucide-react';
 
-const pillars = [
+type VirtueFocus = 'wisdom' | 'courage' | 'temperance' | 'justice';
+type ChadTone = 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
+
+const virtues = [
   {
-    id: 'money' as Pillar,
-    name: 'Money',
-    icon: Wallet,
-    color: 'bg-money',
-    textColor: 'text-money',
-    borderColor: 'border-money',
-    description: 'Master your relationship with wealth. Learn to want less, save wisely, and find freedom from financial anxiety.',
-  },
-  {
-    id: 'ego' as Pillar,
-    name: 'Ego',
+    id: 'wisdom' as VirtueFocus,
+    label: 'Wisdom',
+    description: 'Understanding and sound judgments',
     icon: Brain,
-    color: 'bg-ego',
-    textColor: 'text-ego',
-    borderColor: 'border-ego',
-    description: 'Tame your ego. Accept criticism gracefully, celebrate others\' success, and find strength in humility.',
   },
   {
-    id: 'relationships' as Pillar,
-    name: 'Relationships',
-    icon: Heart,
-    color: 'bg-relationships',
-    textColor: 'text-relationships',
-    borderColor: 'border-relationships',
-    description: 'Build meaningful connections. Practice patience, presence, and unconditional support for those you love.',
+    id: 'courage' as VirtueFocus,
+    label: 'Courage',
+    description: 'Facing challenges with bravery',
+    icon: Flame,
   },
   {
-    id: 'discipline' as Pillar,
-    name: 'Discipline',
-    icon: Target,
-    color: 'bg-discipline',
-    textColor: 'text-discipline',
-    borderColor: 'border-discipline',
-    description: 'Strengthen your willpower. Build habits that serve your higher self and resist the pull of comfort.',
+    id: 'temperance' as VirtueFocus,
+    label: 'Temperance',
+    description: 'Moderation and self-control',
+    icon: Scale,
   },
-]
+  {
+    id: 'justice' as VirtueFocus,
+    label: 'Justice',
+    description: 'Fairness and doing what is right',
+    icon: Gavel,
+  },
+];
+
+const tones = [
+  {
+    id: 'gentle' as ChadTone,
+    label: 'Gentle',
+    description: 'Focuses on empathy and encouragement.',
+  },
+  {
+    id: 'reality-check' as ChadTone,
+    label: 'Reality Check',
+    description: 'Direct, honest, but supportive.',
+  },
+  {
+    id: 'drill-sergeant' as ChadTone,
+    label: 'Drill Sergeant',
+    description: 'No excuses. Pure discipline.',
+  },
+  {
+    id: 'roast-me' as ChadTone,
+    label: 'Roast Me',
+    description: 'Make me laugh while improving.',
+  },
+];
+
+const reminderTimes = [
+  { id: 'morning', label: 'Morning', time: '8:00 AM' },
+  { id: 'afternoon', label: 'Afternoon', time: '12:00 PM' },
+  { id: 'evening', label: 'Evening', time: '6:00 PM' },
+];
 
 export default function OnboardingPage() {
-  const [step, setStep] = useState(1)
-  const [selectedPillar, setSelectedPillar] = useState<Pillar | null>(null)
-  const [reminderTime, setReminderTime] = useState('08:00')
-  const [enableReminder, setEnableReminder] = useState(true)
-  const router = useRouter()
-  const { user, completeOnboarding } = useAppStore()
+  const [step, setStep] = useState(1);
+  const [virtueFocus, setVirtueFocus] = useState<VirtueFocus | null>(null);
+  const [chadTone, setChadTone] = useState<ChadTone>('reality-check');
+  const [currentStruggle, setCurrentStruggle] = useState('');
+  const [reminderTime, setReminderTime] = useState('evening');
+  const [emailReminders, setEmailReminders] = useState(true);
+  const [browserNotifications, setBrowserNotifications] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { updateUserProfile } = useAuth();
+  const router = useRouter();
 
-  const handleComplete = () => {
-    if (selectedPillar) {
-      completeOnboarding(selectedPillar, enableReminder ? reminderTime : undefined)
-      router.push('/dashboard')
+  const handleNext = () => {
+    if (step < 4) {
+      setStep(step + 1);
     }
-  }
+  };
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      await updateUserProfile({
+        virtueFocus: virtueFocus || undefined,
+        chadTone,
+        currentStruggle: currentStruggle || undefined,
+        reminderTime: reminderTimes.find((r) => r.id === reminderTime)?.time,
+        emailReminders,
+        browserNotifications,
+        onboardingComplete: true,
+      });
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Failed to save onboarding data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const canProceed = () => {
-    if (step === 2) return selectedPillar !== null
-    return true
-  }
+    switch (step) {
+      case 1:
+        return virtueFocus !== null;
+      case 2:
+        return true; // chadTone always has a default
+      case 3:
+        return true; // currentStruggle is optional
+      case 4:
+        return true;
+      default:
+        return false;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Progress indicator */}
-      <div className="p-4">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            {[1, 2, 3].map((s) => (
-              <div
-                key={s}
-                className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors',
-                  s === step
-                    ? 'bg-stoic-blue text-white'
-                    : s < step
-                    ? 'bg-stoic-blue/20 text-stoic-blue'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
-                )}
-              >
-                {s < step ? <Check className="h-4 w-4" /> : s}
-              </div>
-            ))}
-          </div>
-          <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-stoic-blue transition-all duration-300"
-              style={{ width: `${((step - 1) / 2) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg">
-          {/* Step 1: Welcome */}
-          {step === 1 && (
-            <div className="text-center space-y-6">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold">Welcome{user?.displayName ? `, ${user.displayName}` : ''}!</h1>
-                <p className="text-muted-foreground text-lg">
-                  You&apos;re about to begin a transformative journey.
-                </p>
-              </div>
-
-              <Card className="text-left">
-                <CardContent className="pt-6 space-y-4">
-                  <blockquote className="quote text-lg">
-                    &ldquo;We suffer more often in imagination than in reality.&rdquo;
-                  </blockquote>
-                  <p className="quote-author">— Seneca</p>
-                </CardContent>
-              </Card>
-
-              <div className="space-y-3 text-left">
-                <p className="text-muted-foreground">Stoic.af helps you:</p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-stoic-blue/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="h-3.5 w-3.5 text-stoic-blue" />
-                    </div>
-                    <span>Build emotional resilience through daily journaling</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-stoic-blue/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="h-3.5 w-3.5 text-stoic-blue" />
-                    </div>
-                    <span>Apply ancient Stoic wisdom to modern challenges</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-stoic-blue/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="h-3.5 w-3.5 text-stoic-blue" />
-                    </div>
-                    <span>Track progress across four key life pillars</span>
-                  </li>
-                </ul>
-              </div>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-xl bg-white rounded-xl border border-slate-200 shadow-sm min-h-[400px] flex flex-col">
+        <CardContent className="pt-6 flex-1 flex flex-col">
+          {/* Progress indicator */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((s) => (
+                <div
+                  key={s}
+                  className={`w-8 h-1 rounded-full transition-colors ${
+                    s <= step ? 'bg-stoic-blue' : 'bg-slate-200'
+                  }`}
+                />
+              ))}
             </div>
-          )}
+            <span className="text-xs font-bold text-slate-400 uppercase">Step {step}/4</span>
+          </div>
 
-          {/* Step 2: Pillar Selection */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold">Choose your focus</h1>
-                <p className="text-muted-foreground">
-                  Which area of life would you like to strengthen first?
+          {/* Step content */}
+          <div className="flex-1">
+            {step === 1 && (
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose Your Virtue Focus</h2>
+                <p className="text-slate-500 mb-8">What do you want to cultivate this month?</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {virtues.map((virtue) => {
+                    const Icon = virtue.icon;
+                    return (
+                      <button
+                        key={virtue.id}
+                        onClick={() => setVirtueFocus(virtue.id)}
+                        className={`p-6 border-2 rounded-xl text-left transition-all group hover:border-stoic-blue hover:bg-sky-50 ${
+                          virtueFocus === virtue.id
+                            ? 'border-stoic-blue bg-sky-50'
+                            : 'border-slate-100'
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                          <Icon className="w-5 h-5 text-stoic-blue" />
+                        </div>
+                        <span className="font-bold text-slate-900 block">{virtue.label}</span>
+                        <span className="text-xs text-slate-500">{virtue.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose CHAD&apos;s Tone</h2>
+                <p className="text-slate-500 mb-8">How should CHAD coach you?</p>
+
+                <RadioGroup value={chadTone} onValueChange={(v) => setChadTone(v as ChadTone)}>
+                  <div className="space-y-3">
+                    {tones.map((tone) => (
+                      <div
+                        key={tone.id}
+                        className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 ${
+                          chadTone === tone.id ? 'border-2 border-stoic-blue bg-sky-50' : 'border-slate-200'
+                        }`}
+                        onClick={() => setChadTone(tone.id)}
+                      >
+                        <RadioGroupItem value={tone.id} id={tone.id} />
+                        <Label htmlFor={tone.id} className="flex-1 cursor-pointer">
+                          <span className="font-bold text-slate-900 block">{tone.label}</span>
+                          <span className="text-sm text-slate-500">{tone.description}</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                  What&apos;s Your Current Struggle?
+                </h2>
+                <p className="text-slate-500 mb-8">Help us personalize your experience</p>
+
+                <Textarea
+                  value={currentStruggle}
+                  onChange={(e) => setCurrentStruggle(e.target.value)}
+                  placeholder="Describe what you're working on right now..."
+                  className="min-h-[150px] border-slate-300 focus:ring-2 focus:ring-stoic-blue focus:border-transparent"
+                  maxLength={500}
+                />
+                <p className="text-xs text-slate-400 mt-2 text-right">
+                  {currentStruggle.length}/500 characters
                 </p>
               </div>
+            )}
 
-              <div className="grid gap-3">
-                {pillars.map((pillar) => {
-                  const Icon = pillar.icon
-                  const isSelected = selectedPillar === pillar.id
-                  return (
-                    <Card
-                      key={pillar.id}
-                      className={cn(
-                        'cursor-pointer transition-all hover:shadow-md',
-                        isSelected && `ring-2 ${pillar.borderColor}`
-                      )}
-                      onClick={() => setSelectedPillar(pillar.id)}
-                    >
-                      <CardContent className="flex items-start gap-4 p-4">
-                        <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', pillar.color)}>
-                          <Icon className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className={cn('font-semibold', isSelected && pillar.textColor)}>
-                            {pillar.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {pillar.description}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <div className={cn('w-6 h-6 rounded-full flex items-center justify-center', pillar.color)}>
-                            <Check className="h-4 w-4 text-white" />
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
+            {step === 4 && (
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Set Your Reminders</h2>
+                <p className="text-slate-500 mb-8">When should we nudge you?</p>
 
-              <p className="text-sm text-muted-foreground text-center">
-                Don&apos;t worry, you can explore all pillars. This just sets your starting point.
-              </p>
-            </div>
-          )}
+                <RadioGroup value={reminderTime} onValueChange={setReminderTime}>
+                  <div className="space-y-3 mb-8">
+                    {reminderTimes.map((time) => (
+                      <div
+                        key={time.id}
+                        className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all hover:bg-slate-50 ${
+                          reminderTime === time.id
+                            ? 'border-2 border-stoic-blue bg-sky-50'
+                            : 'border-slate-200'
+                        }`}
+                        onClick={() => setReminderTime(time.id)}
+                      >
+                        <RadioGroupItem value={time.id} id={time.id} />
+                        <Label htmlFor={time.id} className="flex-1 cursor-pointer">
+                          <span className="font-bold text-slate-900">{time.label}</span>
+                          <span className="text-sm text-slate-500 ml-2">({time.time})</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
 
-          {/* Step 3: Reminder Setup */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold">Set your reminder</h1>
-                <p className="text-muted-foreground">
-                  When would you like to journal each day?
-                </p>
-              </div>
-
-              <Card>
-                <CardContent className="pt-6 space-y-6">
+                <div className="space-y-4 pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-base font-medium">Daily reminder</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get a gentle nudge to reflect
-                      </p>
+                      <span className="font-medium text-slate-900 block">Email reminders</span>
+                      <span className="text-sm text-slate-500">Get daily journaling prompts</span>
                     </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={enableReminder}
-                      onClick={() => setEnableReminder(!enableReminder)}
-                      className={cn(
-                        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                        enableReminder ? 'bg-stoic-blue' : 'bg-gray-300 dark:bg-gray-600'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                          enableReminder ? 'translate-x-6' : 'translate-x-1'
-                        )}
-                      />
-                    </button>
+                    <Switch checked={emailReminders} onCheckedChange={setEmailReminders} />
                   </div>
-
-                  {enableReminder && (
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Reminder time</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={reminderTime}
-                        onChange={(e) => setReminderTime(e.target.value)}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Many Stoics journaled in the morning or evening. Choose what works for you.
-                      </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-medium text-slate-900 block">Browser notifications</span>
+                      <span className="text-sm text-slate-500">Desktop push notifications</span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <Switch
+                      checked={browserNotifications}
+                      onCheckedChange={setBrowserNotifications}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-              <Card className="bg-stoic-blue/5 border-stoic-blue/20">
-                <CardContent className="pt-6">
-                  <blockquote className="quote text-base">
-                    &ldquo;Begin at once to live, and count each separate day as a separate life.&rdquo;
-                  </blockquote>
-                  <p className="quote-author mt-2">— Seneca</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="p-4 border-t bg-white dark:bg-gray-900">
-        <div className="max-w-lg mx-auto flex gap-3">
-          {step > 1 && (
+          {/* Navigation */}
+          <div className="flex justify-between mt-8 pt-6 border-t border-slate-100">
             <Button
-              variant="outline"
-              onClick={() => setStep(step - 1)}
-              className="flex-1"
+              variant="ghost"
+              onClick={handleBack}
+              disabled={step === 1}
+              className="text-slate-500"
             >
-              <ChevronLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-          )}
-          {step < 3 ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
-              className="flex-1"
-            >
-              Continue
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleComplete}
-              className="flex-1"
-            >
-              Start Journaling
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          )}
-        </div>
-      </div>
+            {step < 4 ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="bg-stoic-blue hover:bg-sky-600 text-white"
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                onClick={handleComplete}
+                disabled={loading}
+                className="bg-stoic-blue hover:bg-sky-600 text-white"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Complete'
+                )}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }
