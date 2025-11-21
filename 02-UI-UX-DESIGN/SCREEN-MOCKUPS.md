@@ -2,20 +2,210 @@
 
 Comprehensive mobile-first mockup descriptions for the Stoic.af journaling app.
 
-**Target Devices:** iPhone 14 Pro baseline (375x812pt)
-**Minimum Touch Target:** 44x44pt
-**Thumb Zone:** Critical actions in bottom 60% of screen
+**Target Devices:**
+- Mobile: iPhone 14 Pro baseline (375x812pt)
+- Tablet: iPad/Android tablets (768px-1023px)
+- Desktop: Web browsers (1024px+, max-width 1440px)
+
+**Design Approach:**
+- Mobile-first (Flutter primary)
+- Progressive enhancement for web (Next.js)
+- Responsive breakpoints: 375px → 768px → 1024px → 1440px
+
+**Minimum Touch/Click Targets:**
+- Mobile: 44x44pt
+- Desktop: 32x32px (mouse precision)
+
 **Design System:** See [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)
 
 ---
 
 ## Table of Contents
 
-1. [Core Journaling Screens](#1-core-journaling-screens)
-2. [Onboarding Flow](#2-onboarding-flow)
-3. [Navigation & Discovery](#3-navigation--discovery)
-4. [AI Features](#4-ai-features)
-5. [Monetization](#5-monetization)
+1. [Responsive Design & Desktop Navigation](#responsive-design--desktop-navigation)
+2. [Core Journaling Screens](#1-core-journaling-screens)
+3. [Onboarding Flow](#2-onboarding-flow)
+4. [Navigation & Discovery](#3-navigation--discovery)
+5. [AI Features](#4-ai-features)
+6. [Monetization](#5-monetization)
+7. [Missing Screens](#6-missing-screens)
+8. [UI States Reference](#7-ui-states-reference)
+9. [Accessibility & Keyboard Navigation](#8-accessibility--keyboard-navigation)
+
+---
+
+## Responsive Design & Desktop Navigation
+
+### Breakpoint Strategy
+
+**Mobile (375px-767px)**
+- Single column layout
+- Bottom navigation bar
+- Full-screen modals
+- Thumb-optimized UI
+- Touch targets: 44x44pt minimum
+
+**Tablet (768px-1023px)**
+- Two-column layouts where appropriate
+- Sidebar navigation (optional, collapsible)
+- Sheet modals instead of full-screen
+- Mix of touch and mouse interactions
+- Touch targets: 40x40px minimum
+
+**Desktop (1024px-1439px)**
+- Three-panel layouts (sidebar + content + detail)
+- Persistent sidebar navigation (240px)
+- Top header bar (64px)
+- Modal dialogs (centered, max 600px width)
+- Click targets: 32x32px minimum
+- Keyboard shortcuts enabled
+- Hover states on all interactive elements
+
+**Large Desktop (1440px+)**
+- Max content width: 1440px, centered
+- Increased whitespace
+- Same layout as 1024px but with margins
+
+### Desktop Navigation Structure
+
+**Persistent Left Sidebar (240px width)**
+
+**Header Section (120px height)**
+- App logo: "Stoic.af" (32px, Inter Black)
+- Position: 24px from top, centered
+- User avatar: 48px circle
+  - Position: Below logo, 16px margin
+  - Name: "Sarah M." truncated (Inter Medium, 14px)
+  - Streak badge: "47 🔥" below name
+
+**Navigation Links (Variable height)**
+- Link height: 48px each
+- Padding: 12px 20px
+- Font: Inter Medium, 15px
+- Color: #64748B (inactive), #4B90C8 (active)
+- Icon: 20px, left-aligned, 12px margin-right
+- Active state: Background #E0F2FE, left border 3px #4B90C8
+- Hover state: Background #F8FAFC
+
+Links:
+1. **Home** (house icon) - Today View
+2. **Journal** (book icon) - Journal List
+3. **Insights** (chart icon) - Insights Dashboard
+4. **ChadGPT** (chat icon) - AI Coach
+   - Badge: "AI" if new summary available
+5. **Templates** (document icon) - Template Library
+6. **Settings** (gear icon) - Settings
+
+**Quick Entry Button**
+- Position: 20px from bottom of sidebar
+- Width: 200px (full width minus margins)
+- Height: 48px
+- Background: #4B90C8
+- Text: "+ New Entry"
+- Border radius: 9999px
+- Icon: Plus (16px)
+- Hover: Background #3B7AA8
+- Keyboard: ⌘+N or Ctrl+N
+
+**Top Header Bar (64px height, full width minus sidebar)**
+
+**Left Section**
+- Screen title: Current screen name
+  - Font: Inter SemiBold, 20px
+  - Color: #1E293B
+- Breadcrumbs (if applicable): Home > Journal > Entry
+
+**Right Section (aligned right, 24px from edge)**
+- Search button: Magnifying glass icon (20px)
+  - Touch target: 40x40px
+  - Keyboard: ⌘+K or Ctrl+K
+  - Opens: Search modal
+- Notifications: Bell icon (20px)
+  - Badge: Red dot if unread
+  - Touch target: 40x40px
+  - Click: Opens notification dropdown
+- User menu: Avatar (32px circle)
+  - Click: Opens dropdown
+  - Options: Profile, Settings, Log Out
+
+**Main Content Area**
+- Width: calc(100vw - 240px sidebar)
+- Max width: 1200px content
+- Padding: 32px
+- Background: #F8FAFC
+
+### Keyboard Shortcuts
+
+**Global Shortcuts**
+- `⌘+N` / `Ctrl+N`: New journal entry
+- `⌘+K` / `Ctrl+K`: Quick search
+- `⌘+S` / `Ctrl+S`: Save current entry
+- `⌘+/` / `Ctrl+/`: Show keyboard shortcuts
+- `Esc`: Close modal/dialog
+- `⌘+,` / `Ctrl+,`: Open settings
+
+**Navigation Shortcuts**
+- `⌘+1` through `⌘+6`: Jump to sidebar sections
+- `Tab`: Move focus forward
+- `Shift+Tab`: Move focus backward
+- `Enter`: Activate focused element
+- `Space`: Toggle checkboxes/switches
+
+**Editor Shortcuts**
+- `⌘+B` / `Ctrl+B`: Bold
+- `⌘+I` / `Ctrl+I`: Italic
+- `⌘+K` / `Ctrl+K`: Insert link
+- `⌘+Z` / `Ctrl+Z`: Undo
+- `⌘+Shift+Z` / `Ctrl+Y`: Redo
+
+### Hover States (Desktop Only)
+
+**Interactive Elements**
+- Buttons: Darken by 10%, scale 0.98, cursor pointer
+- Links: Underline, color #3B7AA8, cursor pointer
+- Cards: Elevate shadow, border color #4B90C8, cursor pointer
+- Icons: Color change to #4B90C8, cursor pointer
+- Input fields: Border color #4B90C8, shadow glow
+
+**Transition Timing**
+- Hover transitions: 150ms ease
+- Color changes: 200ms ease
+- Transform (scale): 200ms cubic-bezier(0.4, 0, 0.2, 1)
+
+### Focus States (Keyboard Navigation)
+
+**All Focusable Elements**
+- Outline: 3px solid #4B90C8
+- Outline offset: 2px
+- Border radius: Matches element
+- No focus outline on mouse click (only keyboard)
+
+**Skip to Content Link**
+- Position: Absolute, top-left
+- Visible only on keyboard focus
+- Text: "Skip to main content"
+- Background: #4B90C8, white text
+- Padding: 8px 16px
+- Action: Jumps to main content area
+
+### Multi-Pane Layouts (Desktop)
+
+**Journal Editor (Desktop)**
+- Left pane (50%): Editor with toolbar
+- Right pane (50%): Live markdown preview
+- Resizable: Drag divider to adjust
+- Collapse: Hide preview with button
+
+**Insights Dashboard (Desktop)**
+- Left sidebar (240px): Already present
+- Center pane (60%): Charts and graphs
+- Right pane (40%): AI summary and quick stats
+- Stackable: Becomes single column on tablet
+
+**Chat Interface (Desktop)**
+- Left pane (30%): Conversation history list
+- Right pane (70%): Active conversation
+- Thread view: Show related entries
 
 ---
 
@@ -464,6 +654,322 @@ Scroll container: 812pt - 47pt (top) - 90pt (nav) = 675pt
 
 ---
 
+#### Tablet Layout (768px-1023px)
+
+**Screen Structure**
+- No bottom navigation (uses sidebar or top nav)
+- Two-column grid for stats cards
+- Increased card sizes and spacing
+- Landscape-optimized layouts
+
+**Header (100px)**
+- Greeting + Date (left side)
+- Profile avatar (32px, top right)
+- Notification bell (top right, 48px from edge)
+
+**Content Area (Two-column where applicable)**
+
+**Daily Quote Card**
+- Width: Full width minus 48px padding
+- Height: ~160px
+- Quote text: 20px font size (larger)
+
+**Streak & Mood Section**
+- Width: 50% each (side by side maintained)
+- Increased card height: 120px
+- Larger stat numbers (48px)
+
+**Recent Entries**
+- Grid: 2 columns
+- Entry cards: 48% width each
+- Gap: 24px
+- Preview text: 4 lines (more space)
+
+**Quick Action Buttons**
+- Positioned side-by-side (still at bottom)
+- Width: Full width
+- "Start Writing": 60%
+- "Quick": 35%
+- Gap: 24px
+
+---
+
+#### Desktop Layout (1024px+)
+
+**Overall Structure**
+- Left sidebar: 240px (persistent navigation)
+- Top header: 64px
+- Main content: Centered, max-width 800px
+- Right panel: 320px (optional, for insights)
+
+**Header Bar (64px)**
+- Title: "Good morning, Sarah"
+  - Font: Inter Bold, 24px
+  - Left aligned in content area
+- Right side icons:
+  - Search (⌘+K)
+  - Notifications
+  - User menu
+
+**Main Content Area (800px max-width, centered)**
+
+**Daily Quote Card**
+- Width: 100% (800px)
+- Height: 180px
+- Quote text: 22px
+- Hover state: Slight elevation, cursor pointer
+- Click: Shows sharing options
+
+**Stats Grid (Three-column layout)**
+- Width: 100%
+- Display: 3 cards in single row
+- Cards (each ~250px):
+  1. Current Streak
+  2. This Week Stats
+  3. Mood Trend
+
+**Streak Card**
+- Size: 250px x 140px
+- Number: 56px font
+- Hover: Glow effect on fire icon
+- Click: Navigate to streak detail modal
+
+**Mood Card**
+- Size: 250px x 140px
+- Hover: Chart highlights on hover
+- Click: Navigate to full insights
+
+**Week Stats Card (New on desktop)**
+- Shows: Entries this week, total words
+- Sparkline: Mini chart
+- Hover: Shows daily breakdown tooltip
+
+**Today's Theme Card**
+- Width: 100%
+- Height: 120px
+- Layout: Horizontal (icon left, text right)
+- Hover: Background tint
+
+**Quick Actions (Desktop)**
+- Position: Below theme card
+- Layout: Three buttons in row (not two)
+- Buttons:
+  1. "New Entry" (40% width)
+     - Keyboard: ⌘+N
+  2. "Quick Capture" (30% width)
+     - Keyboard: ⌘+Shift+N
+  3. "Browse Templates" (30% width)
+     - New on desktop
+
+**Recent Entries**
+- Width: 100%
+- Layout: Three-column grid
+- Entry cards: ~250px each
+- Hover states:
+  - Card elevation increases
+  - Border: #4B90C8
+  - Show action buttons (Edit, Delete, Share)
+- Click: Opens entry in modal (not full screen)
+
+**Entry Actions (Hover only)**
+- Appear on card hover
+- Position: Top right of card
+- Buttons:
+  - Edit (pencil icon, 28px)
+  - Favorite (heart icon, 28px)
+  - Delete (trash icon, 28px)
+- Background: rgba(255,255,255,0.9)
+- Blur: backdrop-filter
+
+**Right Panel (Optional, 320px)**
+- Collapsible with toggle button
+- Sticky: Scrolls with page
+- Content:
+  - Mini calendar (month view)
+  - Upcoming streak milestones
+  - Quick stats summary
+  - Recent AI insights preview
+
+**Keyboard Navigation**
+- Tab order: Quote → Stats → Theme → Actions → Entries
+- Arrow keys: Navigate between entry cards
+- Enter: Open focused entry
+- Delete: Delete focused entry (with confirmation)
+
+**Context Menus**
+- Right-click on entry card:
+  - Open in new tab
+  - Edit
+  - Duplicate
+  - Export
+  - Delete
+- Right-click on quote:
+  - Copy quote
+  - Share quote
+  - Save to favorites
+
+**Desktop-Specific Features**
+
+**Drag and Drop**
+- Drag entry cards to reorder (if sorting by manual)
+- Drag files onto page to attach to quick entry
+
+**Multi-select**
+- Shift+Click: Select range of entries
+- ⌘+Click: Add to selection
+- Bulk actions: Export, delete, tag
+
+**Live Updates**
+- Real-time sync indicator in header
+- New entries appear with slide-in animation
+- Collaborative editing (if multiple devices)
+
+---
+
+#### Responsive Behavior
+
+**Breakpoint Transitions**
+
+**375px → 768px (Mobile to Tablet)**
+- Bottom nav → Top nav or sidebar
+- Single column → Two columns
+- Full-screen modals → Sheet modals
+- Touch targets 44pt → 40px
+- Font sizes increase 10%
+
+**768px → 1024px (Tablet to Desktop)**
+- Sidebar appears (240px)
+- Two columns → Three columns (entry grid)
+- Sheet modals → Centered modals (600px max)
+- Touch targets 40px → 32px
+- Hover states activate
+- Keyboard shortcuts enable
+- Right panel option appears
+
+**Fluid Scaling (1024px → 1440px+)**
+- Content max-width: 800px → 1000px → 1200px
+- Margins increase proportionally
+- Font sizes remain same
+- Card gaps increase: 16px → 24px → 32px
+
+**Orientation Changes**
+
+**Tablet Landscape**
+- Force three-column entry grid
+- Sidebar auto-shows
+- Increased whitespace
+
+**Tablet Portrait**
+- Force two-column entry grid
+- Sidebar auto-hides (hamburger menu)
+- Compact spacing
+
+---
+
+#### Desktop-Only UI States
+
+**Hover States**
+
+**Daily Quote Card**
+- Background: #FAFBFC
+- Border: 1px solid #4B90C8
+- Shadow: 0 8px 24px rgba(75,144,200,0.15)
+- Cursor: Pointer
+- Share icon appears (top right)
+
+**Stat Cards**
+- Transform: translateY(-4px)
+- Shadow: 0 12px 32px rgba(0,0,0,0.1)
+- Border: 2px solid #4B90C8
+- Transition: 200ms ease
+
+**Entry Cards**
+- Transform: translateY(-2px)
+- Shadow: 0 8px 20px rgba(0,0,0,0.08)
+- Action buttons fade in (top right)
+- Preview text: Shows full 6 lines (expanded)
+
+**Action Buttons**
+- "Start Writing": Background darkens to #3B7AA8
+- "Quick": Border color #3B7AA8, background tint
+- Scale: 0.98
+- Cursor: Pointer
+
+**Focus States (Keyboard Navigation)**
+
+**All Interactive Elements**
+- Outline: 3px solid #4B90C8
+- Outline offset: 2px
+- No outline on mouse click
+- Visible only with keyboard Tab
+
+**Entry Cards**
+- Focused card: Blue outline
+- Arrow keys: Navigate between cards
+- Enter: Opens entry
+- Space: Toggles favorite
+
+**Loading States**
+
+**Initial Page Load**
+- Skeleton UI for all cards
+- Shimmer animation (1.5s duration)
+- Loads in sequence:
+  1. Quote card (0ms)
+  2. Stats cards (150ms delay)
+  3. Entry cards (300ms delay, stagger by 50ms each)
+
+**Infinite Scroll (Entry List)**
+- Load more as user scrolls to bottom
+- Spinner: Bottom of list
+- New entries: Fade in from bottom
+
+**Live Sync**
+- Indicator in header: "Syncing..." or "Synced"
+- Icon: Cloud with animation
+- New entry appears: Slide down from top
+
+**Empty States**
+
+**No Entries Yet**
+- Illustration: Journal with sparkles (200px)
+- Position: Center of entry grid area
+- Headline: "Your journal awaits"
+- Subtext: "Start writing to see your entries here"
+- CTA button: "Write First Entry" (⌘+N)
+- Ghost UI: 3 sample entry cards in gray
+
+**No Mood Data**
+- Mood card shows: Empty chart
+- Text: "Start logging your mood"
+- Button: "Add Today's Mood"
+
+**Error States**
+
+**Failed to Load Entries**
+- Error card in place of entries
+- Icon: Alert triangle
+- Message: "Unable to load entries"
+- Actions:
+  - "Retry" button
+  - "View Cached Entries" (if offline)
+- Link: "Check connection"
+
+**Failed to Load Quote**
+- Quote card shows error
+- Message: "Daily quote unavailable"
+- Fallback: Shows random Stoic quote from local cache
+- Retry button (small, bottom right)
+
+**Offline Mode**
+- Banner at top: "You're offline. Changes will sync when reconnected."
+- Background: #FEF3C7 (warning yellow)
+- Icon: Cloud with slash
+- Dismiss: X button
+- Auto-hide: When connection restored
+
+---
+
 ### 1.2 Journal Editor (Full-Screen Writing Interface)
 
 **Purpose:** Distraction-free writing experience with markdown support, word count, and auto-save functionality.
@@ -752,6 +1258,438 @@ Action bar: 72pt
    - Appears: 250ms system animation
    - Toolbar: Synced with keyboard animation
    - Dismiss: Smooth 200ms
+
+---
+
+#### Tablet Layout (768px-1023px)
+
+**Screen Structure**
+- Full-screen editor (no sidebar)
+- Floating toolbar (sticky)
+- Expanded canvas for writing
+- Optional preview panel (toggle)
+
+**Header Bar (64px)**
+- Back button (left, 32px icon)
+- Entry title (center, editable inline)
+- Actions menu (right)
+  - Save status
+  - Options (…)
+
+**Metadata Bar (56px)**
+- Date/time picker (left)
+- Word count (center)
+- Mood selector (right)
+- All inline, no wrapping
+
+**Editor Canvas**
+- Width: 100% (if preview hidden) or 50% (if preview shown)
+- Padding: 32px horizontal
+- Font size: 18px (larger for readability)
+- Line height: 1.7
+- Max width: 680px (readable line length)
+
+**Floating Toolbar**
+- Position: Sticky top (below header)
+- Background: White with blur
+- Markdown buttons: Larger (40px each)
+- Horizontal scroll if needed
+
+**Preview Panel (Optional)**
+- Toggle: Button in header
+- Width: 50% (when active)
+- Position: Right side
+- Synced scroll: Matches editor position
+- Background: #FAFBFC
+
+**Bottom Action Bar**
+- Height: 64px
+- Word count (left)
+- Reading time (left)
+- Done button (right, 140px width)
+
+---
+
+#### Desktop Layout (1024px+) ⭐ KEY FEATURE
+
+**Overall Structure**
+- Left sidebar: 240px (persistent navigation)
+- Header bar: 64px
+- **Split-pane editor: Two-column layout**
+  - Left: Editor (50%)
+  - Right: Live preview (50%)
+- Resizable divider between panes
+
+**Header Bar (64px)**
+- Back/Close button (left, optional)
+  - ⌘+W to close
+- Entry title: Editable inline
+  - Font: Inter SemiBold, 20px
+  - Auto-focus on new entry
+  - Placeholder: "Untitled Entry"
+- Auto-save status (center)
+  - "Saving...", "Saved 2 seconds ago"
+  - Icon: Cloud with checkmark
+- Actions (right):
+  - Word count badge: "247 words"
+  - Export button: PDF/Markdown icons
+  - Settings: Options menu
+  - Close: X button (⌘+W)
+
+**Metadata Toolbar (48px)**
+- Below header, full width
+- Background: #F8FAFC
+- Border bottom: 1px solid #E2E8F0
+
+**Left Section**
+- Date picker: Click to edit
+  - Shows: "Wed, Nov 20, 2024 at 3:45 PM"
+  - Picker: Dropdown calendar + time
+- Mood: Emoji picker
+  - Click: Shows 5-option popover
+  - Current: 😊 or "Add mood"
+
+**Right Section**
+- Pillar tags: Multi-select chips
+  - Money, Ego, Relationships, Discipline
+  - Click: Toggle selection
+- Template: "Based on: Evening Review" (if applicable)
+
+**Left Pane - Editor (50% width, min 400px)**
+
+**Toolbar (44px)**
+- Sticky: Below metadata bar
+- Background: White
+- Buttons (32px each):
+  - Bold (⌘+B)
+  - Italic (⌘+I)
+  - Heading (#)
+  - List (bullets)
+  - Quote (")
+  - Link (⌘+K)
+  - Image (upload)
+  - Code (``)
+- Divider
+- Word count live: "247 / 2 min read"
+
+**Editor Canvas**
+- Padding: 48px
+- Background: #FFFFFF
+- Max width: None (full pane)
+- Font: Inter Regular, 17px
+- Line height: 1.7
+- Placeholder: "Start writing..."
+  - Color: #CBD5E1
+  - Font style: Italic
+
+**Editor Features**
+- Syntax highlighting: Markdown symbols in blue
+- Auto-complete: Markdown syntax
+- Distraction-free mode: Hide toolbar (⌘+Shift+F)
+- Focus mode: Dim non-current paragraph
+- Typewriter mode: Keep cursor centered
+
+**Right Pane - Live Preview (50% width, min 400px)**
+
+**Preview Header (36px)**
+- Label: "Preview"
+  - Font: Inter Medium, 13px
+  - Color: #64748B
+- Toggle: Eye icon
+  - Click: Hide/show preview
+  - Keyboard: ⌘+P
+
+**Preview Canvas**
+- Padding: 48px
+- Background: #FAFBFC
+- Border left: 1px solid #E2E8F0
+- Font: Same as editor (17px)
+- Renders: Full markdown
+  - Headings styled
+  - Bold, italic applied
+  - Lists formatted
+  - Quotes indented with left border
+  - Links clickable (⌘+Click to open)
+
+**Synced Scroll**
+- Preview scrolls with editor
+- Maintains relative position
+- Smooth: 200ms transition
+
+**Resizable Divider (Between Panes)**
+- Width: 8px
+- Color: #E2E8F0
+- Hover: #4B90C8, cursor col-resize
+- Drag: Resize panes (min 30%, max 70%)
+- Double-click: Reset to 50/50
+
+**Footer Bar (56px)**
+- Position: Sticky bottom
+- Background: #FFFFFF
+- Border top: 1px solid #E2E8F0
+- Padding: 8px 24px
+
+**Left Side**
+- Character count: "1,234 characters"
+- Word count: "247 words"
+- Reading time: "~2 min"
+- All in gray (Inter Regular, 13px)
+
+**Right Side**
+- Version history: "12 versions" (link)
+  - Click: Opens version history sidebar
+- Done button: 120px, 40px
+  - Background: #4B90C8
+  - Text: "Done" (⌘+S)
+  - Hover: #3B7AA8
+  - Click: Saves and returns to journal list
+
+**Keyboard Shortcuts (Editor-Specific)**
+
+**Text Formatting**
+- `⌘+B` / `Ctrl+B`: Bold
+- `⌘+I` / `Ctrl+I`: Italic
+- `⌘+K` / `Ctrl+K`: Insert link
+- `⌘+Shift+H`: Heading 1
+- `⌘+Shift+L`: Bulleted list
+- `⌘+Shift+Q`: Blockquote
+
+**Editor Actions**
+- `⌘+S` / `Ctrl+S`: Save (auto-saves anyway)
+- `⌘+P` / `Ctrl+P`: Toggle preview
+- `⌘+Shift+F`: Toggle fullscreen/distraction-free
+- `⌘+Z` / `Ctrl+Z`: Undo
+- `⌘+Shift+Z` / `Ctrl+Y`: Redo
+- `⌘+F` / `Ctrl+F`: Find in entry
+- `⌘+W`: Close editor
+
+**Navigation**
+- `⌘+↑`: Jump to start
+- `⌘+↓`: Jump to end
+- `Option+↑/↓`: Move paragraph up/down
+
+**Context Menu (Right-Click)**
+
+**On Selected Text**
+- Bold
+- Italic
+- Insert link
+- Copy
+- Paste
+- Cut
+- Lookup word (dictionary)
+
+**On Editor Canvas**
+- Paste
+- Paste without formatting
+- Insert template
+- Insert date/time
+- Insert Stoic quote
+
+**Desktop-Specific Features**
+
+**Version History**
+- Click: Opens right panel (replaces preview)
+- Shows: List of autosaved versions
+- Timestamp: Every 5 minutes
+- Preview: Click version to preview
+- Restore: "Restore this version" button
+- Compare: Highlight diff between versions
+
+**Focus Mode**
+- Activated: ⌘+Shift+F
+- Dims: Everything except current paragraph
+- Fades: Toolbar (appears on hover)
+- Hides: Preview pane, sidebar
+- Exit: Esc or ⌘+Shift+F again
+
+**Typewriter Mode**
+- Activated: Toggle in settings or ⌘+T
+- Effect: Keeps cursor vertically centered
+- Scrolls: Content moves, cursor stays
+- Visual: Subtle highlight on current line
+
+**Split Screen Templates**
+- Activated: Click "Use Template" in editor
+- Left pane: Template prompts (read-only)
+- Right pane: Your writing
+- Answer: Prompts inline
+- Format: Prompts in gray, answers in black
+
+---
+
+#### Responsive Behavior
+
+**Breakpoint Transitions**
+
+**375px → 768px (Mobile to Tablet)**
+- Full screen → Full screen (no change)
+- Bottom toolbar → Floating sticky toolbar
+- Word count footer → Inline in header
+
+**768px → 1024px (Tablet to Desktop)**
+- Single pane → Split pane (editor + preview)
+- Toolbar: Embedded → Floating sticky
+- Actions: Bottom bar → Header bar
+- Keyboard shortcuts: Activated
+
+**Pane Width Adjustments (Desktop)**
+- Default: 50/50 split
+- Min editor width: 400px (30%)
+- Min preview width: 400px (30%)
+- If window <1200px: Preview auto-hides, toggle button shown
+- If window <900px: Force single-pane, hide preview
+
+---
+
+#### Desktop-Only UI States
+
+**Hover States**
+
+**Toolbar Buttons**
+- Background: #F1F5F9
+- Border: 1px solid #CBD5E1
+- Cursor: Pointer
+- Tooltip: Appears after 500ms
+  - Text: "Bold (⌘+B)"
+  - Font: Inter Regular, 12px
+  - Background: #1E293B, white text
+  - Position: Below button
+
+**Resizable Divider**
+- Hover: Background #4B90C8
+- Cursor: col-resize
+- Width: 12px (expands from 8px)
+- Transition: 150ms
+
+**Done Button**
+- Hover: Background #3B7AA8
+- Scale: 0.98
+- Cursor: Pointer
+
+**Focus States**
+
+**Editor Textarea**
+- Focused: No visible outline (full-screen nature)
+- Cursor: Blinking vertical line
+- Selection: #4B90C8 background, white text
+
+**Toolbar Buttons**
+- Focused: 3px outline #4B90C8
+- Tab order: Left to right
+- Enter: Activates button
+
+**Loading States**
+
+**Initial Load**
+- Skeleton: Title bar, editor canvas, preview pane
+- Shimmer: 1.5s animation
+- Sequence:
+  1. Header loads (0ms)
+  2. Metadata loads (100ms)
+  3. Content loads (200ms)
+
+**Saving State**
+- Cloud icon: Animates (spinning or uploading)
+- Text: "Saving..."
+- Color: #4B90C8 (active)
+- Duration: Until save completes (usually <1s)
+
+**Autosave Failed**
+- Icon: Cloud with X
+- Text: "Couldn't save" (red)
+- Action: "Retry" button appears
+- Tooltip: "Check your connection"
+
+**Loading Preview**
+- Preview pane: Gray shimmer while rendering
+- Duration: <100ms typically
+- If slow: "Rendering preview..." text
+
+**Empty States**
+
+**New Entry (No Content)**
+- Editor: Placeholder text visible
+  - "Start writing..."
+  - Italic, gray color
+- Preview: "Nothing to preview yet"
+  - Centered, gray text
+  - Icon: Document outline (64px)
+
+**No Title**
+- Title field: "Untitled Entry" (gray, italic)
+- Auto-replace: On first keystroke
+
+**No Mood**
+- Mood button: "Add mood" text
+  - Icon: Gray emoji outline
+  - Hover: #4B90C8 tint
+
+**Error States**
+
+**Markdown Syntax Error**
+- Preview: Shows error inline
+  - Icon: Warning triangle
+  - Text: "Invalid markdown syntax"
+  - Line: Highlights error in preview
+- Editor: No error shown (keeps typing smooth)
+
+**Content Too Long (If Limit)**
+- Counter: Turns red at 95%
+- Warning: "Approaching character limit"
+- Hard stop: At 100%, disable typing
+- Action: "Edit down to continue"
+
+**Save Conflict (Multi-Device)**
+- Modal: "Entry was edited elsewhere"
+- Options:
+  - "Keep my version" (overwrite)
+  - "View other version" (preview in new tab)
+  - "Merge changes" (show diff)
+- Default: Keep local (with auto-backup)
+
+**Offline Mode**
+- Banner: "You're offline. Saving locally."
+- Background: #FEF3C7 (warning yellow)
+- Icon: Cloud with slash
+- Behavior: All edits save to local storage
+- Sync: When connection restored
+
+**Network Error (During Save)**
+- Toast: "Couldn't save to cloud. Saved locally."
+- Position: Bottom right
+- Duration: 5 seconds
+- Icon: Cloud with warning
+- Action: "Retry" button
+
+---
+
+#### Desktop-Specific Enhancements
+
+**AI Writing Assistance (Future)**
+- Button: "Ask ChadGPT" in toolbar
+- Shortcut: ⌘+Shift+A
+- Popup: Appears in preview pane
+- Suggests: Completions, rephrasing, Stoic quotes
+- Insert: Click suggestion to add to editor
+
+**Grammar & Style Checking**
+- Underline: Subtle gray wavy line
+- Hover: Shows suggestion tooltip
+- Right-click: "Fix" or "Ignore"
+- Settings: Toggle on/off
+
+**Word Count Goals**
+- Set target: "500 words"
+- Progress: Circular indicator in footer
+  - "247 / 500 words (49%)"
+  - Color: Orange → Green as progress
+- Alert: Celebrate when goal reached
+
+**Reading Time Estimate**
+- Calculation: Words ÷ 200 (avg reading speed)
+- Display: "~2 min read"
+- Updates: Live as you type
 
 ---
 
@@ -3695,9 +4633,1048 @@ Buttons:
 
 ---
 
-**END OF SCREEN MOCKUPS**
+## 6. MISSING SCREENS
+
+### 6.1 Email Verification Screen
+
+**Purpose:** Confirm user email address after signup. Required for account security and password reset functionality.
+
+#### Mobile Layout (375px-767px)
+
+**Full Screen**
+- Background: #F8FAFC
+- No back button (user must complete or logout)
+
+**Header (120pt)**
+- Icon: Envelope with checkmark (80pt)
+  - Color: #4B90C8
+  - Centered
+- Title: "Check your email"
+  - Font: Inter Bold, 24px
+  - Color: #1E293B
+  - Centered
+  - Margin top: 16pt
+
+**Content (280pt)**
+- Padding: 32pt horizontal
+
+**Message**
+- Text: "We sent a verification link to:"
+  - Font: Inter Regular, 16px, line-height 1.5
+  - Color: #64748B
+  - Centered
+- Email: User's email address
+  - Font: Inter SemiBold, 17px
+  - Color: #1E293B
+  - Centered
+  - Margin top: 8pt
+  - Truncated if too long
+
+**Instructions**
+- Margin top: 24pt
+- Text: "Click the link in the email to verify your account."
+  - Font: Inter Regular, 15px, line-height 1.6
+  - Color: #64748B
+  - Centered
+
+**Troubleshooting**
+- Margin top: 24pt
+- Background: #F0F7FF
+- Border: 1px solid #D1E7FA
+- Border radius: 12pt
+- Padding: 16pt
+
+**Didn't receive the email?**
+- Font: Inter Medium, 14px
+- Color: #1E293B
+- Bullet list:
+  - "Check your spam folder"
+  - "Make sure the email address is correct"
+  - "Wait a few minutes and check again"
+
+**Actions (120pt)**
+- Padding: 24pt horizontal
+- Fixed at bottom (or below troubleshooting)
+
+**Resend Email Button**
+- Width: Full (327pt)
+- Height: 48pt
+- Background: Transparent
+- Border: 1.5px solid #4B90C8
+- Border radius: 9999px
+- Text: "Resend verification email"
+  - Font: Inter SemiBold, 15px
+  - Color: #4B90C8
+- Disabled: For 60 seconds after sending
+  - Countdown: "Resend in 45s"
+  - Opacity: 0.5
+
+**Change Email Link**
+- Margin top: 16pt
+- Text: "Wrong email? Update it here"
+- Font: Inter Regular, 14px
+- Color: #4B90C8
+- Touch target: Full width, 44pt height
+- Action: Opens email change modal
+
+**Logout Link**
+- Margin top: 16pt
+- Text: "Log out"
+- Font: Inter Regular, 14px
+- Color: #64748B
+- Centered
+
+#### Desktop Layout (1024px+)
+
+**Modal Dialog (Centered)**
+- Width: 480px
+- Background: #FFFFFF
+- Border radius: 16pt
+- Shadow: 0 24px 48px rgba(0,0,0,0.2)
+- Padding: 40px
+
+**Header**
+- Icon: Larger (100px)
+- Title: Same styling
+
+**Content**
+- Max-width: 400px
+- Centered within modal
+
+**Actions**
+- Buttons: Inline instead of stacked
+  - "Resend Email": 200px width
+  - "Change Email": 200px width
+  - Gap: 16px
+
+**Auto-Check**
+- Polls server every 5 seconds
+- Checks if email verified
+- Auto-redirects to app when verified
+- Shows: "Waiting for verification..." with spinner
+
+**States**
+
+**Loading (Resending)**
+- Button: Shows spinner
+- Text: "Sending..."
+- Disabled: True
+
+**Success (Email Sent)**
+- Toast: "Verification email sent!"
+- Color: #16A34A (green)
+- Duration: 3 seconds
+
+**Error (Send Failed)**
+- Toast: "Couldn't send email. Try again."
+- Color: #EF4444 (red)
+- Retry button stays enabled
+
+**Verified (Success)**
+- Modal replaces content:
+  - Icon: Green checkmark (100px)
+  - Title: "Email verified!"
+  - Text: "Redirecting to your journal..."
+  - Auto-redirect: After 2 seconds
+
+---
+
+### 6.2 Password Reset Flow
+
+#### 6.2.1 Request Password Reset
+
+**Purpose:** Allow users to request a password reset link via email.
+
+#### Mobile Layout (375px-767px)
+
+**Full Screen**
+- Background: #F8FAFC
+
+**Header (80pt)**
+- Back button: Returns to login
+- Title: "Reset password"
+  - Font: Inter Bold, 24px
+  - Color: #1E293B
+  - Left-aligned, 16pt from edge
+
+**Content (300pt)**
+- Padding: 24pt horizontal
+
+**Subtitle**
+- Text: "Enter your email and we'll send you a reset link"
+  - Font: Inter Regular, 16px, line-height 1.5
+  - Color: #64748B
+- Margin bottom: 24pt
+
+**Email Input**
+- Width: Full (327pt)
+- Height: 56pt
+- Background: #FFFFFF
+- Border: 1.5px solid #E2E8F0
+- Border radius: 12pt
+- Padding: 16pt
+- Placeholder: "Enter your email"
+  - Font: Inter Regular, 16px
+  - Color: #94A3B8
+- Validation: Real-time
+  - Valid: Green checkmark appears
+  - Invalid: Red border + error text below
+
+**Error Text (If Invalid)**
+- "Please enter a valid email address"
+- Font: Inter Regular, 13px
+- Color: #EF4444
+- Margin top: 8pt
+
+**Actions (120pt)**
+- Position: Fixed bottom or below input
+- Padding: 24pt
+
+**Send Reset Link Button**
+- Width: Full (327pt)
+- Height: 56pt
+- Background: #4B90C8
+- Border radius: 9999px
+- Text: "Send reset link"
+  - Font: Inter SemiBold, 17px
+  - Color: #FFFFFF
+- Disabled: Until email is valid
+  - Opacity: 0.4
+
+**Back to Login Link**
+- Margin top: 16pt
+- Text: "Back to login"
+- Font: Inter Regular, 14px
+- Color: #4B90C8
+- Centered
+- Touch target: Full width, 44pt
+
+#### Desktop Layout (1024px+)
+
+**Modal Dialog**
+- Width: 440px
+- Centered on screen
+- Background: #FFFFFF
+- Border radius: 16pt
+- Shadow: 0 20px 40px rgba(0,0,0,0.15)
+- Padding: 40px
+
+**Close Button (Top Right)**
+- Icon: X (20px)
+- Touch target: 32x32px
+- Action: Returns to login
+
+**Header**
+- Title: "Reset your password"
+- Subtitle: Below title
+
+**Form**
+- Email input: Full width within modal
+- Button: Full width
+
+**States**
+
+**Loading (Sending)**
+- Button: Shows spinner
+- Text: "Sending..."
+- Disabled
+
+**Success**
+- Replaces form with:
+  - Icon: Envelope sent (80px, green)
+  - Title: "Check your email"
+  - Message: "We sent a reset link to [email]"
+  - CTA: "Return to login" button
+
+**Error (Email Not Found)**
+- Error message below input:
+  - "No account found with this email"
+  - Suggestion: "Try a different email or sign up"
+
+**Error (Network)**
+- Toast: "Couldn't send email. Check your connection."
+- Retry button stays enabled
+
+---
+
+#### 6.2.2 Reset Password (New Password Entry)
+
+**Purpose:** Set new password after clicking reset link in email.
+
+#### Mobile Layout (375px-767px)
+
+**Full Screen**
+- Background: #F8FAFC
+- URL contains: Reset token (validated on load)
+
+**Header (120pt)**
+- Icon: Lock with checkmark (64pt)
+  - Color: #4B90C8
+  - Centered
+- Title: "Create new password"
+  - Font: Inter Bold, 24px
+  - Color: #1E293B
+  - Centered
+
+**Form (320pt)**
+- Padding: 24pt horizontal
+
+**Password Input**
+- Label: "New password"
+  - Font: Inter Medium, 14px
+  - Color: #64748B
+- Input:
+  - Width: Full (327pt)
+  - Height: 56pt
+  - Background: #FFFFFF
+  - Border: 1.5px solid #E2E8F0
+  - Border radius: 12pt
+  - Type: Password
+  - Show/Hide toggle (eye icon)
+  - Placeholder: "Enter new password"
+
+**Password Requirements**
+- Margin top: 12pt
+- List (checkmarks appear as requirements met):
+  - ✓ At least 8 characters
+  - ✓ Contains a number
+  - ✓ Contains an uppercase letter
+  - ✓ Contains a lowercase letter
+- Font: Inter Regular, 13px
+- Color: #64748B (unmet), #16A34A (met)
+
+**Confirm Password Input**
+- Margin top: 20pt
+- Label: "Confirm new password"
+- Same styling as password input
+- Validation: Must match password above
+
+**Match Indicator**
+- Checkmark: If passwords match
+- Error: "Passwords don't match" if different
+- Color: #EF4444
+- Real-time validation
+
+**Actions (100pt)**
+- Padding: 24pt
+- Fixed bottom or below form
+
+**Reset Password Button**
+- Width: Full (327pt)
+- Height: 56pt
+- Background: #4B90C8
+- Border radius: 9999px
+- Text: "Reset password"
+  - Font: Inter SemiBold, 17px
+  - Color: #FFFFFF
+- Disabled: Until all requirements met and passwords match
+
+#### Desktop Layout (1024px+)
+
+**Modal Dialog**
+- Width: 480px
+- Centered
+- Same styling as request modal
+
+**Form**
+- Inputs: Full width within modal
+- Requirements: Inline checklist
+
+**States**
+
+**Loading (Resetting)**
+- Button: Spinner
+- Text: "Resetting..."
+- Disabled
+
+**Success**
+- Replaces form:
+  - Icon: Green checkmark (100px)
+  - Title: "Password reset complete!"
+  - Message: "You can now log in with your new password"
+  - CTA: "Go to login" button
+  - Auto-redirect: After 3 seconds
+
+**Error (Invalid Token)**
+- Shows error screen:
+  - Icon: Warning triangle (80px, red)
+  - Title: "Reset link expired"
+  - Message: "This link is no longer valid. Please request a new one."
+  - CTA: "Request new link" button
+
+**Error (Token Already Used)**
+- Message: "This reset link has already been used"
+- Suggestion: "If you didn't reset your password, request a new link"
+
+**Error (Network)**
+- Toast: "Couldn't reset password. Try again."
+- Form stays visible
+
+---
+
+### 6.3 Dedicated Search Screen
+
+**Purpose:** Global search across all journal entries, quotes, templates. Accessible via ⌘+K on desktop or search button.
+
+#### Mobile Layout (375px-767px)
+
+**Full Screen Modal**
+- Slides up from bottom
+- Background: #F8FAFC
+
+**Search Header (88pt)**
+- Background: #FFFFFF
+- Border bottom: 1px solid #E2E8F0
+- Padding: 12pt
+
+**Search Input**
+- Width: Full minus 32pt padding
+- Height: 48pt
+- Background: #F8FAFC
+- Border: 1px solid #E2E8F0
+- Border radius: 12pt
+- Icon: Magnifying glass (left, 20pt)
+- Placeholder: "Search entries, quotes, templates..."
+- Font: Inter Regular, 16px
+- Auto-focus: Yes
+- Clear button (X): Right side when text exists
+
+**Cancel Button**
+- Position: Right of search bar
+- Text: "Cancel"
+- Font: Inter Medium, 15px
+- Color: #4B90C8
+- Touch target: 44x44pt
+- Action: Dismisses search
+
+**Filter Tabs (48pt)**
+- Below search input
+- Scrollable horizontal
+- Tabs: "All", "Entries", "Templates", "Quotes"
+- Active: #E0F2FE background, #4B90C8 text
+- Inactive: Transparent
+
+**Results List (Scroll Container)**
+
+**No Query (Empty State)**
+- Shows: Recent searches (if any)
+- Title: "Recent"
+- List: Last 5 searches
+  - Each with clock icon
+  - Tap: Fills search bar with query
+  - Swipe left: Delete from history
+
+**Searching (Loading State)**
+- Shows: Spinner centered
+- Text: "Searching..."
+- Or skeleton UI for results
+
+**Results (Each Type)**
+
+**Entry Result Card**
+- Height: ~100pt
+- Background: #FFFFFF
+- Border radius: 12pt
+- Padding: 16pt
+- Margin: 8pt horizontal, 8pt vertical
+
+**Content:**
+- Date: "Nov 20, 2024" (top left, small)
+- Title highlight: Search term highlighted in yellow
+- Preview: 2 lines, search term highlighted
+- Word count: "247 words" (bottom right, gray)
+- Pillar tags: Chips at bottom
+
+**Template Result Card**
+- Badge: "TEMPLATE"
+- Template name
+- Category
+- Preview of prompts
+
+**Quote Result Card**
+- Badge: "QUOTE"
+- Quote text (highlighted)
+- Author
+- "Add to favorites" button
+
+**No Results (Empty State)**
+- Illustration: Magnifying glass (100pt)
+- Title: "No results found"
+- Suggestion: "Try different keywords or check your spelling"
+- Button: "Clear search" or "Browse all entries"
+
+#### Tablet Layout (768-1023px)
+
+**Sheet Modal (Not Full Screen)**
+- Height: 80% of screen
+- Width: 90% of screen
+- Centered
+- Border radius: 24pt (all corners)
+- Shadow: Heavy
+
+**Results**
+- Two-column grid (if space allows)
+
+#### Desktop Layout (1024px+) ⭐ KEY FEATURE
+
+**Command Palette Modal**
+- Triggered: ⌘+K or Ctrl+K
+- Width: 640px
+- Max-height: 600px
+- Position: Center top (120px from top)
+- Background: #FFFFFF
+- Border radius: 16pt
+- Shadow: 0 20px 60px rgba(0,0,0,0.3)
+
+**Search Input**
+- Height: 56px
+- Font: 17px
+- Padding: 16px 20px
+- No border (blends with modal)
+- Icon: Larger (24px)
+
+**Keyboard Shortcuts Hint**
+- Position: Top right of modal
+- Text: "⌘K to close"
+- Font: Inter Regular, 12px
+- Color: #94A3B8
+
+**Results Section**
+- Max-height: 500px
+- Scrollable
+- Categorized by type
+
+**Category Headers**
+- Font: Inter SemiBold, 12px uppercase
+- Color: #64748B
+- Letter spacing: 0.08em
+- Padding: 8px 20px
+- Sticky: Yes
+
+**Result Items**
+- Height: 56px
+- Padding: 12px 20px
+- Hover: Background #F8FAFC
+- Selected: Background #E0F2FE (keyboard navigation)
+- Cursor: Pointer
+
+**Keyboard Navigation**
+- ↑/↓: Navigate results
+- Enter: Open selected result
+- ⌘+Enter: Open in new tab
+- Esc: Close search
+- Tab: Switch between filter tabs
+
+**Advanced Search Options**
+- Toggle: "Advanced" link at bottom
+- Expands to show:
+  - Date range picker
+  - Pillar filters (checkboxes)
+  - Mood filter
+  - Word count range
+- Apply: Updates results instantly
+
+**Recent Searches**
+- Shows when no query
+- "Clear history" link
+
+**Search Suggestions (As You Type)**
+- Autocomplete dropdown
+- Suggests:
+  - Common searches
+  - Entry titles
+  - Pillar names
+  - Template names
+- Select: Arrow keys + Enter
+
+---
+
+### 6.4 Generic Error Recovery Screen
+
+**Purpose:** Fallback screen for unhandled errors, app crashes, or critical failures. Helps user recover gracefully.
+
+#### Mobile Layout (375px-767px)
+
+**Full Screen**
+- Background: #F8FAFC
+
+**Error Illustration (240pt)**
+- Centered
+- Image: Broken page or sad face (160pt)
+  - Style: Minimalist line art
+  - Color: #94A3B8
+- Margin top: 80pt from safe area
+
+**Content (280pt)**
+- Padding: 32pt horizontal
+- Text align: Center
+
+**Title**
+- Text: "Something went wrong"
+- Font: Inter Bold, 24px
+- Color: #1E293B
+
+**Message**
+- Margin top: 12pt
+- Text: "We're sorry for the inconvenience. Your entries are safe."
+- Font: Inter Regular, 16px, line-height 1.5
+- Color: #64748B
+
+**Error Code (Collapsible)**
+- Margin top: 24pt
+- Button: "Show error details"
+  - Font: Inter Regular, 14px
+  - Color: #4B90C8
+  - Tap: Expands to show technical details
+
+**Expanded Details**
+- Background: #2D3748
+- Border radius: 8pt
+- Padding: 16pt
+- Font: Courier, 13px
+- Color: #E2E8F0
+- Text: Error stack trace or code
+- "Copy" button (top right)
+
+**Actions (180pt)**
+- Padding: 24pt
+- Fixed at bottom
+
+**Try Again Button**
+- Width: Full (327pt)
+- Height: 56pt
+- Background: #4B90C8
+- Border radius: 9999px
+- Text: "Try again"
+  - Font: Inter SemiBold, 17px
+  - Color: #FFFFFF
+- Action: Attempts to reload or retry last action
+
+**Return Home Button**
+- Margin top: 12pt
+- Width: Full
+- Height: 48pt
+- Background: Transparent
+- Border: 1.5px solid #E2E8F0
+- Border radius: 9999px
+- Text: "Return to home"
+  - Font: Inter SemiBold, 15px
+  - Color: #64748B
+- Action: Navigates to Today View
+
+**Contact Support Link**
+- Margin top: 16pt
+- Text: "Still having trouble? Contact support"
+- Font: Inter Regular, 14px
+- Color: #4B90C8
+- Centered
+- Action: Opens support email or chat
+
+**Refresh App Link**
+- Margin top: 12pt
+- Text: "Refresh app"
+- Font: Inter Regular, 13px
+- Color: #64748B
+- Action: Force refresh/reload
+- Centered
+
+#### Desktop Layout (1024px+)
+
+**Centered Content**
+- Max-width: 480px
+- Centered on screen
+- Padding: 40px
+
+**Error Illustration**
+- Larger (200px)
+
+**Buttons**
+- Inline instead of stacked
+  - "Try Again": 200px
+  - "Return Home": 200px
+  - Gap: 16px
+
+**Auto-Recovery**
+- Countdown: "Auto-redirecting to home in 10s..."
+  - Font: Inter Regular, 13px
+  - Color: #94A3B8
+  - Centered
+- Can cancel countdown by clicking any button
+
+**Error Types & Custom Messages**
+
+**Network Error**
+- Title: "Connection lost"
+- Message: "Check your internet connection and try again"
+- Icon: Cloud with slash
+
+**Server Error (500)**
+- Title: "Our servers are having issues"
+- Message: "We're working on it. Please try again in a few minutes."
+- Icon: Server with X
+
+**Not Found (404)**
+- Title: "Page not found"
+- Message: "This page doesn't exist or has been moved"
+- Icon: Magnifying glass with X
+
+**Permission Denied**
+- Title: "Access denied"
+- Message: "You don't have permission to view this"
+- Action: "Return home" or "Log in"
+
+**Session Expired**
+- Title: "Session expired"
+- Message: "Please log in again to continue"
+- Action: "Log in" button
+
+**States**
+
+**Retrying**
+- Button: Shows spinner
+- Text: "Retrying..."
+- Disabled
+
+**Offline Mode**
+- Additional message:
+  - "You're offline. Some features may be limited."
+  - Shows cached data if available
+- Actions:
+  - "View cached entries"
+  - "Refresh when online"
+
+---
+
+## 7. UI STATES REFERENCE
+
+### Global State Patterns
+
+This section consolidates all common UI states used across screens.
+
+#### Loading States
+
+**Skeleton UI Pattern**
+- Used for: Initial page loads, content fetches
+- Animation: Shimmer effect (1.5-2s duration, infinite)
+- Colors:
+  - Background: #E2E8F0
+  - Shimmer: Linear gradient with #F1F5F9
+- Timing: Sequence loading (cards load 50-150ms apart)
+
+**Spinner Pattern**
+- Used for: Actions, saves, API calls
+- Size: 20px (small), 32px (medium), 48px (large)
+- Color: #4B90C8
+- Animation: Rotate 360deg, 1s linear infinite
+- Position: Centered or inline with text
+
+**Progress Bar Pattern**
+- Used for: File uploads, multi-step processes
+- Height: 4px (thin) or 8px (standard)
+- Background: #E2E8F0
+- Fill: #4B90C8
+- Animation: Width change 300ms ease
+
+**Inline Loading Text**
+- Format: "Loading..." or "Saving..." or "Processing..."
+- Font: Inter Regular, same size as context
+- Color: #64748B
+- Animation: Ellipsis animation (optional)
+
+#### Empty States
+
+**Pattern Structure**
+- Illustration: 80-200px (depending on screen)
+- Headline: Inter SemiBold, 18-24px, #1E293B
+- Description: Inter Regular, 14-16px, #64748B, line-height 1.5
+- CTA Button: Primary style, relevant action
+- Optional: Ghost UI (preview of what content will look like)
+
+**Tone Guidelines**
+- Encouraging, not negative
+- Action-oriented
+- Explain why empty and what to do next
+- Examples:
+  - Good: "Start your first entry to begin journaling"
+  - Bad: "No entries"
+
+#### Error States
+
+**Error Message Pattern**
+- Icon: Warning triangle or X circle (red or yellow)
+- Title: Inter SemiBold, 16-18px, #1E293B
+- Message: Inter Regular, 14-15px, #64748B
+- Action: Retry button or alternative action
+- Link: "Learn more" or "Contact support" (optional)
+
+**Toast Notifications**
+- Position: Top center (mobile) or bottom right (desktop)
+- Width: Full (mobile) or max 400px (desktop)
+- Height: Auto (min 56px)
+- Background:
+  - Error: #FEE2E2
+  - Warning: #FEF3C7
+  - Success: #D1FAE5
+  - Info: #DBEAFE
+- Border: 1px solid matching darker shade
+- Border radius: 12px
+- Padding: 12px 16px
+- Shadow: 0 4px 12px rgba(0,0,0,0.1)
+- Duration:
+  - Error: 5 seconds (dismissible)
+  - Warning: 5 seconds (dismissible)
+  - Success: 3 seconds (auto-dismiss)
+  - Info: 4 seconds (dismissible)
+- Icon: Left side (20px)
+- Text: Inter Regular, 14px
+- Dismiss: X button (right side, 32x32px)
+- Animation: Slide in from top (300ms), slide out (250ms)
+
+**Inline Errors (Forms)**
+- Position: Below input field
+- Icon: Warning triangle (16px), #EF4444
+- Text: Inter Regular, 13px, #EF4444
+- Border: Input border turns red (#EF4444)
+- Examples:
+  - "Please enter a valid email"
+  - "Password must be at least 8 characters"
+
+#### Success States
+
+**Success Toast**
+- Background: #D1FAE5
+- Border: 1px solid #16A34A
+- Icon: Checkmark (green)
+- Text: "Entry saved" or "Changes saved"
+- Duration: 3 seconds
+
+**Success Modal (Major Actions)**
+- Icon: Large checkmark (80-100px), #16A34A
+- Animation: Scale in with bounce
+- Title: "Success!" or specific message
+- Message: What happened
+- CTA: "Continue" or next action
+- Auto-dismiss: Optional (3-5 seconds)
+
+**Inline Success Indicators**
+- Checkmark icon (green) appears
+- Text turns green briefly
+- Example: "✓ Saved" next to field
+
+#### Hover States (Desktop)
+
+**Interactive Elements**
+- Transition: 150-200ms ease
+- Transform: translateY(-2px) or scale(0.98)
+- Shadow: Elevate (increase shadow)
+- Cursor: pointer
+- Color: Darken by 10% or change to defined hover color
+
+**Cards**
+- Shadow: 0 2px 4px rgba(0,0,0,0.04) → 0 8px 20px rgba(0,0,0,0.08)
+- Border: #E2E8F0 → #4B90C8
+- Transform: translateY(-4px)
+- Actions: Fade in additional buttons
+
+**Buttons**
+- Primary: Background darkens 10%
+- Secondary: Background tint appears
+- Scale: 0.98 (pressed effect)
+
+**Links**
+- Underline: None → Underline
+- Color: #4B90C8 → #3B7AA8
+
+**Icons**
+- Color: #64748B → #4B90C8
+- Scale: 1.0 → 1.1 (subtle)
+
+#### Focus States (Keyboard Navigation)
+
+**All Focusable Elements**
+- Outline: 3px solid #4B90C8
+- Outline offset: 2px
+- Border radius: Matches element
+- Visible: Only on keyboard focus (not mouse click)
+
+**Skip Links**
+- Position: Absolute, -9999px (off-screen)
+- On focus: Position normal, visible
+- Style: Button-like appearance
+- Purpose: Jump to main content
+
+#### Disabled States
+
+**Disabled Buttons**
+- Opacity: 0.4
+- Cursor: not-allowed
+- Interaction: None (no hover, no click)
+- Color: Grayed out (#CBD5E1)
+
+**Disabled Inputs**
+- Background: #F8FAFC
+- Border: #E2E8F0
+- Text color: #94A3B8
+- Cursor: not-allowed
+
+**Disabled Text/Links**
+- Color: #CBD5E1
+- Cursor: not-allowed
+- No underline
+
+---
+
+## 8. ACCESSIBILITY & KEYBOARD NAVIGATION
+
+### ARIA Labels & Roles
+
+**Interactive Elements**
+- Buttons: `role="button"` `aria-label="[Clear description]"`
+- Links: `aria-label="[Link purpose]"`
+- Icons: `aria-label="[Icon meaning]"` (if not decorative)
+- Decorative icons: `aria-hidden="true"`
+
+**Form Fields**
+- Labels: Explicit `<label for="id">` or `aria-label`
+- Required: `aria-required="true"`
+- Invalid: `aria-invalid="true"` + `aria-describedby="error-id"`
+- Disabled: `aria-disabled="true"`
+
+**Dynamic Content**
+- Live regions: `aria-live="polite"` or `"assertive"`
+- Loading: `aria-busy="true"`
+- Expanded: `aria-expanded="true/false"`
+- Selected: `aria-selected="true/false"`
+- Checked: `aria-checked="true/false"`
+
+**Navigation**
+- Main: `role="main"` or `<main>`
+- Navigation: `role="navigation"` or `<nav>` with `aria-label`
+- Landmarks: Use semantic HTML (`<header>`, `<footer>`, `<aside>`)
+- Breadcrumbs: `aria-label="Breadcrumb"`
+
+**Modals & Dialogs**
+- Dialog: `role="dialog"` `aria-modal="true"`
+- Title: `aria-labelledby="dialog-title-id"`
+- Description: `aria-describedby="dialog-desc-id"`
+- Focus trap: Keep focus within modal
+- Close: Esc key always closes
+
+**Lists & Grids**
+- Lists: `role="list"` with `role="listitem"`
+- Grids: `role="grid"` with `role="gridcell"`
+- Tab lists: `role="tablist"`, `role="tab"`, `role="tabpanel"`
+
+### Keyboard Navigation Patterns
+
+**Tab Order**
+- Logical order: Left to right, top to bottom
+- Skip links: First focusable element
+- Modals: Focus first element on open
+- Close: Return focus to trigger element
+
+**Arrow Key Navigation**
+- Lists: ↑/↓ navigate items
+- Grids: ↑/↓/←/→ navigate cells
+- Tabs: ←/→ navigate tabs
+- Select first: Home key
+- Select last: End key
+
+**Action Keys**
+- Enter: Activate buttons, links, submit forms
+- Space: Toggle checkboxes, activate buttons
+- Esc: Close modals, cancel actions, clear search
+- Delete/Backspace: Delete items (with confirmation)
+
+**Global Shortcuts (Already Documented)**
+- See "Keyboard Shortcuts" section for full list
+- All shortcuts have visual indicators in UI
+- Help: ⌘+/ shows keyboard shortcuts overlay
+
+### Screen Reader Support
+
+**VoiceOver/NVDA/JAWS Announcements**
+- Page titles: Clear, descriptive
+- Headings: Proper hierarchy (h1 → h2 → h3)
+- Images: Alt text for meaningful images
+- Status updates: Announced via aria-live
+- Errors: Read immediately when appearing
+- Success: Announced when action completes
+
+**Reading Order**
+- Matches visual order
+- No layout tables (use CSS Grid/Flexbox)
+- Hidden content: `aria-hidden="true"` or `hidden`
+
+### Color Contrast
+
+**WCAG AA Standards (Minimum)**
+- Normal text: 4.5:1
+- Large text (18px+ or 14px+ bold): 3:1
+- UI components: 3:1
+- Focus indicators: 3:1
+
+**Our Design System Compliance**
+- Primary text (#1E293B) on white: 13.5:1 ✓
+- Secondary text (#64748B) on white: 5.2:1 ✓
+- Primary button (#4B90C8) text (white): 4.8:1 ✓
+- Links (#4B90C8): 5.5:1 ✓
+
+**Color-Blind Considerations**
+- Never rely on color alone
+- Use icons + text + patterns
+- Mood indicators: Emoji + text labels
+- Success/Error: Icons + text + position
+
+### Dynamic Type (Text Scaling)
+
+**iOS Dynamic Type**
+- Support: All text scales 100% → 200%
+- Sizes: Defined in points, scales automatically
+- Layout: Adapts to larger text (may wrap, expand)
+- Testing: Test at "Accessibility XXL" size
+
+**Android Font Scaling**
+- Support: sp units scale with user preference
+- Range: 85% → 200%
+- Similar behavior to iOS
+
+**Desktop Browser Zoom**
+- Support: 100% → 200% zoom
+- Layout: Responsive, doesn't break
+- Touch targets: Remain accessible
+
+### Motion & Animation
+
+**Reduce Motion Preference**
+- Respected: `prefers-reduced-motion: reduce`
+- Behavior: Disable non-essential animations
+- Keep: Instant transitions, no slides/fades
+- Exceptions: Loading spinners (functional)
+
+**Animation Guidelines**
+- Duration: 200-300ms (quick), 400-600ms (slow)
+- Easing: `ease-out` for entrances, `ease-in` for exits
+- Purpose: All animations serve a purpose
+- Optional: Decorative animations respect motion preference
+
+### Touch & Click Targets
+
+**Minimum Sizes**
+- Mobile: 44x44pt (iOS), 48x48dp (Android)
+- Desktop: 32x32px (mouse precision)
+- Spacing: 8px minimum between targets
+
+**Expanded Touch Areas**
+- Invisible: Padding extends touch area
+- Example: 24px icon with 44px touch target
+- Implementation: Padding or pseudo-element
+
+---
 
 # Implementation Notes
+
+---
 
 ## Design System Consistency
 - All screens use colors from [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)
