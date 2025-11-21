@@ -2,20 +2,210 @@
 
 Comprehensive mobile-first mockup descriptions for the Stoic.af journaling app.
 
-**Target Devices:** iPhone 14 Pro baseline (375x812pt)
-**Minimum Touch Target:** 44x44pt
-**Thumb Zone:** Critical actions in bottom 60% of screen
+**Target Devices:**
+- Mobile: iPhone 14 Pro baseline (375x812pt)
+- Tablet: iPad/Android tablets (768px-1023px)
+- Desktop: Web browsers (1024px+, max-width 1440px)
+
+**Design Approach:**
+- Mobile-first (Flutter primary)
+- Progressive enhancement for web (Next.js)
+- Responsive breakpoints: 375px → 768px → 1024px → 1440px
+
+**Minimum Touch/Click Targets:**
+- Mobile: 44x44pt
+- Desktop: 32x32px (mouse precision)
+
 **Design System:** See [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)
 
 ---
 
 ## Table of Contents
 
-1. [Core Journaling Screens](#1-core-journaling-screens)
-2. [Onboarding Flow](#2-onboarding-flow)
-3. [Navigation & Discovery](#3-navigation--discovery)
-4. [AI Features](#4-ai-features)
-5. [Monetization](#5-monetization)
+1. [Responsive Design & Desktop Navigation](#responsive-design--desktop-navigation)
+2. [Core Journaling Screens](#1-core-journaling-screens)
+3. [Onboarding Flow](#2-onboarding-flow)
+4. [Navigation & Discovery](#3-navigation--discovery)
+5. [AI Features](#4-ai-features)
+6. [Monetization](#5-monetization)
+7. [Missing Screens](#6-missing-screens)
+8. [UI States Reference](#7-ui-states-reference)
+9. [Accessibility & Keyboard Navigation](#8-accessibility--keyboard-navigation)
+
+---
+
+## Responsive Design & Desktop Navigation
+
+### Breakpoint Strategy
+
+**Mobile (375px-767px)**
+- Single column layout
+- Bottom navigation bar
+- Full-screen modals
+- Thumb-optimized UI
+- Touch targets: 44x44pt minimum
+
+**Tablet (768px-1023px)**
+- Two-column layouts where appropriate
+- Sidebar navigation (optional, collapsible)
+- Sheet modals instead of full-screen
+- Mix of touch and mouse interactions
+- Touch targets: 40x40px minimum
+
+**Desktop (1024px-1439px)**
+- Three-panel layouts (sidebar + content + detail)
+- Persistent sidebar navigation (240px)
+- Top header bar (64px)
+- Modal dialogs (centered, max 600px width)
+- Click targets: 32x32px minimum
+- Keyboard shortcuts enabled
+- Hover states on all interactive elements
+
+**Large Desktop (1440px+)**
+- Max content width: 1440px, centered
+- Increased whitespace
+- Same layout as 1024px but with margins
+
+### Desktop Navigation Structure
+
+**Persistent Left Sidebar (240px width)**
+
+**Header Section (120px height)**
+- App logo: "Stoic.af" (32px, Inter Black)
+- Position: 24px from top, centered
+- User avatar: 48px circle
+  - Position: Below logo, 16px margin
+  - Name: "Sarah M." truncated (Inter Medium, 14px)
+  - Streak badge: "47 🔥" below name
+
+**Navigation Links (Variable height)**
+- Link height: 48px each
+- Padding: 12px 20px
+- Font: Inter Medium, 15px
+- Color: #64748B (inactive), #4B90C8 (active)
+- Icon: 20px, left-aligned, 12px margin-right
+- Active state: Background #E0F2FE, left border 3px #4B90C8
+- Hover state: Background #F8FAFC
+
+Links:
+1. **Home** (house icon) - Today View
+2. **Journal** (book icon) - Journal List
+3. **Insights** (chart icon) - Insights Dashboard
+4. **ChadGPT** (chat icon) - AI Coach
+   - Badge: "AI" if new summary available
+5. **Templates** (document icon) - Template Library
+6. **Settings** (gear icon) - Settings
+
+**Quick Entry Button**
+- Position: 20px from bottom of sidebar
+- Width: 200px (full width minus margins)
+- Height: 48px
+- Background: #4B90C8
+- Text: "+ New Entry"
+- Border radius: 9999px
+- Icon: Plus (16px)
+- Hover: Background #3B7AA8
+- Keyboard: ⌘+N or Ctrl+N
+
+**Top Header Bar (64px height, full width minus sidebar)**
+
+**Left Section**
+- Screen title: Current screen name
+  - Font: Inter SemiBold, 20px
+  - Color: #1E293B
+- Breadcrumbs (if applicable): Home > Journal > Entry
+
+**Right Section (aligned right, 24px from edge)**
+- Search button: Magnifying glass icon (20px)
+  - Touch target: 40x40px
+  - Keyboard: ⌘+K or Ctrl+K
+  - Opens: Search modal
+- Notifications: Bell icon (20px)
+  - Badge: Red dot if unread
+  - Touch target: 40x40px
+  - Click: Opens notification dropdown
+- User menu: Avatar (32px circle)
+  - Click: Opens dropdown
+  - Options: Profile, Settings, Log Out
+
+**Main Content Area**
+- Width: calc(100vw - 240px sidebar)
+- Max width: 1200px content
+- Padding: 32px
+- Background: #F8FAFC
+
+### Keyboard Shortcuts
+
+**Global Shortcuts**
+- `⌘+N` / `Ctrl+N`: New journal entry
+- `⌘+K` / `Ctrl+K`: Quick search
+- `⌘+S` / `Ctrl+S`: Save current entry
+- `⌘+/` / `Ctrl+/`: Show keyboard shortcuts
+- `Esc`: Close modal/dialog
+- `⌘+,` / `Ctrl+,`: Open settings
+
+**Navigation Shortcuts**
+- `⌘+1` through `⌘+6`: Jump to sidebar sections
+- `Tab`: Move focus forward
+- `Shift+Tab`: Move focus backward
+- `Enter`: Activate focused element
+- `Space`: Toggle checkboxes/switches
+
+**Editor Shortcuts**
+- `⌘+B` / `Ctrl+B`: Bold
+- `⌘+I` / `Ctrl+I`: Italic
+- `⌘+K` / `Ctrl+K`: Insert link
+- `⌘+Z` / `Ctrl+Z`: Undo
+- `⌘+Shift+Z` / `Ctrl+Y`: Redo
+
+### Hover States (Desktop Only)
+
+**Interactive Elements**
+- Buttons: Darken by 10%, scale 0.98, cursor pointer
+- Links: Underline, color #3B7AA8, cursor pointer
+- Cards: Elevate shadow, border color #4B90C8, cursor pointer
+- Icons: Color change to #4B90C8, cursor pointer
+- Input fields: Border color #4B90C8, shadow glow
+
+**Transition Timing**
+- Hover transitions: 150ms ease
+- Color changes: 200ms ease
+- Transform (scale): 200ms cubic-bezier(0.4, 0, 0.2, 1)
+
+### Focus States (Keyboard Navigation)
+
+**All Focusable Elements**
+- Outline: 3px solid #4B90C8
+- Outline offset: 2px
+- Border radius: Matches element
+- No focus outline on mouse click (only keyboard)
+
+**Skip to Content Link**
+- Position: Absolute, top-left
+- Visible only on keyboard focus
+- Text: "Skip to main content"
+- Background: #4B90C8, white text
+- Padding: 8px 16px
+- Action: Jumps to main content area
+
+### Multi-Pane Layouts (Desktop)
+
+**Journal Editor (Desktop)**
+- Left pane (50%): Editor with toolbar
+- Right pane (50%): Live markdown preview
+- Resizable: Drag divider to adjust
+- Collapse: Hide preview with button
+
+**Insights Dashboard (Desktop)**
+- Left sidebar (240px): Already present
+- Center pane (60%): Charts and graphs
+- Right pane (40%): AI summary and quick stats
+- Stackable: Becomes single column on tablet
+
+**Chat Interface (Desktop)**
+- Left pane (30%): Conversation history list
+- Right pane (70%): Active conversation
+- Thread view: Show related entries
 
 ---
 
@@ -464,6 +654,322 @@ Scroll container: 812pt - 47pt (top) - 90pt (nav) = 675pt
 
 ---
 
+#### Tablet Layout (768px-1023px)
+
+**Screen Structure**
+- No bottom navigation (uses sidebar or top nav)
+- Two-column grid for stats cards
+- Increased card sizes and spacing
+- Landscape-optimized layouts
+
+**Header (100px)**
+- Greeting + Date (left side)
+- Profile avatar (32px, top right)
+- Notification bell (top right, 48px from edge)
+
+**Content Area (Two-column where applicable)**
+
+**Daily Quote Card**
+- Width: Full width minus 48px padding
+- Height: ~160px
+- Quote text: 20px font size (larger)
+
+**Streak & Mood Section**
+- Width: 50% each (side by side maintained)
+- Increased card height: 120px
+- Larger stat numbers (48px)
+
+**Recent Entries**
+- Grid: 2 columns
+- Entry cards: 48% width each
+- Gap: 24px
+- Preview text: 4 lines (more space)
+
+**Quick Action Buttons**
+- Positioned side-by-side (still at bottom)
+- Width: Full width
+- "Start Writing": 60%
+- "Quick": 35%
+- Gap: 24px
+
+---
+
+#### Desktop Layout (1024px+)
+
+**Overall Structure**
+- Left sidebar: 240px (persistent navigation)
+- Top header: 64px
+- Main content: Centered, max-width 800px
+- Right panel: 320px (optional, for insights)
+
+**Header Bar (64px)**
+- Title: "Good morning, Sarah"
+  - Font: Inter Bold, 24px
+  - Left aligned in content area
+- Right side icons:
+  - Search (⌘+K)
+  - Notifications
+  - User menu
+
+**Main Content Area (800px max-width, centered)**
+
+**Daily Quote Card**
+- Width: 100% (800px)
+- Height: 180px
+- Quote text: 22px
+- Hover state: Slight elevation, cursor pointer
+- Click: Shows sharing options
+
+**Stats Grid (Three-column layout)**
+- Width: 100%
+- Display: 3 cards in single row
+- Cards (each ~250px):
+  1. Current Streak
+  2. This Week Stats
+  3. Mood Trend
+
+**Streak Card**
+- Size: 250px x 140px
+- Number: 56px font
+- Hover: Glow effect on fire icon
+- Click: Navigate to streak detail modal
+
+**Mood Card**
+- Size: 250px x 140px
+- Hover: Chart highlights on hover
+- Click: Navigate to full insights
+
+**Week Stats Card (New on desktop)**
+- Shows: Entries this week, total words
+- Sparkline: Mini chart
+- Hover: Shows daily breakdown tooltip
+
+**Today's Theme Card**
+- Width: 100%
+- Height: 120px
+- Layout: Horizontal (icon left, text right)
+- Hover: Background tint
+
+**Quick Actions (Desktop)**
+- Position: Below theme card
+- Layout: Three buttons in row (not two)
+- Buttons:
+  1. "New Entry" (40% width)
+     - Keyboard: ⌘+N
+  2. "Quick Capture" (30% width)
+     - Keyboard: ⌘+Shift+N
+  3. "Browse Templates" (30% width)
+     - New on desktop
+
+**Recent Entries**
+- Width: 100%
+- Layout: Three-column grid
+- Entry cards: ~250px each
+- Hover states:
+  - Card elevation increases
+  - Border: #4B90C8
+  - Show action buttons (Edit, Delete, Share)
+- Click: Opens entry in modal (not full screen)
+
+**Entry Actions (Hover only)**
+- Appear on card hover
+- Position: Top right of card
+- Buttons:
+  - Edit (pencil icon, 28px)
+  - Favorite (heart icon, 28px)
+  - Delete (trash icon, 28px)
+- Background: rgba(255,255,255,0.9)
+- Blur: backdrop-filter
+
+**Right Panel (Optional, 320px)**
+- Collapsible with toggle button
+- Sticky: Scrolls with page
+- Content:
+  - Mini calendar (month view)
+  - Upcoming streak milestones
+  - Quick stats summary
+  - Recent AI insights preview
+
+**Keyboard Navigation**
+- Tab order: Quote → Stats → Theme → Actions → Entries
+- Arrow keys: Navigate between entry cards
+- Enter: Open focused entry
+- Delete: Delete focused entry (with confirmation)
+
+**Context Menus**
+- Right-click on entry card:
+  - Open in new tab
+  - Edit
+  - Duplicate
+  - Export
+  - Delete
+- Right-click on quote:
+  - Copy quote
+  - Share quote
+  - Save to favorites
+
+**Desktop-Specific Features**
+
+**Drag and Drop**
+- Drag entry cards to reorder (if sorting by manual)
+- Drag files onto page to attach to quick entry
+
+**Multi-select**
+- Shift+Click: Select range of entries
+- ⌘+Click: Add to selection
+- Bulk actions: Export, delete, tag
+
+**Live Updates**
+- Real-time sync indicator in header
+- New entries appear with slide-in animation
+- Collaborative editing (if multiple devices)
+
+---
+
+#### Responsive Behavior
+
+**Breakpoint Transitions**
+
+**375px → 768px (Mobile to Tablet)**
+- Bottom nav → Top nav or sidebar
+- Single column → Two columns
+- Full-screen modals → Sheet modals
+- Touch targets 44pt → 40px
+- Font sizes increase 10%
+
+**768px → 1024px (Tablet to Desktop)**
+- Sidebar appears (240px)
+- Two columns → Three columns (entry grid)
+- Sheet modals → Centered modals (600px max)
+- Touch targets 40px → 32px
+- Hover states activate
+- Keyboard shortcuts enable
+- Right panel option appears
+
+**Fluid Scaling (1024px → 1440px+)**
+- Content max-width: 800px → 1000px → 1200px
+- Margins increase proportionally
+- Font sizes remain same
+- Card gaps increase: 16px → 24px → 32px
+
+**Orientation Changes**
+
+**Tablet Landscape**
+- Force three-column entry grid
+- Sidebar auto-shows
+- Increased whitespace
+
+**Tablet Portrait**
+- Force two-column entry grid
+- Sidebar auto-hides (hamburger menu)
+- Compact spacing
+
+---
+
+#### Desktop-Only UI States
+
+**Hover States**
+
+**Daily Quote Card**
+- Background: #FAFBFC
+- Border: 1px solid #4B90C8
+- Shadow: 0 8px 24px rgba(75,144,200,0.15)
+- Cursor: Pointer
+- Share icon appears (top right)
+
+**Stat Cards**
+- Transform: translateY(-4px)
+- Shadow: 0 12px 32px rgba(0,0,0,0.1)
+- Border: 2px solid #4B90C8
+- Transition: 200ms ease
+
+**Entry Cards**
+- Transform: translateY(-2px)
+- Shadow: 0 8px 20px rgba(0,0,0,0.08)
+- Action buttons fade in (top right)
+- Preview text: Shows full 6 lines (expanded)
+
+**Action Buttons**
+- "Start Writing": Background darkens to #3B7AA8
+- "Quick": Border color #3B7AA8, background tint
+- Scale: 0.98
+- Cursor: Pointer
+
+**Focus States (Keyboard Navigation)**
+
+**All Interactive Elements**
+- Outline: 3px solid #4B90C8
+- Outline offset: 2px
+- No outline on mouse click
+- Visible only with keyboard Tab
+
+**Entry Cards**
+- Focused card: Blue outline
+- Arrow keys: Navigate between cards
+- Enter: Opens entry
+- Space: Toggles favorite
+
+**Loading States**
+
+**Initial Page Load**
+- Skeleton UI for all cards
+- Shimmer animation (1.5s duration)
+- Loads in sequence:
+  1. Quote card (0ms)
+  2. Stats cards (150ms delay)
+  3. Entry cards (300ms delay, stagger by 50ms each)
+
+**Infinite Scroll (Entry List)**
+- Load more as user scrolls to bottom
+- Spinner: Bottom of list
+- New entries: Fade in from bottom
+
+**Live Sync**
+- Indicator in header: "Syncing..." or "Synced"
+- Icon: Cloud with animation
+- New entry appears: Slide down from top
+
+**Empty States**
+
+**No Entries Yet**
+- Illustration: Journal with sparkles (200px)
+- Position: Center of entry grid area
+- Headline: "Your journal awaits"
+- Subtext: "Start writing to see your entries here"
+- CTA button: "Write First Entry" (⌘+N)
+- Ghost UI: 3 sample entry cards in gray
+
+**No Mood Data**
+- Mood card shows: Empty chart
+- Text: "Start logging your mood"
+- Button: "Add Today's Mood"
+
+**Error States**
+
+**Failed to Load Entries**
+- Error card in place of entries
+- Icon: Alert triangle
+- Message: "Unable to load entries"
+- Actions:
+  - "Retry" button
+  - "View Cached Entries" (if offline)
+- Link: "Check connection"
+
+**Failed to Load Quote**
+- Quote card shows error
+- Message: "Daily quote unavailable"
+- Fallback: Shows random Stoic quote from local cache
+- Retry button (small, bottom right)
+
+**Offline Mode**
+- Banner at top: "You're offline. Changes will sync when reconnected."
+- Background: #FEF3C7 (warning yellow)
+- Icon: Cloud with slash
+- Dismiss: X button
+- Auto-hide: When connection restored
+
+---
+
 ### 1.2 Journal Editor (Full-Screen Writing Interface)
 
 **Purpose:** Distraction-free writing experience with markdown support, word count, and auto-save functionality.
@@ -752,6 +1258,438 @@ Action bar: 72pt
    - Appears: 250ms system animation
    - Toolbar: Synced with keyboard animation
    - Dismiss: Smooth 200ms
+
+---
+
+#### Tablet Layout (768px-1023px)
+
+**Screen Structure**
+- Full-screen editor (no sidebar)
+- Floating toolbar (sticky)
+- Expanded canvas for writing
+- Optional preview panel (toggle)
+
+**Header Bar (64px)**
+- Back button (left, 32px icon)
+- Entry title (center, editable inline)
+- Actions menu (right)
+  - Save status
+  - Options (…)
+
+**Metadata Bar (56px)**
+- Date/time picker (left)
+- Word count (center)
+- Mood selector (right)
+- All inline, no wrapping
+
+**Editor Canvas**
+- Width: 100% (if preview hidden) or 50% (if preview shown)
+- Padding: 32px horizontal
+- Font size: 18px (larger for readability)
+- Line height: 1.7
+- Max width: 680px (readable line length)
+
+**Floating Toolbar**
+- Position: Sticky top (below header)
+- Background: White with blur
+- Markdown buttons: Larger (40px each)
+- Horizontal scroll if needed
+
+**Preview Panel (Optional)**
+- Toggle: Button in header
+- Width: 50% (when active)
+- Position: Right side
+- Synced scroll: Matches editor position
+- Background: #FAFBFC
+
+**Bottom Action Bar**
+- Height: 64px
+- Word count (left)
+- Reading time (left)
+- Done button (right, 140px width)
+
+---
+
+#### Desktop Layout (1024px+) ⭐ KEY FEATURE
+
+**Overall Structure**
+- Left sidebar: 240px (persistent navigation)
+- Header bar: 64px
+- **Split-pane editor: Two-column layout**
+  - Left: Editor (50%)
+  - Right: Live preview (50%)
+- Resizable divider between panes
+
+**Header Bar (64px)**
+- Back/Close button (left, optional)
+  - ⌘+W to close
+- Entry title: Editable inline
+  - Font: Inter SemiBold, 20px
+  - Auto-focus on new entry
+  - Placeholder: "Untitled Entry"
+- Auto-save status (center)
+  - "Saving...", "Saved 2 seconds ago"
+  - Icon: Cloud with checkmark
+- Actions (right):
+  - Word count badge: "247 words"
+  - Export button: PDF/Markdown icons
+  - Settings: Options menu
+  - Close: X button (⌘+W)
+
+**Metadata Toolbar (48px)**
+- Below header, full width
+- Background: #F8FAFC
+- Border bottom: 1px solid #E2E8F0
+
+**Left Section**
+- Date picker: Click to edit
+  - Shows: "Wed, Nov 20, 2024 at 3:45 PM"
+  - Picker: Dropdown calendar + time
+- Mood: Emoji picker
+  - Click: Shows 5-option popover
+  - Current: 😊 or "Add mood"
+
+**Right Section**
+- Pillar tags: Multi-select chips
+  - Money, Ego, Relationships, Discipline
+  - Click: Toggle selection
+- Template: "Based on: Evening Review" (if applicable)
+
+**Left Pane - Editor (50% width, min 400px)**
+
+**Toolbar (44px)**
+- Sticky: Below metadata bar
+- Background: White
+- Buttons (32px each):
+  - Bold (⌘+B)
+  - Italic (⌘+I)
+  - Heading (#)
+  - List (bullets)
+  - Quote (")
+  - Link (⌘+K)
+  - Image (upload)
+  - Code (``)
+- Divider
+- Word count live: "247 / 2 min read"
+
+**Editor Canvas**
+- Padding: 48px
+- Background: #FFFFFF
+- Max width: None (full pane)
+- Font: Inter Regular, 17px
+- Line height: 1.7
+- Placeholder: "Start writing..."
+  - Color: #CBD5E1
+  - Font style: Italic
+
+**Editor Features**
+- Syntax highlighting: Markdown symbols in blue
+- Auto-complete: Markdown syntax
+- Distraction-free mode: Hide toolbar (⌘+Shift+F)
+- Focus mode: Dim non-current paragraph
+- Typewriter mode: Keep cursor centered
+
+**Right Pane - Live Preview (50% width, min 400px)**
+
+**Preview Header (36px)**
+- Label: "Preview"
+  - Font: Inter Medium, 13px
+  - Color: #64748B
+- Toggle: Eye icon
+  - Click: Hide/show preview
+  - Keyboard: ⌘+P
+
+**Preview Canvas**
+- Padding: 48px
+- Background: #FAFBFC
+- Border left: 1px solid #E2E8F0
+- Font: Same as editor (17px)
+- Renders: Full markdown
+  - Headings styled
+  - Bold, italic applied
+  - Lists formatted
+  - Quotes indented with left border
+  - Links clickable (⌘+Click to open)
+
+**Synced Scroll**
+- Preview scrolls with editor
+- Maintains relative position
+- Smooth: 200ms transition
+
+**Resizable Divider (Between Panes)**
+- Width: 8px
+- Color: #E2E8F0
+- Hover: #4B90C8, cursor col-resize
+- Drag: Resize panes (min 30%, max 70%)
+- Double-click: Reset to 50/50
+
+**Footer Bar (56px)**
+- Position: Sticky bottom
+- Background: #FFFFFF
+- Border top: 1px solid #E2E8F0
+- Padding: 8px 24px
+
+**Left Side**
+- Character count: "1,234 characters"
+- Word count: "247 words"
+- Reading time: "~2 min"
+- All in gray (Inter Regular, 13px)
+
+**Right Side**
+- Version history: "12 versions" (link)
+  - Click: Opens version history sidebar
+- Done button: 120px, 40px
+  - Background: #4B90C8
+  - Text: "Done" (⌘+S)
+  - Hover: #3B7AA8
+  - Click: Saves and returns to journal list
+
+**Keyboard Shortcuts (Editor-Specific)**
+
+**Text Formatting**
+- `⌘+B` / `Ctrl+B`: Bold
+- `⌘+I` / `Ctrl+I`: Italic
+- `⌘+K` / `Ctrl+K`: Insert link
+- `⌘+Shift+H`: Heading 1
+- `⌘+Shift+L`: Bulleted list
+- `⌘+Shift+Q`: Blockquote
+
+**Editor Actions**
+- `⌘+S` / `Ctrl+S`: Save (auto-saves anyway)
+- `⌘+P` / `Ctrl+P`: Toggle preview
+- `⌘+Shift+F`: Toggle fullscreen/distraction-free
+- `⌘+Z` / `Ctrl+Z`: Undo
+- `⌘+Shift+Z` / `Ctrl+Y`: Redo
+- `⌘+F` / `Ctrl+F`: Find in entry
+- `⌘+W`: Close editor
+
+**Navigation**
+- `⌘+↑`: Jump to start
+- `⌘+↓`: Jump to end
+- `Option+↑/↓`: Move paragraph up/down
+
+**Context Menu (Right-Click)**
+
+**On Selected Text**
+- Bold
+- Italic
+- Insert link
+- Copy
+- Paste
+- Cut
+- Lookup word (dictionary)
+
+**On Editor Canvas**
+- Paste
+- Paste without formatting
+- Insert template
+- Insert date/time
+- Insert Stoic quote
+
+**Desktop-Specific Features**
+
+**Version History**
+- Click: Opens right panel (replaces preview)
+- Shows: List of autosaved versions
+- Timestamp: Every 5 minutes
+- Preview: Click version to preview
+- Restore: "Restore this version" button
+- Compare: Highlight diff between versions
+
+**Focus Mode**
+- Activated: ⌘+Shift+F
+- Dims: Everything except current paragraph
+- Fades: Toolbar (appears on hover)
+- Hides: Preview pane, sidebar
+- Exit: Esc or ⌘+Shift+F again
+
+**Typewriter Mode**
+- Activated: Toggle in settings or ⌘+T
+- Effect: Keeps cursor vertically centered
+- Scrolls: Content moves, cursor stays
+- Visual: Subtle highlight on current line
+
+**Split Screen Templates**
+- Activated: Click "Use Template" in editor
+- Left pane: Template prompts (read-only)
+- Right pane: Your writing
+- Answer: Prompts inline
+- Format: Prompts in gray, answers in black
+
+---
+
+#### Responsive Behavior
+
+**Breakpoint Transitions**
+
+**375px → 768px (Mobile to Tablet)**
+- Full screen → Full screen (no change)
+- Bottom toolbar → Floating sticky toolbar
+- Word count footer → Inline in header
+
+**768px → 1024px (Tablet to Desktop)**
+- Single pane → Split pane (editor + preview)
+- Toolbar: Embedded → Floating sticky
+- Actions: Bottom bar → Header bar
+- Keyboard shortcuts: Activated
+
+**Pane Width Adjustments (Desktop)**
+- Default: 50/50 split
+- Min editor width: 400px (30%)
+- Min preview width: 400px (30%)
+- If window <1200px: Preview auto-hides, toggle button shown
+- If window <900px: Force single-pane, hide preview
+
+---
+
+#### Desktop-Only UI States
+
+**Hover States**
+
+**Toolbar Buttons**
+- Background: #F1F5F9
+- Border: 1px solid #CBD5E1
+- Cursor: Pointer
+- Tooltip: Appears after 500ms
+  - Text: "Bold (⌘+B)"
+  - Font: Inter Regular, 12px
+  - Background: #1E293B, white text
+  - Position: Below button
+
+**Resizable Divider**
+- Hover: Background #4B90C8
+- Cursor: col-resize
+- Width: 12px (expands from 8px)
+- Transition: 150ms
+
+**Done Button**
+- Hover: Background #3B7AA8
+- Scale: 0.98
+- Cursor: Pointer
+
+**Focus States**
+
+**Editor Textarea**
+- Focused: No visible outline (full-screen nature)
+- Cursor: Blinking vertical line
+- Selection: #4B90C8 background, white text
+
+**Toolbar Buttons**
+- Focused: 3px outline #4B90C8
+- Tab order: Left to right
+- Enter: Activates button
+
+**Loading States**
+
+**Initial Load**
+- Skeleton: Title bar, editor canvas, preview pane
+- Shimmer: 1.5s animation
+- Sequence:
+  1. Header loads (0ms)
+  2. Metadata loads (100ms)
+  3. Content loads (200ms)
+
+**Saving State**
+- Cloud icon: Animates (spinning or uploading)
+- Text: "Saving..."
+- Color: #4B90C8 (active)
+- Duration: Until save completes (usually <1s)
+
+**Autosave Failed**
+- Icon: Cloud with X
+- Text: "Couldn't save" (red)
+- Action: "Retry" button appears
+- Tooltip: "Check your connection"
+
+**Loading Preview**
+- Preview pane: Gray shimmer while rendering
+- Duration: <100ms typically
+- If slow: "Rendering preview..." text
+
+**Empty States**
+
+**New Entry (No Content)**
+- Editor: Placeholder text visible
+  - "Start writing..."
+  - Italic, gray color
+- Preview: "Nothing to preview yet"
+  - Centered, gray text
+  - Icon: Document outline (64px)
+
+**No Title**
+- Title field: "Untitled Entry" (gray, italic)
+- Auto-replace: On first keystroke
+
+**No Mood**
+- Mood button: "Add mood" text
+  - Icon: Gray emoji outline
+  - Hover: #4B90C8 tint
+
+**Error States**
+
+**Markdown Syntax Error**
+- Preview: Shows error inline
+  - Icon: Warning triangle
+  - Text: "Invalid markdown syntax"
+  - Line: Highlights error in preview
+- Editor: No error shown (keeps typing smooth)
+
+**Content Too Long (If Limit)**
+- Counter: Turns red at 95%
+- Warning: "Approaching character limit"
+- Hard stop: At 100%, disable typing
+- Action: "Edit down to continue"
+
+**Save Conflict (Multi-Device)**
+- Modal: "Entry was edited elsewhere"
+- Options:
+  - "Keep my version" (overwrite)
+  - "View other version" (preview in new tab)
+  - "Merge changes" (show diff)
+- Default: Keep local (with auto-backup)
+
+**Offline Mode**
+- Banner: "You're offline. Saving locally."
+- Background: #FEF3C7 (warning yellow)
+- Icon: Cloud with slash
+- Behavior: All edits save to local storage
+- Sync: When connection restored
+
+**Network Error (During Save)**
+- Toast: "Couldn't save to cloud. Saved locally."
+- Position: Bottom right
+- Duration: 5 seconds
+- Icon: Cloud with warning
+- Action: "Retry" button
+
+---
+
+#### Desktop-Specific Enhancements
+
+**AI Writing Assistance (Future)**
+- Button: "Ask ChadGPT" in toolbar
+- Shortcut: ⌘+Shift+A
+- Popup: Appears in preview pane
+- Suggests: Completions, rephrasing, Stoic quotes
+- Insert: Click suggestion to add to editor
+
+**Grammar & Style Checking**
+- Underline: Subtle gray wavy line
+- Hover: Shows suggestion tooltip
+- Right-click: "Fix" or "Ignore"
+- Settings: Toggle on/off
+
+**Word Count Goals**
+- Set target: "500 words"
+- Progress: Circular indicator in footer
+  - "247 / 500 words (49%)"
+  - Color: Orange → Green as progress
+- Alert: Celebrate when goal reached
+
+**Reading Time Estimate**
+- Calculation: Words ÷ 200 (avg reading speed)
+- Display: "~2 min read"
+- Updates: Live as you type
 
 ---
 
