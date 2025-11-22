@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { QuickCapture } from '@/components/QuickCapture';
 
 const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();

@@ -1,8 +1,8 @@
 # Stoic.af Development Status - Claude Reference
 
-**Last Updated**: 2025-11-21
+**Last Updated**: 2025-11-22
 **Current Phase**: MVP Development
-**Active Branch**: `claude/nextjs-foundation-design-system-01BEGgkwtNVi6QSuaYNtfFyN`
+**Active Branch**: `claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA`
 
 ---
 
@@ -11,13 +11,15 @@
 **Stoic.af** is a desktop web journaling platform combining ancient Stoic philosophy with modern AI to build emotional resilience through guided journaling across four pillars: Money, Ego, Relationships, and Discipline.
 
 **Tech Stack:**
-- **Framework**: Next.js 16.0.3 (App Router, Turbopack)
-- **Language**: TypeScript 5.9.3
-- **Styling**: Tailwind CSS 3.4.0 + shadcn/ui components
-- **Backend**: Firebase (Auth, Firestore, Functions, Storage)
+- **Framework**: Next.js 15.3.3 (App Router, Turbopack)
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 3.4.0 + shadcn/ui components (30+ components)
+- **Backend**: Firebase (Auth, Firestore)
+- **AI**: Genkit (installed, flows created but not active)
 - **State**: Zustand (installed, not yet configured)
 - **Data Fetching**: React Query (installed, not yet configured)
 - **Icons**: Lucide React
+- **Deployment**: Docker + Coolify
 
 ---
 
@@ -25,370 +27,352 @@
 
 ### ✅ Sprint 1: Next.js Foundation & Design System (COMPLETE)
 
-**Completed**: 2025-11-21
-**Branch**: `claude/nextjs-foundation-design-system-01BEGgkwtNVi6QSuaYNtfFyN`
-**Commit**: `bb35471`
+- Next.js with TypeScript and App Router
+- Tailwind CSS with design tokens
+- shadcn/ui component library (30+ components)
+- Design system with pillar colors
+
+### ✅ Sprint 2: Firebase Integration & Authentication (COMPLETE)
+
+**Completed**: 2025-11-22
 
 **What Was Built:**
-- ✅ Next.js 16.0.3 initialized with TypeScript and App Router
-- ✅ Tailwind CSS configured with Stoic.af design tokens
-- ✅ Complete design system:
-  - Primary color: Stoic Blue (#4B90C8)
-  - Four pillar colors: Money (green), Ego (purple), Relationships (pink), Discipline (amber)
-  - Typography scale (Inter for UI, Playfair Display for quotes)
-  - Spacing scale (4px to 48px)
-  - Border radius tokens
-- ✅ shadcn/ui components manually created:
-  - Button (5 variants: default, secondary, outline, ghost, destructive)
-  - Input, Textarea, Label
-  - Card (with Header, Content, Description)
-  - Switch
-- ✅ Component showcase page at `/` (src/app/page.tsx)
-- ✅ Light/dark theme toggle working
-- ✅ Fully responsive design
-- ✅ TypeScript compiles with zero errors
-- ✅ Build succeeds (`npm run build` ✅)
-- ✅ Dev server runs (`npm run dev` ✅)
+- ✅ Firebase Auth (Email/Password + Google OAuth)
+- ✅ AuthContext with full user management
+- ✅ Login page (`/auth/signin`)
+- ✅ Signup page (`/auth/signup`)
+- ✅ Password reset page (`/auth/reset-password`)
+- ✅ 4-step onboarding flow (`/onboarding`):
+  - Welcome screen
+  - Pillar focus selection (Money, Ego, Relationships, Discipline)
+  - Chad tone selection (Gentle, Reality Check, Drill Sergeant, Roast Me)
+  - Current struggle input
+- ✅ Protected routes (redirects to signin if not authenticated)
+- ✅ User profile creation in Firestore
+- ✅ Docker deployment configuration
+- ✅ Coolify deployment working
 
-**Key Files:**
-- `src/app/layout.tsx` - Root layout with fonts
-- `src/app/page.tsx` - Component showcase
-- `src/app/globals.css` - Global styles + CSS variables
-- `tailwind.config.ts` - Tailwind config with design tokens
-- `src/lib/utils.ts` - cn() helper function
-- `src/components/ui/*` - shadcn/ui components
+### ✅ Sprint 2.5: UI Migration & Polish (COMPLETE)
 
-**Quick Start:**
-```bash
-npm install
-npm run dev  # Opens http://localhost:3000
-```
+**What Was Built:**
+- ✅ Migrated prototype UI from `swgszn-app.studioaf.co-main`
+- ✅ Full app shell with sidebar navigation
+- ✅ Dashboard with:
+  - Dynamic greeting (time-based + user's first name)
+  - 15-day streak counter
+  - 5-day mood trend line chart (SVG)
+  - Daily Stoic quote with Chad speech bubble
+  - Recent entries list
+  - Pillar progress bars (Money, Ego, Relationships, Discipline)
+  - Pro trial banner
+- ✅ Journal page with functional views:
+  - List view (full entry cards)
+  - Grid view (3-column responsive)
+  - Calendar view (month navigation, entry indicators)
+- ✅ Journal entry editor (`/journal/new`)
+- ✅ Insights page (placeholder)
+- ✅ Settings page with:
+  - Profile info display
+  - Chad tone selector
+  - Monthly pillar focus selector
+  - Daily prompt toggle
+  - Dark mode toggle
+  - Sign out
+- ✅ QuickCapture modal (Cmd+K)
+- ✅ Mobile bottom navigation
+- ✅ Responsive sidebar (collapsible)
 
----
-
-### 🚧 Sprint 2: Firebase Integration & Authentication (NEXT)
-
-**Status**: Not started
-**Documentation**: `SPRINT-2-FIREBASE.md`
-
-**Objectives:**
-1. Set up Firebase project (Auth, Firestore, Storage)
-2. Configure environment variables
-3. Create authentication context and hooks
-4. Build login page (email + Google)
-5. Build signup page
-6. Create 3-step onboarding flow
-7. Implement user profile creation in Firestore
-8. Add protected route middleware
-9. Build dashboard placeholder
-10. Deploy Firestore security rules
-
-**Expected Deliverables:**
-- Working authentication (signup → onboarding → dashboard)
-- User profiles stored in Firestore
-- Protected routes
-- Login/logout functionality
+**Removed:**
+- ChadGPT chat page (cost concerns - AI features will be batch/scheduled only)
+- ChadFloatingButton component
 
 ---
 
-### 📋 Sprint 3: Journal Entry System (PLANNED)
+## Current App Routes
 
-**Focus:**
-- Daily journal entry creation
-- Entry editor with rich text
-- Prompt display system
-- Entry save/update to Firestore
-- Entry history view
-- Date navigation
-
----
-
-### 📋 Sprint 4: AI Integration (PLANNED)
-
-**Focus:**
-- Firebase Cloud Functions for AI
-- Prompt selection engine
-- AI-powered prompt remixing
-- ChadGPT coach integration
-- Response streaming
+| Route | Description | Auth Required |
+|-------|-------------|---------------|
+| `/` | Component showcase (landing page placeholder) | No |
+| `/auth/signin` | Login page | No |
+| `/auth/signup` | Registration page | No |
+| `/auth/reset-password` | Password reset | No |
+| `/onboarding` | 4-step onboarding flow | Yes |
+| `/dashboard` | Main dashboard | Yes |
+| `/journal` | Journal entries list/grid/calendar | Yes |
+| `/journal/new` | New journal entry editor | Yes |
+| `/insights` | Analytics & insights | Yes |
+| `/settings` | User settings | Yes |
 
 ---
 
-### 📋 Sprint 5: Insights & Analytics (PLANNED)
+## Key Files Reference
 
-**Focus:**
-- Weekly AI summaries
-- Mood tracking visualization
-- Streak counter
-- Pillar progress tracking
-- Charts and graphs
+### Authentication
+- `src/contexts/AuthContext.tsx` - Auth provider with Firebase
+- `src/lib/firebase/config.ts` - Firebase configuration
+- `src/lib/firebase/auth.ts` - Firebase auth instance
+- `src/lib/firebase/firestore.ts` - Firestore instance
+
+### Pages
+- `src/app/(app)/layout.tsx` - Protected app layout with sidebar
+- `src/app/(app)/dashboard/page.tsx` - Dashboard
+- `src/app/(app)/journal/page.tsx` - Journal with list/grid/calendar views
+- `src/app/(app)/journal/new/page.tsx` - Entry editor
+- `src/app/(app)/settings/page.tsx` - Settings
+- `src/app/onboarding/page.tsx` - 4-step onboarding
+
+### Components
+- `src/components/app-sidebar.tsx` - Main navigation sidebar
+- `src/components/QuickCapture.tsx` - Cmd+K quick entry modal
+- `src/components/ChadGPTSvg.tsx` - Chad mascot SVG
+- `src/components/StoicLogo.tsx` - Logo component
+- `src/components/ui/*` - 30+ shadcn/ui components
+
+### Configuration
+- `Dockerfile` - Docker build with Firebase env vars
+- `next.config.ts` - Next.js config with `output: 'standalone'`
+- `tailwind.config.ts` - Design tokens
+- `.env.example` - Environment variable template
 
 ---
 
-## Design System Quick Reference
+## Design System
 
 ### Colors
 
-**Primary:**
-- Stoic Blue: `#4B90C8` (use `text-stoic-blue`, `bg-stoic-blue`)
+**Brand:**
+- Stoic Dark (Navy): `#1E293B` - `bg-stoic-dark`
+- Stoic Blue: `hsl(var(--primary))` - `bg-primary`
 
 **Pillar Colors:**
-- Money: `#10B981` (green) - `bg-money`
-- Ego: `#8B5CF6` (purple) - `bg-ego`
-- Relationships: `#EC4899` (pink) - `bg-relationships`
-- Discipline: `#F59E0B` (amber) - `bg-discipline`
+- Money: emerald-500 (`#10B981`)
+- Ego: purple-500 (`#8B5CF6`)
+- Relationships: pink-500 (`#EC4899`)
+- Discipline: amber-500 (`#F59E0B`)
 
-**Semantic:**
-- Success: `#10B981` - `bg-success`
-- Warning: `#F59E0B` - `bg-warning`
-- Error: `#EF4444` - `bg-error`
-- Info: `#3B82F6` - `bg-info`
+### Key UI Patterns
 
-### Typography
-
-**Fonts:**
-- UI: Inter (loaded via Google Fonts link tag)
-- Quotes: Playfair Display (use `font-quote` class)
-
-**Sizes:**
-- `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`
-
-**Quote Styling:**
+**Sidebar Quick Entry Button:**
 ```tsx
-<blockquote className="quote">
-  "The happiness of your life depends upon the quality of your thoughts."
-</blockquote>
-<p className="quote-author">— Marcus Aurelius</p>
+className="bg-stoic-dark hover:bg-stoic-dark/90"
 ```
 
-### Spacing
+**Chad Speech Bubble:**
+- Avatar with gradient background
+- Speech bubble with triangle pointer
+- Indigo accent color
 
-- `space-1` = 4px
-- `space-2` = 8px
-- `space-3` = 12px
-- `space-4` = 16px
-- `space-6` = 24px
-- `space-8` = 32px
+---
 
-### Components
+## Data Models
 
-**Button Variants:**
-```tsx
-<Button>Default</Button>
-<Button variant="secondary">Secondary</Button>
-<Button variant="outline">Outline</Button>
-<Button variant="ghost">Ghost</Button>
-<Button variant="destructive">Destructive</Button>
-```
-
-**Button Sizes:**
-```tsx
-<Button size="sm">Small</Button>
-<Button size="default">Default</Button>
-<Button size="lg">Large</Button>
-```
-
-**Card Usage:**
-```tsx
-<Card>
-  <CardHeader>
-    <CardTitle>Title</CardTitle>
-    <CardDescription>Description</CardDescription>
-  </CardHeader>
-  <CardContent>
-    Content here
-  </CardContent>
-</Card>
+### UserProfile (Firestore: `users/{uid}`)
+```typescript
+interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  pillarFocus?: 'money' | 'ego' | 'relationships' | 'discipline';
+  chadTone?: 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
+  currentStruggle?: string;
+  reminderTime?: string;
+  reminderDays?: string[];
+  emailReminders?: boolean;
+  browserNotifications?: boolean;
+  onboardingComplete?: boolean;
+  createdAt?: Date;
+}
 ```
 
 ---
 
-## Project Structure
+## Environment Variables
 
+Required in `.env.local` or Coolify:
 ```
-desktop.stoicaf.co/
-├── 00-AI-INSTRUCTIONS/      # AI agent guides and instructions
-├── 01-PROJECT-OVERVIEW/     # Business context and PRD
-├── 02-UI-UX-DESIGN/         # Design system, mockups, API contracts
-│   ├── DESIGN-SYSTEM.md
-│   ├── API-CONTRACTS.md
-│   ├── COMPONENT-SPECS.md
-│   ├── SCREEN-MOCKUPS.md
-│   └── tokens-complete.json # Complete design tokens
-├── 03-TECHNICAL-SPECS/      # Architecture documentation
-├── 04-DATA-MODELS/          # Database schemas
-├── 05-USER-FLOWS/           # User journey documentation
-├── 07-CONTENT/              # Copy and prompts
-├── src/                     # Next.js application
-│   ├── app/                 # App router pages
-│   │   ├── layout.tsx       # Root layout
-│   │   ├── page.tsx         # Component showcase
-│   │   └── globals.css      # Global styles
-│   ├── components/
-│   │   └── ui/              # shadcn/ui components
-│   └── lib/
-│       └── utils.ts         # Utility functions
-├── SPRINT-1-NEXTJS.md       # Sprint 1 original requirements
-├── SPRINT-2-FIREBASE.md     # Sprint 2 requirements (Firebase & Auth)
-├── CLAUDE.md                # This file - project status
-└── README.md                # Project overview
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+GOOGLE_GENAI_API_KEY=  # For future AI features
 ```
 
 ---
 
-## Important Files Reference
+## Deployment
 
-### Configuration Files
-- `package.json` - Dependencies and scripts
-- `tsconfig.json` - TypeScript configuration
-- `tailwind.config.ts` - Tailwind CSS with design tokens
-- `next.config.ts` - Next.js configuration
-- `postcss.config.mjs` - PostCSS configuration
-- `components.json` - shadcn/ui configuration
-- `.gitignore` - Git ignore rules
-
-### Key Application Files
-- `src/app/layout.tsx` - Root layout with fonts and providers
-- `src/app/page.tsx` - Current homepage (component showcase)
-- `src/app/globals.css` - CSS variables and global styles
-- `src/lib/utils.ts` - cn() utility for class merging
-
----
-
-## Development Commands
+**Platform**: Coolify (Docker)
+**Build**: `npm run build` produces standalone output
+**Dockerfile**: Accepts Firebase env vars as build args
 
 ```bash
-# Install dependencies
+# Local development
 npm install
+npm run dev
 
-# Development
-npm run dev        # Start dev server (http://localhost:3000)
-
-# Production
-npm run build      # Build for production
-npm start          # Run production build
-
-# Code Quality
-npm run lint       # Run ESLint (when configured)
+# Production build
+npm run build
+npm start
 ```
+
+---
+
+## Next To-Do's (Sprint 3: Journal System)
+
+### High Priority - Core Functionality
+
+1. **Journal Entry CRUD**
+   - [ ] Create Firestore collection `entries/{entryId}`
+   - [ ] Save new entries to Firestore from editor
+   - [ ] Load entries from Firestore in journal list
+   - [ ] Edit existing entries
+   - [ ] Delete entries with confirmation
+   - [ ] Entry data model: `{ userId, title, content, mood, pillar, tags, template, createdAt, updatedAt }`
+
+2. **Entry Editor Enhancements**
+   - [ ] Auto-save draft to localStorage
+   - [ ] Mood selector (1-5 scale with emoji icons)
+   - [ ] Pillar tag selector
+   - [ ] Custom tags input
+   - [ ] Template selector (Morning Intent, Evening Audit, Free-form)
+   - [ ] Rich text or markdown support
+
+3. **Journal Views - Connect to Real Data**
+   - [ ] List view loads from Firestore
+   - [ ] Grid view loads from Firestore
+   - [ ] Calendar view shows actual entry dates
+   - [ ] Click entry to view/edit
+   - [ ] Pagination for list view
+
+4. **Firestore Security Rules**
+   - [ ] Deploy rules to restrict user access to own data
+   - [ ] Test rules with Firebase emulator
+
+### Medium Priority - Dashboard & Insights
+
+5. **Dashboard - Real Data**
+   - [ ] Streak calculation from actual entries
+   - [ ] Mood trend from last 5 entries
+   - [ ] Recent entries from Firestore
+   - [ ] Pillar progress calculation
+
+6. **Daily Quote System**
+   - [ ] Create quotes collection in Firestore
+   - [ ] Fetch random quote for dashboard
+   - [ ] Chad interpretation (static for now, AI later)
+
+7. **Insights Page**
+   - [ ] Weekly summary view
+   - [ ] Monthly mood chart
+   - [ ] Pillar distribution pie chart
+   - [ ] Entry count statistics
+
+### Lower Priority - Polish & UX
+
+8. **Search & Filters**
+   - [ ] Search entries by title/content
+   - [ ] Filter by mood
+   - [ ] Filter by pillar
+   - [ ] Filter by date range
+   - [ ] Filter by template type
+
+9. **Settings Enhancements**
+   - [ ] Update profile (display name, photo)
+   - [ ] Notification preferences (UI ready, needs backend)
+   - [ ] Export data feature
+   - [ ] Delete account
+
+10. **Mobile Responsiveness**
+    - [ ] Test all views on mobile
+    - [ ] Fix any layout issues
+    - [ ] Ensure touch targets are adequate
+
+### Future Sprints (Backlog)
+
+11. **AI Integration (Sprint 4)**
+    - [ ] Daily prompt generation (batch job)
+    - [ ] Weekly reflection summaries
+    - [ ] Chad insights on entries
+    - [ ] Prompt remixing based on user context
+
+12. **Notifications**
+    - [ ] Email reminders (Firebase Functions)
+    - [ ] Browser push notifications
+
+13. **Payments (Sprint 5)**
+    - [ ] Stripe integration
+    - [ ] Pro subscription features
+    - [ ] Trial management
+
+14. **Landing Page**
+    - [ ] Marketing landing page at `/`
+    - [ ] Feature highlights
+    - [ ] Pricing section
+    - [ ] CTA to signup
+
+---
+
+## Known Issues
+
+1. **Firestore Rules**: Currently using permissive test rules - need to deploy proper security rules before production
+2. **Static Data**: Dashboard, journal entries, quotes are all mock data - need Firestore integration
+3. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected to UI
+4. **No Error Boundaries**: App crashes on errors - add error boundaries
+5. **No Loading States**: Some pages need skeleton loaders
 
 ---
 
 ## Git Workflow
 
-**Current Branch**: `claude/nextjs-foundation-design-system-01BEGgkwtNVi6QSuaYNtfFyN`
+**Current Branch**: `claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA`
 
-**Branch Naming Convention**:
-- Format: `claude/<feature-description>-<session-id>`
-- Example: `claude/nextjs-foundation-design-system-01BEGgkwtNVi6QSuaYNtfFyN`
-
-**Commit Message Format**:
-```
-<Type>: <Subject>
-
-<Body with bullet points>
-- Change 1
-- Change 2
-
-<Footer with context>
-```
-
-**Push to Remote**:
+**Push Command**:
 ```bash
-git push -u origin <branch-name>
+git push -u origin claude/<feature>-<session-id>
 ```
 
----
-
-## Dependencies Installed
-
-### Core
-- next@16.0.3
-- react@19.2.0
-- react-dom@19.2.0
-- typescript@5.9.3
-
-### Styling
-- tailwindcss@3.4.0
-- tailwindcss-animate@1.0.7
-- autoprefixer@10.4.22
-- postcss@8.5.6
-- class-variance-authority@0.7.1
-- clsx@2.1.1
-- tailwind-merge@3.4.0
-
-### UI Components
-- lucide-react@0.554.0
-- @radix-ui/react-slot@1.1.1
-- @radix-ui/react-label@2.1.1
-- @radix-ui/react-switch@1.1.2
-
-### Backend (Ready for Sprint 2)
-- firebase@12.6.0
-
-### State & Data (Not yet configured)
-- zustand@5.0.8
-- @tanstack/react-query@5.90.10
+**Recent Commits**:
+- Add functional list/grid/calendar views to journal page
+- Update dashboard with dynamic greeting, line chart, and pillars
+- Change Quick Entry button to stoic-dark navy
+- Add speech bubble styling for Chad on dashboard
+- Update pillars and remove ChadGPT chat feature
 
 ---
 
-## Known Issues / Notes
+## Quick Start for New Context
 
-### Font Loading
-- Using Google Fonts via `<link>` tag in layout.tsx
-- Environment has network restrictions for next/font API
-- Fonts load successfully in browser
+```bash
+# 1. Ensure on correct branch
+git checkout claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA
 
-### Build Configuration
-- Turbopack enabled with system TLS certs
-- `experimental.turbopackUseSystemTlsCerts: true` in next.config.ts
+# 2. Install dependencies
+npm install
 
-### Component Library
-- shadcn/ui components manually created (CLI had network issues)
-- All components are functional and follow shadcn/ui patterns
-- Missing components can be added from https://ui.shadcn.com/docs/components
+# 3. Start dev server
+npm run dev
 
----
+# 4. View app at http://localhost:3000
+```
 
-## Next Steps (Sprint 2)
-
-1. **Create Firebase project** in console
-2. **Enable Authentication** (Email/Password + Google provider)
-3. **Create Firestore database** (start in test mode)
-4. **Set up environment variables** (.env.local)
-5. **Build authentication context** (AuthProvider)
-6. **Create login/signup pages**
-7. **Build onboarding flow** (3 steps)
-8. **Implement user profile creation**
-9. **Deploy security rules**
-10. **Test end-to-end auth flow**
-
-See `SPRINT-2-FIREBASE.md` for complete implementation guide.
+**Test Auth Flow**:
+1. Go to `/auth/signup`
+2. Create account
+3. Complete onboarding
+4. Land on `/dashboard`
 
 ---
 
 ## Resources
 
-### Documentation
-- Next.js: https://nextjs.org/docs
-- Tailwind CSS: https://tailwindcss.com/docs
-- shadcn/ui: https://ui.shadcn.com/docs
-- Firebase: https://firebase.google.com/docs
-- Lucide Icons: https://lucide.dev/icons
-
-### Design System
-- Complete tokens: `02-UI-UX-DESIGN/tokens-complete.json`
-- Design system guide: `02-UI-UX-DESIGN/DESIGN-SYSTEM.md`
-- Component specs: `02-UI-UX-DESIGN/COMPONENT-SPECS.md`
-- API contracts: `02-UI-UX-DESIGN/API-CONTRACTS.md`
+- **Firebase Console**: https://console.firebase.google.com
+- **Coolify Dashboard**: (deployment platform)
+- **shadcn/ui**: https://ui.shadcn.com/docs
+- **Lucide Icons**: https://lucide.dev/icons
 
 ---
 
-## Contact
-
-**Repository**: https://github.com/scottmcquaig/desktop.stoicaf.co
-**Project Owner**: Scott McQuaig
-
----
-
-**Status**: Ready for Sprint 2 - Firebase Integration & Authentication 🚀
+**Status**: Ready for Sprint 3 - Journal Entry System
