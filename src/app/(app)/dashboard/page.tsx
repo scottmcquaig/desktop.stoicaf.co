@@ -85,17 +85,31 @@ const DashboardPage: React.FC = () => {
               <blockquote className="text-xl font-serif text-slate-800 italic mb-4 leading-relaxed">
                 "The impediment to action advances action. What stands in the way becomes the way."
               </blockquote>
-              <p className="text-sm font-bold text-slate-900 mb-4">— Marcus Aurelius</p>
+              <p className="text-sm font-bold text-slate-900 mb-6">— Marcus Aurelius</p>
 
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold flex-shrink-0">
-                  <ChadGPTSvg className="w-8 h-8" />
+              {/* Chad Speech Bubble - overlapping card */}
+              <div className="relative -mx-2 -mb-2">
+                <div className="flex items-start gap-3">
+                  {/* Chad Avatar - positioned to overlap */}
+                  <div className="relative -mt-2 -ml-1 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center shadow-md border-2 border-white">
+                      <ChadGPTSvg className="w-10 h-10" />
+                    </div>
+                  </div>
+
+                  {/* Speech Bubble */}
+                  <div className="relative flex-1 bg-gradient-to-br from-indigo-50 to-slate-50 p-4 rounded-2xl rounded-tl-sm border border-indigo-100 shadow-sm">
+                    {/* Speech bubble pointer */}
+                    <div className="absolute -left-2 top-3 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-indigo-100"></div>
+                    <div className="absolute -left-[6px] top-3 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-indigo-50"></div>
+
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      <span className="font-bold text-indigo-700">Chad says:</span> This reminds us that obstacles aren&apos;t
+                      stop signs—they&apos;re training grounds. The difficult coworker is patience training. The lost deal is
+                      resilience training.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  <span className="font-bold text-slate-800">ChadGPT says:</span> This reminds us that obstacles aren't
-                  stop signs—they're training grounds. The difficult coworker is patience training. The lost deal is
-                  resilience training.
-                </p>
               </div>
             </CardContent>
           </Card>
