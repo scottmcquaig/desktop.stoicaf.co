@@ -1,30 +1,40 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Smile, Meh, Frown, ChevronLeft, ChevronRight, List, Grid, Calendar, Loader2, BookOpen } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Smile,
+  Meh,
+  Frown,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Grid,
+  Calendar,
+  Loader2,
+  BookOpen,
+  DollarSign,
+  User,
+  Heart,
+  Target,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEntries, getEntriesForMonth, getEntryCount } from '@/lib/firebase/journal';
-import type { JournalEntry, MoodScore, JournalTemplate } from '@/lib/types';
+import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 type ViewMode = 'list' | 'grid' | 'calendar';
 
-const TEMPLATE_LABELS: Record<JournalTemplate, string> = {
-  'morning-intent': 'Morning Intent',
-  'evening-audit': 'Evening Audit',
-  'dichotomy': 'Dichotomy of Control',
-  'free-form': 'Free Form',
-};
-
-const TEMPLATE_COLORS: Record<JournalTemplate, string> = {
-  'morning-intent': 'bg-sky-100 text-primary border-sky-200',
-  'evening-audit': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  'dichotomy': 'bg-purple-100 text-purple-700 border-purple-200',
-  'free-form': 'bg-slate-100 text-slate-700 border-slate-200',
+const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string }> = {
+  money: { icon: DollarSign, label: 'Money', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  ego: { icon: User, label: 'Ego', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  relationships: { icon: Heart, label: 'Relationships', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+  discipline: { icon: Target, label: 'Discipline', color: 'bg-amber-100 text-amber-700 border-amber-200' },
 };
 
 const MoodIcon = ({ mood }: { mood: MoodScore | null }) => {
@@ -125,16 +135,20 @@ const JournalListPage: React.FC = () => {
   const { firstDay, daysInMonth } = getDaysInMonth(currentMonth);
   const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-  // Check if a day has an entry
+  // Check if a day has an entry (using date field in YYYY-MM-DD format)
   const getEntriesForDay = (day: number) => {
-    return calendarEntries.filter((e) => {
-      const entryDate = e.createdAt.toDate();
-      return entryDate.getDate() === day;
-    });
+    const targetDate = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return calendarEntries.filter((e) => e.date === targetDate);
   };
 
   // Format date for display
   const formatDate = (entry: JournalEntry) => {
+    // Use date field if available, otherwise fall back to createdAt
+    if (entry.date) {
+      const [year, month, day] = entry.date.split('-');
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
     const date = entry.createdAt.toDate();
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
@@ -143,31 +157,102 @@ const JournalListPage: React.FC = () => {
   const getLastEntryText = () => {
     if (entries.length === 0) return 'No entries yet';
     const lastEntry = entries[0];
-    const date = lastEntry.createdAt.toDate();
+
+    // Use date field if available
+    let entryDate: Date;
+    if (lastEntry.date) {
+      const [year, month, day] = lastEntry.date.split('-');
+      entryDate = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      entryDate = lastEntry.createdAt.toDate();
+    }
+
     const today = new Date();
-    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    today.setHours(0, 0, 0, 0);
+    entryDate.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return 'Last entry today';
     if (diffDays === 1) return 'Last entry yesterday';
     return `Last entry ${diffDays} days ago`;
   };
 
-  // Filter entries by search
+  // Get excerpt from entry blocks
+  const getExcerpt = (entry: JournalEntry) => {
+    // Handle new block-based entries
+    if (entry.blocks && entry.blocks.length > 0) {
+      for (const block of entry.blocks) {
+        if (block.type === 'dichotomy') {
+          const text = block.inControl || block.notInControl || '';
+          if (text) {
+            return text.length > 150 ? text.slice(0, 147) + '...' : text;
+          }
+        } else if (block.content) {
+          return block.content.length > 150 ? block.content.slice(0, 147) + '...' : block.content;
+        }
+      }
+    }
+
+    // Legacy entries fallback
+    const legacyEntry = entry as JournalEntry & { content?: string; inControl?: string; notInControl?: string };
+    const text = legacyEntry.content || legacyEntry.inControl || legacyEntry.notInControl || '';
+    if (text.length <= 150) return text;
+    return text.slice(0, 147) + '...';
+  };
+
+  // Get title from entry (generates from pillar/day for new entries)
+  const getEntryTitle = (entry: JournalEntry) => {
+    // Legacy entries have title
+    const legacyEntry = entry as JournalEntry & { title?: string };
+    if (legacyEntry.title) return legacyEntry.title;
+
+    // New entries: generate title from pillar and day
+    if (entry.pillar && entry.dayInTrack) {
+      const pillarLabel = PILLAR_CONFIG[entry.pillar]?.label || entry.pillar;
+      return `Day ${entry.dayInTrack} - ${pillarLabel}`;
+    }
+
+    return 'Journal Entry';
+  };
+
+  // Filter entries by search (searches blocks content)
   const filteredEntries = entries.filter((entry) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
-    return (
-      entry.title.toLowerCase().includes(query) ||
-      entry.content.toLowerCase().includes(query) ||
-      entry.tags.some((tag) => tag.toLowerCase().includes(query))
-    );
+
+    // Search in pillar name
+    if (entry.pillar && entry.pillar.toLowerCase().includes(query)) return true;
+
+    // Search in blocks content
+    if (entry.blocks) {
+      for (const block of entry.blocks) {
+        if (block.content?.toLowerCase().includes(query)) return true;
+        if (block.inControl?.toLowerCase().includes(query)) return true;
+        if (block.notInControl?.toLowerCase().includes(query)) return true;
+      }
+    }
+
+    // Legacy: search in title, content, tags
+    const legacyEntry = entry as JournalEntry & { title?: string; content?: string; tags?: string[] };
+    if (legacyEntry.title?.toLowerCase().includes(query)) return true;
+    if (legacyEntry.content?.toLowerCase().includes(query)) return true;
+    if (legacyEntry.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+
+    return false;
   });
 
-  // Get excerpt from content
-  const getExcerpt = (entry: JournalEntry) => {
-    const text = entry.content || entry.inControl || entry.notInControl || '';
-    if (text.length <= 150) return text;
-    return text.slice(0, 147) + '...';
+  // Render pillar badge
+  const PillarBadge = ({ pillar }: { pillar?: Pillar }) => {
+    if (!pillar) return null;
+    const config = PILLAR_CONFIG[pillar];
+    if (!config) return null;
+    const Icon = config.icon;
+    return (
+      <Badge variant="secondary" className={config.color}>
+        <Icon size={12} className="mr-1" />
+        {config.label}
+      </Badge>
+    );
   };
 
   return (
@@ -228,10 +313,7 @@ const JournalListPage: React.FC = () => {
                 All Moods <span className="ml-2 text-slate-400">▼</span>
               </Button>
               <Button variant="outline" className="bg-white">
-                All Tags <span className="ml-2 text-slate-400">▼</span>
-              </Button>
-              <Button variant="outline" className="bg-white">
-                Templates <span className="ml-2 text-slate-400">▼</span>
+                All Pillars <span className="ml-2 text-slate-400">▼</span>
               </Button>
             </div>
           </CardContent>
@@ -278,24 +360,20 @@ const JournalListPage: React.FC = () => {
                           <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                             {formatDate(entry)}
                           </span>
-                          <Badge variant="secondary" className={TEMPLATE_COLORS[entry.template]}>
-                            {TEMPLATE_LABELS[entry.template]}
-                          </Badge>
+                          <PillarBadge pillar={entry.pillar} />
+                          {entry.dayInTrack && (
+                            <span className="text-xs text-slate-400">Day {entry.dayInTrack}</span>
+                          )}
                           <span className="text-lg">
                             <MoodIcon mood={entry.mood} />
                           </span>
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors">
-                          {entry.title}
+                          {getEntryTitle(entry)}
                         </h3>
-                        <p className="text-slate-600 text-sm line-clamp-2 mb-3">
+                        <p className="text-slate-600 text-sm line-clamp-2">
                           {getExcerpt(entry)}
                         </p>
-                        <div className="flex gap-2">
-                          {entry.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="font-normal border-0">{tag}</Badge>
-                          ))}
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -338,20 +416,18 @@ const JournalListPage: React.FC = () => {
                         </span>
                         <MoodIcon mood={entry.mood} />
                       </div>
-                      <Badge variant="secondary" className={`mb-3 ${TEMPLATE_COLORS[entry.template]}`}>
-                        {TEMPLATE_LABELS[entry.template]}
-                      </Badge>
+                      <div className="flex items-center gap-2 mb-3">
+                        <PillarBadge pillar={entry.pillar} />
+                        {entry.dayInTrack && (
+                          <span className="text-xs text-slate-400">Day {entry.dayInTrack}</span>
+                        )}
+                      </div>
                       <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                        {entry.title}
+                        {getEntryTitle(entry)}
                       </h3>
-                      <p className="text-slate-600 text-sm line-clamp-3 mb-3">
+                      <p className="text-slate-600 text-sm line-clamp-3">
                         {getExcerpt(entry)}
                       </p>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="font-normal border-0 text-xs">{tag}</Badge>
-                        ))}
-                      </div>
                     </CardContent>
                   </Card>
                 </Link>
@@ -439,9 +515,6 @@ const JournalListPage: React.FC = () => {
                             {firstEntryMood && firstEntryMood <= 2 && <Frown size={12} className="text-red-500" />}
                             {firstEntryMood && firstEntryMood === 3 && <Meh size={12} className="text-amber-500" />}
                             {firstEntryMood && firstEntryMood >= 4 && <Smile size={12} className="text-emerald-500" />}
-                            {dayEntries.length > 1 && (
-                              <span className="text-[10px] text-slate-500 ml-0.5">+{dayEntries.length - 1}</span>
-                            )}
                           </div>
                         )}
                       </div>

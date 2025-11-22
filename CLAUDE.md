@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-11-22
 **Current Phase**: MVP Development
-**Active Branch**: `claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA`
+**Active Branch**: `claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3`
 
 ---
 
@@ -42,89 +42,63 @@
 - ✅ Login page (`/auth/signin`)
 - ✅ Signup page (`/auth/signup`)
 - ✅ Password reset page (`/auth/reset-password`)
-- ✅ 4-step onboarding flow (`/onboarding`):
-  - Welcome screen
-  - Pillar focus selection (Money, Ego, Relationships, Discipline)
-  - Chad tone selection (Gentle, Reality Check, Drill Sergeant, Roast Me)
-  - Current struggle input
+- ✅ 4-step onboarding flow (`/onboarding`)
 - ✅ Protected routes (redirects to signin if not authenticated)
 - ✅ User profile creation in Firestore
 - ✅ Docker deployment configuration
-- ✅ Coolify deployment working
 
 ### ✅ Sprint 2.5: UI Migration & Polish (COMPLETE)
 
-**What Was Built:**
-- ✅ Migrated prototype UI from `swgszn-app.studioaf.co-main`
+- ✅ Migrated prototype UI from previous repo
 - ✅ Full app shell with sidebar navigation
-- ✅ Dashboard with:
-  - Dynamic greeting (time-based + user's first name)
-  - 15-day streak counter
-  - 5-day mood trend line chart (SVG)
-  - Daily Stoic quote with Chad speech bubble
-  - Recent entries list
-  - Pillar progress bars (Money, Ego, Relationships, Discipline)
-  - Pro trial banner
-- ✅ Journal page with functional views:
-  - List view (full entry cards)
-  - Grid view (3-column responsive)
-  - Calendar view (month navigation, entry indicators)
-- ✅ Journal entry editor (`/journal/new`)
-- ✅ Insights page (placeholder)
-- ✅ Settings page with:
-  - Profile info display
-  - Chad tone selector
-  - Monthly pillar focus selector
-  - Daily prompt toggle
-  - Dark mode toggle
-  - Sign out
+- ✅ Dashboard with dynamic greeting, streak, mood chart
 - ✅ QuickCapture modal (Cmd+K)
 - ✅ Mobile bottom navigation
 - ✅ Responsive sidebar (collapsible)
-
-**Removed:**
-- ChadGPT chat page (cost concerns - AI features will be batch/scheduled only)
-- ChadFloatingButton component
 
 ### ✅ Sprint 3: Journal Entry System (COMPLETE)
 
 **Completed**: 2025-11-22
 
 **What Was Built:**
-- ✅ Full journal CRUD with Firestore:
-  - Create new entries from `/journal/new`
-  - Read entries in list/grid/calendar views
-  - Update entries via edit mode
-  - Delete entries with confirmation dialog
-- ✅ JournalEntry data model (`src/lib/types.ts`):
-  - title, content, mood (1-5), pillar, tags, template
-  - Dichotomy template support (inControl/notInControl fields)
-  - Timestamps (createdAt, updatedAt)
-- ✅ Journal service (`src/lib/firebase/journal.ts`):
-  - Pagination with cursor-based loading
-  - Month-based queries for calendar view
-  - Streak calculation
-  - Entry count
-- ✅ Entry editor features:
-  - Template selector (Dichotomy, Morning Intent, Evening Audit, Free Form)
-  - Mood selector (sad/neutral/happy)
-  - Pillar tags (Money, Ego, Relationships, Discipline)
-  - Custom tags with hashtags
-  - Word count
-  - Auto-save drafts to localStorage
-- ✅ Journal list improvements:
-  - Search entries by title/content/tags
-  - Empty state with CTA
-  - Loading states
-  - "Load more" pagination
-- ✅ View/Edit entry page (`/journal/[id]`):
-  - Full entry display with date/time
-  - Edit mode with all fields
-  - Delete with confirmation dialog
-- ✅ Firestore security rules (`firestore.rules`):
-  - Users can only access their own entries
-  - Proper validation for create/update/delete
-- ✅ Firestore indexes (`firestore.indexes.json`)
+- ✅ Full journal CRUD with Firestore
+- ✅ Firestore security rules and indexes
+- ✅ Dashboard connected to real data (streak, mood, entries)
+
+### ✅ Sprint 3.5: Block-Based Journal Redesign (COMPLETE)
+
+**Completed**: 2025-11-22
+
+**Major Redesign - Block-Based Journal Editor:**
+- ✅ **Block-based entry model** (like Notion):
+  - Freeform text blocks
+  - Morning Intent blocks (sun icon)
+  - Evening Audit blocks (moon icon)
+  - Dichotomy of Control blocks (columns icon)
+- ✅ **Sticky toolbar** with:
+  - Template icons (Sun/Moon/Columns) to add blocks
+  - Pillar icons (Money/Ego/Relationships/Discipline) to select track
+  - Mood selector (Frown/Meh/Smile)
+  - Save, Delete, Save Layout buttons
+- ✅ **Pillar Track System** (30-day journaling courses):
+  - Money: "Your Wealth Isn't Your Worth"
+  - Ego: "Let Results Talk"
+  - Relationships: "Lead With Respect"
+  - Discipline: "Small Reps, Big Gains"
+- ✅ **Daily prompts** from pillar tracks with:
+  - Stoic quote + author
+  - Chad's "bro translation"
+  - Today's challenge
+  - Evening reflection prompts
+- ✅ **One entry per day** logic - automatically loads/edits today's entry
+- ✅ **Pillar progress tracking** - tracks which day (1-30) user is on
+- ✅ **Save default layout** - users can save preferred block arrangement
+- ✅ **Track data fallback** - loads from `/public/data/` JSON files
+
+**New Files:**
+- `src/lib/firebase/pillarTracks.ts` - Pillar track service with fallback
+- `public/data/*.json` - 30-day track data for each pillar
+- `scripts/seedPillarTracks.ts` - Seeding script for Firestore
 
 ---
 
@@ -139,78 +113,91 @@
 | `/onboarding` | 4-step onboarding flow | Yes |
 | `/dashboard` | Main dashboard | Yes |
 | `/journal` | Journal entries list/grid/calendar | Yes |
-| `/journal/new` | New journal entry editor | Yes |
+| `/journal/new` | Block-based journal editor | Yes |
 | `/journal/[id]` | View/edit single entry | Yes |
-| `/insights` | Analytics & insights | Yes |
+| `/insights` | Analytics & insights (placeholder) | Yes |
 | `/settings` | User settings | Yes |
 
 ---
 
 ## Key Files Reference
 
-### Authentication
+### Authentication & User
 - `src/contexts/AuthContext.tsx` - Auth provider with Firebase
 - `src/lib/firebase/config.ts` - Firebase configuration
 - `src/lib/firebase/auth.ts` - Firebase auth instance
 - `src/lib/firebase/firestore.ts` - Firestore instance
+
+### Journal System
 - `src/lib/firebase/journal.ts` - Journal CRUD service
+- `src/lib/firebase/pillarTracks.ts` - Pillar track service
+- `src/lib/types.ts` - TypeScript types including block-based entry model
 
 ### Pages
 - `src/app/(app)/layout.tsx` - Protected app layout with sidebar
-- `src/app/(app)/dashboard/page.tsx` - Dashboard
-- `src/app/(app)/journal/page.tsx` - Journal with list/grid/calendar views
-- `src/app/(app)/journal/new/page.tsx` - Entry editor
+- `src/app/(app)/dashboard/page.tsx` - Dashboard (real Firestore data)
+- `src/app/(app)/journal/page.tsx` - Journal list/grid/calendar views
+- `src/app/(app)/journal/new/page.tsx` - Block-based editor with sticky toolbar
 - `src/app/(app)/journal/[id]/page.tsx` - View/edit single entry
 - `src/app/(app)/settings/page.tsx` - Settings
 - `src/app/onboarding/page.tsx` - 4-step onboarding
 
-### Components
-- `src/components/app-sidebar.tsx` - Main navigation sidebar
-- `src/components/QuickCapture.tsx` - Cmd+K quick entry modal
-- `src/components/ChadGPTSvg.tsx` - Chad mascot SVG
-- `src/components/StoicLogo.tsx` - Logo component
-- `src/components/ui/*` - 30+ shadcn/ui components
+### Data Files
+- `public/data/money-track.json` - 30 days of Money pillar prompts
+- `public/data/ego-track.json` - 30 days of Ego pillar prompts
+- `public/data/relationships-track.json` - 30 days of Relationships prompts
+- `public/data/discipline-track.json` - 30 days of Discipline prompts
 
 ### Configuration
-- `Dockerfile` - Docker build with Firebase env vars
-- `next.config.ts` - Next.js config with `output: 'standalone'`
-- `tailwind.config.ts` - Design tokens
-- `.env.example` - Environment variable template
-- `firebase.json` - Firebase CLI configuration
 - `firestore.rules` - Firestore security rules
 - `firestore.indexes.json` - Firestore composite indexes
 
 ---
 
-## Design System
+## Data Models
 
-### Colors
+### JournalEntry (Firestore: `entries/{id}`)
+```typescript
+interface JournalEntry {
+  id: string;
+  userId: string;
+  date: string;              // YYYY-MM-DD format (one entry per day)
+  pillar: Pillar;            // money | ego | relationships | discipline
+  dayInTrack: number;        // which day (1-30) in the pillar track
+  blocks: EntryBlock[];      // array of content blocks
+  mood: MoodScore | null;    // 1-5
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
 
-**Brand:**
-- Stoic Dark (Navy): `#1E293B` - `bg-stoic-dark`
-- Stoic Blue: `hsl(var(--primary))` - `bg-primary`
-
-**Pillar Colors:**
-- Money: emerald-500 (`#10B981`)
-- Ego: purple-500 (`#8B5CF6`)
-- Relationships: pink-500 (`#EC4899`)
-- Discipline: amber-500 (`#F59E0B`)
-
-### Key UI Patterns
-
-**Sidebar Quick Entry Button:**
-```tsx
-className="bg-stoic-dark hover:bg-stoic-dark/90"
+interface EntryBlock {
+  id: string;
+  type: BlockType;           // freeform | morning-intent | evening-audit | dichotomy
+  content: string;
+  inControl?: string;        // for dichotomy blocks
+  notInControl?: string;     // for dichotomy blocks
+}
 ```
 
-**Chad Speech Bubble:**
-- Avatar with gradient background
-- Speech bubble with triangle pointer
-- Indigo accent color
+### PillarTrack (Firestore: `pillarTracks/{pillar}` or `/public/data/`)
+```typescript
+interface PillarTrack {
+  pillar: Pillar;
+  theme: string;             // "Let Results Talk", etc.
+  days: DayPrompt[];         // 30 days of prompts
+}
 
----
-
-## Data Models
+interface DayPrompt {
+  day: number;
+  stoicQuote: string;
+  quoteAuthor: string;
+  broTranslation: string;    // Chad's interpretation
+  todaysChallenge: string;
+  challengeType: 'reflection' | 'action' | 'meditation';
+  todaysIntention: string;
+  eveningPrompts: string[];
+}
+```
 
 ### UserProfile (Firestore: `users/{uid}`)
 ```typescript
@@ -219,17 +206,30 @@ interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  pillarFocus?: 'money' | 'ego' | 'relationships' | 'discipline';
+  pillarFocus?: Pillar;
   chadTone?: 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
   currentStruggle?: string;
-  reminderTime?: string;
-  reminderDays?: string[];
-  emailReminders?: boolean;
-  browserNotifications?: boolean;
+  defaultEntryLayout?: { blocks: Array<{ id: string; type: string }> };
   onboardingComplete?: boolean;
   createdAt?: Date;
 }
 ```
+
+---
+
+## Design System
+
+### Pillar Colors
+- **Money**: emerald-500 (`#10B981`) - `bg-emerald-50`, `text-emerald-500`
+- **Ego**: purple-500 (`#8B5CF6`) - `bg-purple-50`, `text-purple-500`
+- **Relationships**: pink-500 (`#EC4899`) - `bg-pink-50`, `text-pink-500`
+- **Discipline**: amber-500 (`#F59E0B`) - `bg-amber-50`, `text-amber-500`
+
+### Block Type Colors
+- **Morning Intent**: amber/sun - `bg-amber-50`, `text-amber-600`
+- **Evening Audit**: indigo/moon - `bg-indigo-50`, `text-indigo-600`
+- **Dichotomy**: purple/columns - `bg-purple-50`, `text-purple-600`
+- **Freeform**: slate - `bg-white`, `text-slate-800`
 
 ---
 
@@ -252,7 +252,6 @@ GOOGLE_GENAI_API_KEY=  # For future AI features
 
 **Platform**: Coolify (Docker)
 **Build**: `npm run build` produces standalone output
-**Dockerfile**: Accepts Firebase env vars as build args
 
 ```bash
 # Local development
@@ -262,60 +261,59 @@ npm run dev
 # Production build
 npm run build
 npm start
+
+# Deploy Firestore rules
+firebase deploy --only firestore:rules
 ```
 
 ---
 
-## Next To-Do's (Sprint 4: Dashboard & Insights)
+## Next To-Do's (Sprint 4: Insights & Polish)
 
-### High Priority - Dashboard Real Data
+### High Priority
 
-1. **Dashboard - Connect to Real Data**
-   - [ ] Streak calculation from actual entries (service exists, needs UI connection)
-   - [ ] Mood trend from last 5 entries (service exists, needs UI connection)
-   - [ ] Recent entries from Firestore
-   - [ ] Pillar progress calculation based on entry pillars
+1. **Insights Page Implementation**
+   - [ ] Weekly summary view with charts
+   - [ ] Monthly mood chart (line or bar)
+   - [ ] Pillar distribution visualization
+   - [ ] Entry count statistics
+   - [ ] Streak history graph
 
 2. **Daily Quote System**
-   - [ ] Create quotes collection in Firestore
-   - [ ] Seed initial Stoic quotes (Marcus Aurelius, Seneca, Epictetus)
-   - [ ] Fetch random quote for dashboard
-   - [ ] Chad interpretation (static for now, AI later)
+   - [ ] Fetch random Stoic quote for dashboard
+   - [ ] Rotate quotes daily (not per page load)
+   - [ ] Consider using pillar track quotes
 
-3. **Insights Page**
-   - [ ] Weekly summary view
-   - [ ] Monthly mood chart (line or bar)
-   - [ ] Pillar distribution pie chart
-   - [ ] Entry count statistics
-   - [ ] Streak history
-
-### Medium Priority - Polish & UX
-
-4. **Search & Filters Enhancements**
-   - [x] Search entries by title/content/tags (basic implemented)
+3. **Search & Filter Enhancements**
    - [ ] Filter by mood dropdown
    - [ ] Filter by pillar dropdown
    - [ ] Filter by date range picker
-   - [ ] Filter by template type
 
-5. **Settings Enhancements**
-   - [ ] Update profile (display name, photo upload)
-   - [ ] Notification preferences (UI ready, needs backend)
+### Medium Priority
+
+4. **Settings Enhancements**
+   - [ ] Update display name
+   - [ ] Photo upload
    - [ ] Export data feature (JSON download)
    - [ ] Delete account with confirmation
 
-6. **Mobile Responsiveness**
+5. **Mobile Responsiveness**
    - [ ] Test all views on mobile
-   - [ ] Fix any layout issues
+   - [ ] Fix sticky toolbar on mobile
    - [ ] Ensure touch targets are adequate
+
+6. **Polish & UX**
+   - [ ] Add error boundaries
+   - [ ] Toast notifications (install sonner)
+   - [ ] Keyboard shortcuts in editor
+   - [ ] Auto-focus on first empty block
 
 ### Future Sprints (Backlog)
 
 7. **AI Integration (Sprint 5)**
-   - [ ] Daily prompt generation (batch job via Cloud Functions)
+   - [ ] Daily prompt generation via Cloud Functions
    - [ ] Weekly reflection summaries
    - [ ] Chad insights on entries
-   - [ ] Prompt remixing based on user context
 
 8. **Notifications**
    - [ ] Email reminders (Firebase Functions)
@@ -324,41 +322,32 @@ npm start
 9. **Payments (Sprint 6)**
    - [ ] Stripe integration
    - [ ] Pro subscription features
-   - [ ] Trial management
 
 10. **Landing Page**
     - [ ] Marketing landing page at `/`
     - [ ] Feature highlights
     - [ ] Pricing section
-    - [ ] CTA to signup
 
 ---
 
 ## Known Issues
 
-1. **Firestore Rules**: Security rules created but need to be deployed via `firebase deploy --only firestore:rules`
-2. **Dashboard Static Data**: Dashboard still shows mock data - needs Sprint 4 implementation
-3. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected to UI
-4. **No Error Boundaries**: App crashes on errors - add error boundaries
-5. **Quotes Collection**: Need to seed Firestore with initial Stoic quotes
+1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules`
+2. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected
+3. **No Error Boundaries**: App crashes on errors - add error boundaries
+4. **No Toast Library**: Using browser alerts - should add sonner
+5. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
 
 ---
 
 ## Git Workflow
 
-**Current Branch**: `claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA`
-
-**Push Command**:
-```bash
-git push -u origin claude/<feature>-<session-id>
-```
+**Current Branch**: `claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3`
 
 **Recent Commits**:
-- Add functional list/grid/calendar views to journal page
-- Update dashboard with dynamic greeting, line chart, and pillars
-- Change Quick Entry button to stoic-dark navy
-- Add speech bubble styling for Chad on dashboard
-- Update pillars and remove ChadGPT chat feature
+- Implement block-based journal editor with pillar track integration
+- Connect dashboard to real Firestore data
+- Fix onboarding completion navigation race condition
 
 ---
 
@@ -366,7 +355,7 @@ git push -u origin claude/<feature>-<session-id>
 
 ```bash
 # 1. Ensure on correct branch
-git checkout claude/integrate-nextjs-ui-01LgHujJM9s2i7riTW3umVKA
+git checkout claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3
 
 # 2. Install dependencies
 npm install
@@ -377,11 +366,14 @@ npm run dev
 # 4. View app at http://localhost:3000
 ```
 
-**Test Auth Flow**:
-1. Go to `/auth/signup`
-2. Create account
-3. Complete onboarding
-4. Land on `/dashboard`
+**Test Journal Flow**:
+1. Go to `/journal/new`
+2. Select a pillar (Money/Ego/Relationships/Discipline)
+3. View daily prompt with Stoic quote
+4. Add blocks using toolbar (Sun/Moon/Columns)
+5. Write content, select mood
+6. Save - redirects to `/journal`
+7. Return to `/journal/new` same day - loads existing entry for editing
 
 ---
 
@@ -394,4 +386,4 @@ npm run dev
 
 ---
 
-**Status**: Sprint 3 Complete - Ready for Sprint 4 (Dashboard & Insights)
+**Status**: Sprint 3.5 Complete - Ready for Sprint 4 (Insights & Polish)

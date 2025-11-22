@@ -277,3 +277,55 @@ export async function getMoodTrend(
     })
     .reverse(); // Chronological order
 }
+
+/**
+ * Get entry for a specific date (one entry per day)
+ */
+export async function getEntryByDate(
+  userId: string,
+  date: string // YYYY-MM-DD format
+): Promise<JournalEntry | null> {
+  const q = query(
+    collection(db, ENTRIES_COLLECTION),
+    where('userId', '==', userId),
+    where('date', '==', date),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const doc = snapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as JournalEntry;
+}
+
+/**
+ * Get user's progress in a specific pillar track
+ */
+export async function getPillarProgress(
+  userId: string,
+  pillar: string
+): Promise<number> {
+  const q = query(
+    collection(db, ENTRIES_COLLECTION),
+    where('userId', '==', userId),
+    where('pillar', '==', pillar),
+    orderBy('dayInTrack', 'desc'),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  const data = snapshot.docs[0].data();
+  return data.dayInTrack as number;
+}

@@ -31,6 +31,12 @@ service cloud.firestore {
       allow write: if false; // Admin only via Firebase Console
     }
 
+    // Pillar tracks - readable by all authenticated users (public content)
+    match /pillarTracks/{pillarId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Admin only via Firebase Console or seeding script
+    }
+
     // Default deny all
     match /{document=**} {
       allow read, write: if false;
