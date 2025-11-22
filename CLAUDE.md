@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-11-22
 **Current Phase**: MVP Development
-**Active Branch**: `claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3`
+**Active Branch**: `claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7`
 
 ---
 
@@ -18,6 +18,7 @@
 - **AI**: Genkit (installed, flows created but not active)
 - **State**: Zustand (installed, not yet configured)
 - **Data Fetching**: React Query (installed, not yet configured)
+- **Toasts**: Sonner (installed)
 - **Icons**: Lucide React
 - **Deployment**: Docker + Coolify
 
@@ -95,10 +96,43 @@
 - ✅ **Save default layout** - users can save preferred block arrangement
 - ✅ **Track data fallback** - loads from `/public/data/` JSON files
 
+### ✅ Sprint 4: Insights & Polish (COMPLETE)
+
+**Completed**: 2025-11-22
+
+**What Was Built:**
+- ✅ **Daily Quote System** (`src/lib/dailyQuote.ts`):
+  - Deterministic daily quote based on day of year
+  - Cycles through 120 quotes (4 pillars × 30 days)
+  - Same quote for all users on the same day
+  - Includes ChadGPT "bro translation"
+- ✅ **Insights Page** (real Firestore data):
+  - Stats cards: streak, total entries, avg mood, top pillar
+  - 30-day mood heatmap with color coding
+  - Pillar distribution donut chart
+  - Weekly summary with personalized stats
+  - Empty states when no data
+- ✅ **Journal Filters**:
+  - Mood filter dropdown (Good/Okay/Bad - matches 3 smiley system)
+  - Pillar filter dropdown
+  - Clear filters button
+  - Shows filtered count
+- ✅ **Toast Notifications**: Sonner installed and configured
+- ✅ **Error Boundaries**: `src/components/ErrorBoundary.tsx`
+- ✅ **UI Polish**:
+  - Fixed mobile header icon sizing with hover states
+  - Fixed mood trend chart empty state
+  - Fixed calendar view double scrollbar
+  - Fixed ChadGPT speech bubble rounded corners
+
 **New Files:**
-- `src/lib/firebase/pillarTracks.ts` - Pillar track service with fallback
-- `public/data/*.json` - 30-day track data for each pillar
-- `scripts/seedPillarTracks.ts` - Seeding script for Firestore
+- `src/lib/dailyQuote.ts` - Daily quote utility
+- `src/components/ErrorBoundary.tsx` - Error boundary component
+
+**New Journal Service Functions:**
+- `getEntriesForLastNDays()` - Get entries for insights
+- `getPillarDistribution()` - Get pillar breakdown
+- `getMoodDataForDays()` - Get mood data for heatmap
 
 ---
 
@@ -111,11 +145,11 @@
 | `/auth/signup` | Registration page | No |
 | `/auth/reset-password` | Password reset | No |
 | `/onboarding` | 4-step onboarding flow | Yes |
-| `/dashboard` | Main dashboard | Yes |
-| `/journal` | Journal entries list/grid/calendar | Yes |
+| `/dashboard` | Main dashboard with daily quote | Yes |
+| `/journal` | Journal entries list/grid/calendar with filters | Yes |
 | `/journal/new` | Block-based journal editor | Yes |
 | `/journal/[id]` | View/edit single entry | Yes |
-| `/insights` | Analytics & insights (placeholder) | Yes |
+| `/insights` | Analytics & insights (real data) | Yes |
 | `/settings` | User settings | Yes |
 
 ---
@@ -129,16 +163,21 @@
 - `src/lib/firebase/firestore.ts` - Firestore instance
 
 ### Journal System
-- `src/lib/firebase/journal.ts` - Journal CRUD service
+- `src/lib/firebase/journal.ts` - Journal CRUD + insights queries
 - `src/lib/firebase/pillarTracks.ts` - Pillar track service
 - `src/lib/types.ts` - TypeScript types including block-based entry model
 
+### Utilities
+- `src/lib/dailyQuote.ts` - Daily quote system (deterministic by day of year)
+- `src/components/ErrorBoundary.tsx` - Error boundary component
+
 ### Pages
-- `src/app/(app)/layout.tsx` - Protected app layout with sidebar
-- `src/app/(app)/dashboard/page.tsx` - Dashboard (real Firestore data)
-- `src/app/(app)/journal/page.tsx` - Journal list/grid/calendar views
+- `src/app/(app)/layout.tsx` - Protected app layout with sidebar + error boundary
+- `src/app/(app)/dashboard/page.tsx` - Dashboard with daily quote, mood trend, recent entries
+- `src/app/(app)/journal/page.tsx` - Journal list/grid/calendar with mood & pillar filters
 - `src/app/(app)/journal/new/page.tsx` - Block-based editor with sticky toolbar
 - `src/app/(app)/journal/[id]/page.tsx` - View/edit single entry
+- `src/app/(app)/insights/page.tsx` - Analytics with real Firestore data
 - `src/app/(app)/settings/page.tsx` - Settings
 - `src/app/onboarding/page.tsx` - 4-step onboarding
 
@@ -165,7 +204,7 @@ interface JournalEntry {
   pillar: Pillar;            // money | ego | relationships | discipline
   dayInTrack: number;        // which day (1-30) in the pillar track
   blocks: EntryBlock[];      // array of content blocks
-  mood: MoodScore | null;    // 1-5
+  mood: MoodScore | null;    // 1-5 (displayed as 3 faces: bad=1-2, okay=3, good=4-5)
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -231,6 +270,11 @@ interface UserProfile {
 - **Dichotomy**: purple/columns - `bg-purple-50`, `text-purple-600`
 - **Freeform**: slate - `bg-white`, `text-slate-800`
 
+### Mood Display (3-tier system)
+- **Good** (mood 4-5): Green smile icon
+- **Okay** (mood 3): Amber meh icon
+- **Bad** (mood 1-2): Red frown icon
+
 ---
 
 ## Environment Variables
@@ -268,65 +312,46 @@ firebase deploy --only firestore:rules
 
 ---
 
-## Next To-Do's (Sprint 4: Insights & Polish)
+## Next To-Do's (Sprint 5: AI & Settings)
 
 ### High Priority
 
-1. **Insights Page Implementation**
-   - [ ] Weekly summary view with charts
-   - [ ] Monthly mood chart (line or bar)
-   - [ ] Pillar distribution visualization
-   - [ ] Entry count statistics
-   - [ ] Streak history graph
-
-2. **Daily Quote System**
-   - [ ] Fetch random Stoic quote for dashboard
-   - [ ] Rotate quotes daily (not per page load)
-   - [ ] Consider using pillar track quotes
-
-3. **Search & Filter Enhancements**
-   - [ ] Filter by mood dropdown
-   - [ ] Filter by pillar dropdown
-   - [ ] Filter by date range picker
-
-### Medium Priority
-
-4. **Settings Enhancements**
+1. **Settings Enhancements**
    - [ ] Update display name
    - [ ] Photo upload
    - [ ] Export data feature (JSON download)
    - [ ] Delete account with confirmation
 
-5. **Mobile Responsiveness**
+2. **Mobile Responsiveness**
    - [ ] Test all views on mobile
    - [ ] Fix sticky toolbar on mobile
    - [ ] Ensure touch targets are adequate
 
-6. **Polish & UX**
-   - [ ] Add error boundaries
-   - [ ] Toast notifications (install sonner)
+3. **AI Integration**
+   - [ ] Daily prompt generation via Cloud Functions
+   - [ ] Weekly reflection summaries
+   - [ ] Chad insights on entries
+
+### Medium Priority
+
+4. **Notifications**
+   - [ ] Email reminders (Firebase Functions)
+   - [ ] Browser push notifications
+
+5. **Polish & UX**
    - [ ] Keyboard shortcuts in editor
    - [ ] Auto-focus on first empty block
 
 ### Future Sprints (Backlog)
 
-7. **AI Integration (Sprint 5)**
-   - [ ] Daily prompt generation via Cloud Functions
-   - [ ] Weekly reflection summaries
-   - [ ] Chad insights on entries
-
-8. **Notifications**
-   - [ ] Email reminders (Firebase Functions)
-   - [ ] Browser push notifications
-
-9. **Payments (Sprint 6)**
+6. **Payments (Sprint 6)**
    - [ ] Stripe integration
    - [ ] Pro subscription features
 
-10. **Landing Page**
-    - [ ] Marketing landing page at `/`
-    - [ ] Feature highlights
-    - [ ] Pricing section
+7. **Landing Page**
+   - [ ] Marketing landing page at `/`
+   - [ ] Feature highlights
+   - [ ] Pricing section
 
 ---
 
@@ -334,20 +359,18 @@ firebase deploy --only firestore:rules
 
 1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules`
 2. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected
-3. **No Error Boundaries**: App crashes on errors - add error boundaries
-4. **No Toast Library**: Using browser alerts - should add sonner
-5. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
+3. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
 
 ---
 
 ## Git Workflow
 
-**Current Branch**: `claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3`
+**Current Branch**: `claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7`
 
 **Recent Commits**:
+- UI fixes and polish
+- Sprint 4: Insights & Polish
 - Implement block-based journal editor with pillar track integration
-- Connect dashboard to real Firestore data
-- Fix onboarding completion navigation race condition
 
 ---
 
@@ -355,7 +378,7 @@ firebase deploy --only firestore:rules
 
 ```bash
 # 1. Ensure on correct branch
-git checkout claude/sprint-3-development-01BSUjSYkKtMur66G5oE5tq3
+git checkout claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7
 
 # 2. Install dependencies
 npm install
@@ -375,6 +398,11 @@ npm run dev
 6. Save - redirects to `/journal`
 7. Return to `/journal/new` same day - loads existing entry for editing
 
+**Test Insights Flow**:
+1. Create a few journal entries with different pillars/moods
+2. Go to `/insights`
+3. See mood heatmap, pillar distribution, and stats
+
 ---
 
 ## Resources
@@ -386,4 +414,4 @@ npm run dev
 
 ---
 
-**Status**: Sprint 3.5 Complete - Ready for Sprint 4 (Insights & Polish)
+**Status**: Sprint 4 Complete - Ready for Sprint 5 (AI & Settings)

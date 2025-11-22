@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -18,17 +18,27 @@ import {
   User,
   Heart,
   Target,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEntries, getEntriesForMonth, getEntryCount } from '@/lib/firebase/journal';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 type ViewMode = 'list' | 'grid' | 'calendar';
+type MoodFilter = 'all' | 'good' | 'okay' | 'bad';
+type PillarFilter = 'all' | Pillar;
 
 const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string }> = {
   money: { icon: DollarSign, label: 'Money', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -55,6 +65,8 @@ const JournalListPage: React.FC = () => {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [moodFilter, setMoodFilter] = useState<MoodFilter>('all');
+  const [pillarFilter, setPillarFilter] = useState<PillarFilter>('all');
 
   // Load entries for list/grid view
   const loadEntries = useCallback(async (reset = false) => {
@@ -215,31 +227,64 @@ const JournalListPage: React.FC = () => {
     return 'Journal Entry';
   };
 
-  // Filter entries by search (searches blocks content)
-  const filteredEntries = entries.filter((entry) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+  // Check if any filters are active
+  const hasActiveFilters = moodFilter !== 'all' || pillarFilter !== 'all' || searchQuery !== '';
 
-    // Search in pillar name
-    if (entry.pillar && entry.pillar.toLowerCase().includes(query)) return true;
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setMoodFilter('all');
+    setPillarFilter('all');
+  };
 
-    // Search in blocks content
-    if (entry.blocks) {
-      for (const block of entry.blocks) {
-        if (block.content?.toLowerCase().includes(query)) return true;
-        if (block.inControl?.toLowerCase().includes(query)) return true;
-        if (block.notInControl?.toLowerCase().includes(query)) return true;
+  // Filter entries by search, mood, and pillar
+  const filteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      // Mood filter (good = 4-5, okay = 3, bad = 1-2)
+      if (moodFilter !== 'all') {
+        const mood = entry.mood;
+        if (mood === null) return false;
+
+        switch (moodFilter) {
+          case 'good': if (mood < 4) return false; break;
+          case 'okay': if (mood !== 3) return false; break;
+          case 'bad': if (mood > 2) return false; break;
+        }
       }
-    }
 
-    // Legacy: search in title, content, tags
-    const legacyEntry = entry as JournalEntry & { title?: string; content?: string; tags?: string[] };
-    if (legacyEntry.title?.toLowerCase().includes(query)) return true;
-    if (legacyEntry.content?.toLowerCase().includes(query)) return true;
-    if (legacyEntry.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+      // Pillar filter
+      if (pillarFilter !== 'all') {
+        if (entry.pillar !== pillarFilter) return false;
+      }
 
-    return false;
-  });
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+
+        // Search in pillar name
+        if (entry.pillar && entry.pillar.toLowerCase().includes(query)) return true;
+
+        // Search in blocks content
+        if (entry.blocks) {
+          for (const block of entry.blocks) {
+            if (block.content?.toLowerCase().includes(query)) return true;
+            if (block.inControl?.toLowerCase().includes(query)) return true;
+            if (block.notInControl?.toLowerCase().includes(query)) return true;
+          }
+        }
+
+        // Legacy: search in title, content, tags
+        const legacyEntry = entry as JournalEntry & { title?: string; content?: string; tags?: string[] };
+        if (legacyEntry.title?.toLowerCase().includes(query)) return true;
+        if (legacyEntry.content?.toLowerCase().includes(query)) return true;
+        if (legacyEntry.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+
+        return false;
+      }
+
+      return true;
+    });
+  }, [entries, searchQuery, moodFilter, pillarFilter]);
 
   // Render pillar badge
   const PillarBadge = ({ pillar }: { pillar?: Pillar }) => {
@@ -256,7 +301,7 @@ const JournalListPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 p-4 md:p-8 min-h-screen">
+    <div className="bg-slate-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -308,16 +353,80 @@ const JournalListPage: React.FC = () => {
               />
             </div>
             <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
-            <div className="flex gap-2 overflow-x-auto">
-              <Button variant="outline" className="bg-white">
-                All Moods <span className="ml-2 text-slate-400">▼</span>
-              </Button>
-              <Button variant="outline" className="bg-white">
-                All Pillars <span className="ml-2 text-slate-400">▼</span>
-              </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={moodFilter} onValueChange={(v) => setMoodFilter(v as MoodFilter)}>
+                <SelectTrigger className="w-[130px] bg-white">
+                  <SelectValue placeholder="All Moods" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Moods</SelectItem>
+                  <SelectItem value="good">
+                    <span className="flex items-center gap-2">
+                      <Smile size={14} className="text-emerald-500" /> Good
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="okay">
+                    <span className="flex items-center gap-2">
+                      <Meh size={14} className="text-amber-500" /> Okay
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="bad">
+                    <span className="flex items-center gap-2">
+                      <Frown size={14} className="text-red-500" /> Bad
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={pillarFilter} onValueChange={(v) => setPillarFilter(v as PillarFilter)}>
+                <SelectTrigger className="w-[150px] bg-white">
+                  <SelectValue placeholder="All Pillars" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Pillars</SelectItem>
+                  <SelectItem value="money">
+                    <span className="flex items-center gap-2">
+                      <DollarSign size={14} className="text-emerald-500" /> Money
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="ego">
+                    <span className="flex items-center gap-2">
+                      <User size={14} className="text-purple-500" /> Ego
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="relationships">
+                    <span className="flex items-center gap-2">
+                      <Heart size={14} className="text-pink-500" /> Relationships
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="discipline">
+                    <span className="flex items-center gap-2">
+                      <Target size={14} className="text-amber-500" /> Discipline
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  <X size={16} className="mr-1" /> Clear
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Filter Results Info */}
+        {hasActiveFilters && filteredEntries.length !== entries.length && (
+          <p className="text-sm text-slate-500 mb-4">
+            Showing {filteredEntries.length} of {entries.length} entries
+          </p>
+        )}
 
         {/* Loading State */}
         {isLoading && entries.length === 0 && (

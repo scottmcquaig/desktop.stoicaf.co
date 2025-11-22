@@ -17,6 +17,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuickCapture } from '@/components/QuickCapture';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
@@ -70,21 +71,28 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {/* Header for mobile only */}
           <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-20 md:hidden">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 flex items-center justify-center text-white font-bold text-sm">
-                <StoicLogo className="w-full h-full" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <StoicLogo className="w-8 h-8" />
               </div>
               <span className="font-bold text-lg text-slate-900">STOIC AF</span>
             </div>
-            <div className="flex gap-2 items-center">
-              <button onClick={() => setQuickCaptureOpen(true)} className="p-2">
-                <Search className="text-slate-600" size={24} />
+            <div className="flex gap-1 items-center">
+              <button
+                onClick={() => setQuickCaptureOpen(true)}
+                className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <Search className="text-slate-600" size={22} />
               </button>
-              <Bell className="text-slate-600" size={24} />
+              <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">
+                <Bell className="text-slate-600" size={22} />
+              </button>
             </div>
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto md:h-screen pb-20 md:pb-0">{children}</main>
+          <main className="flex-1 overflow-y-auto md:h-screen pb-20 md:pb-0">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
         </div>
 
         {/* Mobile Bottom Nav */}
