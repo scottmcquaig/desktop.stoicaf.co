@@ -86,6 +86,46 @@
 - ChadGPT chat page (cost concerns - AI features will be batch/scheduled only)
 - ChadFloatingButton component
 
+### ✅ Sprint 3: Journal Entry System (COMPLETE)
+
+**Completed**: 2025-11-22
+
+**What Was Built:**
+- ✅ Full journal CRUD with Firestore:
+  - Create new entries from `/journal/new`
+  - Read entries in list/grid/calendar views
+  - Update entries via edit mode
+  - Delete entries with confirmation dialog
+- ✅ JournalEntry data model (`src/lib/types.ts`):
+  - title, content, mood (1-5), pillar, tags, template
+  - Dichotomy template support (inControl/notInControl fields)
+  - Timestamps (createdAt, updatedAt)
+- ✅ Journal service (`src/lib/firebase/journal.ts`):
+  - Pagination with cursor-based loading
+  - Month-based queries for calendar view
+  - Streak calculation
+  - Entry count
+- ✅ Entry editor features:
+  - Template selector (Dichotomy, Morning Intent, Evening Audit, Free Form)
+  - Mood selector (sad/neutral/happy)
+  - Pillar tags (Money, Ego, Relationships, Discipline)
+  - Custom tags with hashtags
+  - Word count
+  - Auto-save drafts to localStorage
+- ✅ Journal list improvements:
+  - Search entries by title/content/tags
+  - Empty state with CTA
+  - Loading states
+  - "Load more" pagination
+- ✅ View/Edit entry page (`/journal/[id]`):
+  - Full entry display with date/time
+  - Edit mode with all fields
+  - Delete with confirmation dialog
+- ✅ Firestore security rules (`firestore.rules`):
+  - Users can only access their own entries
+  - Proper validation for create/update/delete
+- ✅ Firestore indexes (`firestore.indexes.json`)
+
 ---
 
 ## Current App Routes
@@ -100,6 +140,7 @@
 | `/dashboard` | Main dashboard | Yes |
 | `/journal` | Journal entries list/grid/calendar | Yes |
 | `/journal/new` | New journal entry editor | Yes |
+| `/journal/[id]` | View/edit single entry | Yes |
 | `/insights` | Analytics & insights | Yes |
 | `/settings` | User settings | Yes |
 
@@ -112,12 +153,14 @@
 - `src/lib/firebase/config.ts` - Firebase configuration
 - `src/lib/firebase/auth.ts` - Firebase auth instance
 - `src/lib/firebase/firestore.ts` - Firestore instance
+- `src/lib/firebase/journal.ts` - Journal CRUD service
 
 ### Pages
 - `src/app/(app)/layout.tsx` - Protected app layout with sidebar
 - `src/app/(app)/dashboard/page.tsx` - Dashboard
 - `src/app/(app)/journal/page.tsx` - Journal with list/grid/calendar views
 - `src/app/(app)/journal/new/page.tsx` - Entry editor
+- `src/app/(app)/journal/[id]/page.tsx` - View/edit single entry
 - `src/app/(app)/settings/page.tsx` - Settings
 - `src/app/onboarding/page.tsx` - 4-step onboarding
 
@@ -133,6 +176,9 @@
 - `next.config.ts` - Next.js config with `output: 'standalone'`
 - `tailwind.config.ts` - Design tokens
 - `.env.example` - Environment variable template
+- `firebase.json` - Firebase CLI configuration
+- `firestore.rules` - Firestore security rules
+- `firestore.indexes.json` - Firestore composite indexes
 
 ---
 
@@ -220,94 +266,67 @@ npm start
 
 ---
 
-## Next To-Do's (Sprint 3: Journal System)
+## Next To-Do's (Sprint 4: Dashboard & Insights)
 
-### High Priority - Core Functionality
+### High Priority - Dashboard Real Data
 
-1. **Journal Entry CRUD**
-   - [ ] Create Firestore collection `entries/{entryId}`
-   - [ ] Save new entries to Firestore from editor
-   - [ ] Load entries from Firestore in journal list
-   - [ ] Edit existing entries
-   - [ ] Delete entries with confirmation
-   - [ ] Entry data model: `{ userId, title, content, mood, pillar, tags, template, createdAt, updatedAt }`
-
-2. **Entry Editor Enhancements**
-   - [ ] Auto-save draft to localStorage
-   - [ ] Mood selector (1-5 scale with emoji icons)
-   - [ ] Pillar tag selector
-   - [ ] Custom tags input
-   - [ ] Template selector (Morning Intent, Evening Audit, Free-form)
-   - [ ] Rich text or markdown support
-
-3. **Journal Views - Connect to Real Data**
-   - [ ] List view loads from Firestore
-   - [ ] Grid view loads from Firestore
-   - [ ] Calendar view shows actual entry dates
-   - [ ] Click entry to view/edit
-   - [ ] Pagination for list view
-
-4. **Firestore Security Rules**
-   - [ ] Deploy rules to restrict user access to own data
-   - [ ] Test rules with Firebase emulator
-
-### Medium Priority - Dashboard & Insights
-
-5. **Dashboard - Real Data**
-   - [ ] Streak calculation from actual entries
-   - [ ] Mood trend from last 5 entries
+1. **Dashboard - Connect to Real Data**
+   - [ ] Streak calculation from actual entries (service exists, needs UI connection)
+   - [ ] Mood trend from last 5 entries (service exists, needs UI connection)
    - [ ] Recent entries from Firestore
-   - [ ] Pillar progress calculation
+   - [ ] Pillar progress calculation based on entry pillars
 
-6. **Daily Quote System**
+2. **Daily Quote System**
    - [ ] Create quotes collection in Firestore
+   - [ ] Seed initial Stoic quotes (Marcus Aurelius, Seneca, Epictetus)
    - [ ] Fetch random quote for dashboard
    - [ ] Chad interpretation (static for now, AI later)
 
-7. **Insights Page**
+3. **Insights Page**
    - [ ] Weekly summary view
-   - [ ] Monthly mood chart
+   - [ ] Monthly mood chart (line or bar)
    - [ ] Pillar distribution pie chart
    - [ ] Entry count statistics
+   - [ ] Streak history
 
-### Lower Priority - Polish & UX
+### Medium Priority - Polish & UX
 
-8. **Search & Filters**
-   - [ ] Search entries by title/content
-   - [ ] Filter by mood
-   - [ ] Filter by pillar
-   - [ ] Filter by date range
+4. **Search & Filters Enhancements**
+   - [x] Search entries by title/content/tags (basic implemented)
+   - [ ] Filter by mood dropdown
+   - [ ] Filter by pillar dropdown
+   - [ ] Filter by date range picker
    - [ ] Filter by template type
 
-9. **Settings Enhancements**
-   - [ ] Update profile (display name, photo)
+5. **Settings Enhancements**
+   - [ ] Update profile (display name, photo upload)
    - [ ] Notification preferences (UI ready, needs backend)
-   - [ ] Export data feature
-   - [ ] Delete account
+   - [ ] Export data feature (JSON download)
+   - [ ] Delete account with confirmation
 
-10. **Mobile Responsiveness**
-    - [ ] Test all views on mobile
-    - [ ] Fix any layout issues
-    - [ ] Ensure touch targets are adequate
+6. **Mobile Responsiveness**
+   - [ ] Test all views on mobile
+   - [ ] Fix any layout issues
+   - [ ] Ensure touch targets are adequate
 
 ### Future Sprints (Backlog)
 
-11. **AI Integration (Sprint 4)**
-    - [ ] Daily prompt generation (batch job)
-    - [ ] Weekly reflection summaries
-    - [ ] Chad insights on entries
-    - [ ] Prompt remixing based on user context
+7. **AI Integration (Sprint 5)**
+   - [ ] Daily prompt generation (batch job via Cloud Functions)
+   - [ ] Weekly reflection summaries
+   - [ ] Chad insights on entries
+   - [ ] Prompt remixing based on user context
 
-12. **Notifications**
-    - [ ] Email reminders (Firebase Functions)
-    - [ ] Browser push notifications
+8. **Notifications**
+   - [ ] Email reminders (Firebase Functions)
+   - [ ] Browser push notifications
 
-13. **Payments (Sprint 5)**
-    - [ ] Stripe integration
-    - [ ] Pro subscription features
-    - [ ] Trial management
+9. **Payments (Sprint 6)**
+   - [ ] Stripe integration
+   - [ ] Pro subscription features
+   - [ ] Trial management
 
-14. **Landing Page**
+10. **Landing Page**
     - [ ] Marketing landing page at `/`
     - [ ] Feature highlights
     - [ ] Pricing section
@@ -317,11 +336,11 @@ npm start
 
 ## Known Issues
 
-1. **Firestore Rules**: Currently using permissive test rules - need to deploy proper security rules before production
-2. **Static Data**: Dashboard, journal entries, quotes are all mock data - need Firestore integration
+1. **Firestore Rules**: Security rules created but need to be deployed via `firebase deploy --only firestore:rules`
+2. **Dashboard Static Data**: Dashboard still shows mock data - needs Sprint 4 implementation
 3. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected to UI
 4. **No Error Boundaries**: App crashes on errors - add error boundaries
-5. **No Loading States**: Some pages need skeleton loaders
+5. **Quotes Collection**: Need to seed Firestore with initial Stoic quotes
 
 ---
 
@@ -375,4 +394,4 @@ npm run dev
 
 ---
 
-**Status**: Ready for Sprint 3 - Journal Entry System
+**Status**: Sprint 3 Complete - Ready for Sprint 4 (Dashboard & Insights)

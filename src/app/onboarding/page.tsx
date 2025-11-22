@@ -130,10 +130,12 @@ export default function OnboardingPage() {
         browserNotifications,
         onboardingComplete: true,
       });
-      router.push('/dashboard');
+      // Small delay to ensure profile state is updated before navigation
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      router.replace('/dashboard');
     } catch (error) {
       console.error('Failed to save onboarding data:', error);
-    } finally {
+      alert('Something went wrong. Please try again.');
       setLoading(false);
     }
   };
