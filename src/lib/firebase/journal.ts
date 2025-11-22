@@ -173,6 +173,16 @@ export async function getRecentEntries(
 }
 
 /**
+ * Get recent entries for pillar progress (larger window)
+ */
+export async function getRecentEntriesForProgress(
+  userId: string,
+  count: number = 30
+): Promise<JournalEntry[]> {
+  return getRecentEntries(userId, count);
+}
+
+/**
  * Get entry count for a user
  */
 export async function getEntryCount(userId: string): Promise<number> {

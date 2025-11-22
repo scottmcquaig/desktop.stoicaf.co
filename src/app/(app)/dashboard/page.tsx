@@ -16,7 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
-import { calculateStreak, getRecentEntries, getEntryCount } from '@/lib/firebase/journal';
+import {
+  calculateStreak,
+  getRecentEntries,
+  getRecentEntriesForProgress,
+  getEntryCount,
+} from '@/lib/firebase/journal';
 import { getDailyQuote } from '@/lib/dailyQuote';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 
@@ -41,23 +46,26 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dailyQuote, setDailyQuote] = useState<DailyQuoteData | null>(null);
 
+  const PROGRESS_WINDOW = 30;
+
   // Load dashboard data
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
 
     setIsLoading(true);
     try {
-      const [streakData, entries, count] = await Promise.all([
+      const [streakData, entries, count, progressEntries] = await Promise.all([
         calculateStreak(user.uid),
         getRecentEntries(user.uid, 5),
         getEntryCount(user.uid),
+        getRecentEntriesForProgress(user.uid, PROGRESS_WINDOW),
       ]);
 
       setStreak(streakData);
       setRecentEntries(entries);
       setEntryCount(count);
 
-      // Calculate pillar progress from recent entries (last 30 entries)
+      // Calculate pillar progress from the most recent 30 entries
       const pillarCounts: Record<Pillar, number> = {
         money: 0,
         ego: 0,
@@ -65,19 +73,19 @@ const DashboardPage: React.FC = () => {
         discipline: 0,
       };
 
-      entries.forEach((entry) => {
+      progressEntries.forEach((entry) => {
         if (entry.pillar) {
           pillarCounts[entry.pillar]++;
         }
       });
 
-      // Convert to percentages (based on having at least 1 entry per pillar being "progress")
-      const total = Object.values(pillarCounts).reduce((a, b) => a + b, 0) || 1;
+      // Convert to percentages based on the sampled window so values remain within 0-100
+      const totalEntries = progressEntries.length || 1;
       setPillarProgress({
-        money: Math.min(100, Math.round((pillarCounts.money / total) * 100 * 4)),
-        ego: Math.min(100, Math.round((pillarCounts.ego / total) * 100 * 4)),
-        relationships: Math.min(100, Math.round((pillarCounts.relationships / total) * 100 * 4)),
-        discipline: Math.min(100, Math.round((pillarCounts.discipline / total) * 100 * 4)),
+        money: Math.round((pillarCounts.money / totalEntries) * 100),
+        ego: Math.round((pillarCounts.ego / totalEntries) * 100),
+        relationships: Math.round((pillarCounts.relationships / totalEntries) * 100),
+        discipline: Math.round((pillarCounts.discipline / totalEntries) * 100),
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
