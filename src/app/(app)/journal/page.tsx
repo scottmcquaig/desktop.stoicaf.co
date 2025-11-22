@@ -1,25 +1,117 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Smile, Meh, ChevronLeft, ChevronRight, List, Grid, Calendar } from 'lucide-react';
+import { Plus, Search, Smile, Meh, Frown, ChevronLeft, ChevronRight, List, Grid, Calendar, Loader2, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { getEntries, getEntriesForMonth, getEntryCount } from '@/lib/firebase/journal';
+import type { JournalEntry, MoodScore, JournalTemplate } from '@/lib/types';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 type ViewMode = 'list' | 'grid' | 'calendar';
 
-// Sample entries data
-const entriesData = [
-  { id: 1, date: 'Nov 16, 2025', dayNum: 16, type: 'Morning Intent', mood: 'good', title: 'Focusing on what I can control today', excerpt: 'Today started chaotic but I managed to pause and breathe before responding to the email. The dichotomy of control really helped when...', tags: ['#work', '#patience'] },
-  { id: 2, date: 'Nov 15, 2025', dayNum: 15, type: 'Evening Audit', mood: 'neutral', title: 'Reflecting on the argument with Dave', excerpt: 'Had a difficult conversation but stayed calm. Need to remember that I can only control my own reactions...', tags: ['#relationships', '#discipline'] },
-  { id: 3, date: 'Nov 14, 2025', dayNum: 14, type: 'Morning Intent', mood: 'good', title: 'Setting intentions for the week', excerpt: 'This week I want to focus on being present in conversations and not checking my phone...', tags: ['#mindfulness'] },
-  { id: 4, date: 'Nov 13, 2025', dayNum: 13, type: 'Evening Audit', mood: 'good', title: 'Grateful for small wins today', excerpt: 'Finished the project ahead of deadline. Took time to appreciate the accomplishment before moving on...', tags: ['#gratitude', '#work'] },
-];
+const TEMPLATE_LABELS: Record<JournalTemplate, string> = {
+  'morning-intent': 'Morning Intent',
+  'evening-audit': 'Evening Audit',
+  'dichotomy': 'Dichotomy of Control',
+  'free-form': 'Free Form',
+};
+
+const TEMPLATE_COLORS: Record<JournalTemplate, string> = {
+  'morning-intent': 'bg-sky-100 text-primary border-sky-200',
+  'evening-audit': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'dichotomy': 'bg-purple-100 text-purple-700 border-purple-200',
+  'free-form': 'bg-slate-100 text-slate-700 border-slate-200',
+};
+
+const MoodIcon = ({ mood }: { mood: MoodScore | null }) => {
+  if (!mood) return null;
+  if (mood <= 2) return <Frown size={18} className="text-red-500" />;
+  if (mood <= 3) return <Meh size={18} className="text-amber-500" />;
+  return <Smile size={18} className="text-emerald-500" />;
+};
 
 const JournalListPage: React.FC = () => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 10)); // November 2025
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [calendarEntries, setCalendarEntries] = useState<JournalEntry[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Load entries for list/grid view
+  const loadEntries = useCallback(async (reset = false) => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const result = await getEntries(user.uid, {
+        pageSize: 10,
+        lastDoc: reset ? undefined : lastDoc ?? undefined,
+      });
+
+      if (reset) {
+        setEntries(result.entries);
+      } else {
+        setEntries((prev) => [...prev, ...result.entries]);
+      }
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, lastDoc]);
+
+  // Load entries for calendar view
+  const loadCalendarEntries = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const result = await getEntriesForMonth(
+        user.uid,
+        currentMonth.getFullYear(),
+        currentMonth.getMonth()
+      );
+      setCalendarEntries(result);
+    } catch (error) {
+      console.error('Error loading calendar entries:', error);
+    }
+  }, [user, currentMonth]);
+
+  // Load entry count
+  const loadCount = useCallback(async () => {
+    if (!user) return;
+    try {
+      const count = await getEntryCount(user.uid);
+      setTotalCount(count);
+    } catch (error) {
+      console.error('Error loading count:', error);
+    }
+  }, [user]);
+
+  // Initial load
+  useEffect(() => {
+    if (user) {
+      loadEntries(true);
+      loadCount();
+    }
+  }, [user]);
+
+  // Load calendar entries when month changes or view changes to calendar
+  useEffect(() => {
+    if (viewMode === 'calendar' && user) {
+      loadCalendarEntries();
+    }
+  }, [viewMode, currentMonth, user, loadCalendarEntries]);
 
   // Get days in month for calendar
   const getDaysInMonth = (date: Date) => {
@@ -34,7 +126,49 @@ const JournalListPage: React.FC = () => {
   const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   // Check if a day has an entry
-  const getEntryForDay = (day: number) => entriesData.find(e => e.dayNum === day);
+  const getEntriesForDay = (day: number) => {
+    return calendarEntries.filter((e) => {
+      const entryDate = e.createdAt.toDate();
+      return entryDate.getDate() === day;
+    });
+  };
+
+  // Format date for display
+  const formatDate = (entry: JournalEntry) => {
+    const date = entry.createdAt.toDate();
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Get last entry info
+  const getLastEntryText = () => {
+    if (entries.length === 0) return 'No entries yet';
+    const lastEntry = entries[0];
+    const date = lastEntry.createdAt.toDate();
+    const today = new Date();
+    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Last entry today';
+    if (diffDays === 1) return 'Last entry yesterday';
+    return `Last entry ${diffDays} days ago`;
+  };
+
+  // Filter entries by search
+  const filteredEntries = entries.filter((entry) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      entry.title.toLowerCase().includes(query) ||
+      entry.content.toLowerCase().includes(query) ||
+      entry.tags.some((tag) => tag.toLowerCase().includes(query))
+    );
+  });
+
+  // Get excerpt from content
+  const getExcerpt = (entry: JournalEntry) => {
+    const text = entry.content || entry.inControl || entry.notInControl || '';
+    if (text.length <= 150) return text;
+    return text.slice(0, 147) + '...';
+  };
 
   return (
     <div className="bg-slate-50 p-4 md:p-8 min-h-screen">
@@ -42,7 +176,9 @@ const JournalListPage: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Your Journal</h1>
-            <p className="text-slate-500">47 entries • Last entry yesterday</p>
+            <p className="text-slate-500">
+              {totalCount} {totalCount === 1 ? 'entry' : 'entries'} • {getLastEntryText()}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="bg-white border border-slate-200 rounded-lg p-1.5 flex gap-1">
@@ -78,7 +214,13 @@ const JournalListPage: React.FC = () => {
           <CardContent className="p-4 flex flex-wrap gap-4 items-center">
             <div className="relative flex-grow md:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <Input type="text" placeholder="Search entries..." className="w-full pl-10 bg-slate-50 border-slate-200" />
+              <Input
+                type="text"
+                placeholder="Search entries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 bg-slate-50 border-slate-200"
+              />
             </div>
             <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
             <div className="flex gap-2 overflow-x-auto">
@@ -95,100 +237,138 @@ const JournalListPage: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Loading State */}
+        {isLoading && entries.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-slate-500">Loading your entries...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && entries.length === 0 && (
+          <Card className="py-16">
+            <CardContent className="flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                <BookOpen size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">No entries yet</h3>
+              <p className="text-slate-500 mb-6 max-w-md">
+                Start your Stoic journey by writing your first journal entry. Reflect on what you can control and build emotional resilience.
+              </p>
+              <Button asChild>
+                <Link href="/journal/new" className="flex items-center gap-2">
+                  <Plus size={18} /> Write Your First Entry
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* List View */}
-        {viewMode === 'list' && (
+        {viewMode === 'list' && !isLoading && entries.length > 0 && (
           <>
             <div className="space-y-4">
-              {entriesData.map((entry) => (
-                <Card key={entry.id} className="hover:border-primary/50 transition-all group cursor-pointer">
-                  <CardContent className="p-5 flex justify-between items-start">
-                    <div className="flex-grow">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                          {entry.date}
-                        </span>
-                        <Badge variant="secondary" className={entry.type === 'Morning Intent' ? 'bg-sky-100 text-primary border-sky-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}>
-                          {entry.type}
-                        </Badge>
-                        <span className="text-lg">
-                          {entry.mood === 'neutral' ? (
-                            <Meh size={18} className="text-amber-500" />
-                          ) : (
-                            <Smile size={18} className="text-emerald-500" />
-                          )}
-                        </span>
+              {filteredEntries.map((entry) => (
+                <Link key={entry.id} href={`/journal/${entry.id}`}>
+                  <Card className="hover:border-primary/50 transition-all group cursor-pointer">
+                    <CardContent className="p-5 flex justify-between items-start">
+                      <div className="flex-grow">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                            {formatDate(entry)}
+                          </span>
+                          <Badge variant="secondary" className={TEMPLATE_COLORS[entry.template]}>
+                            {TEMPLATE_LABELS[entry.template]}
+                          </Badge>
+                          <span className="text-lg">
+                            <MoodIcon mood={entry.mood} />
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors">
+                          {entry.title}
+                        </h3>
+                        <p className="text-slate-600 text-sm line-clamp-2 mb-3">
+                          {getExcerpt(entry)}
+                        </p>
+                        <div className="flex gap-2">
+                          {entry.tags.map((tag) => (
+                            <Badge key={tag} variant="secondary" className="font-normal border-0">{tag}</Badge>
+                          ))}
+                        </div>
                       </div>
-                      <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors">
-                        {entry.title}
-                      </h3>
-                      <p className="text-slate-600 text-sm line-clamp-2 mb-3">
-                        {entry.excerpt}
-                      </p>
-                      <div className="flex gap-2">
-                        {entry.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="font-normal border-0">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
 
-            <div className="flex justify-center mt-8 gap-2">
-              <Button variant="outline" size="icon" disabled>
-                <ChevronLeft size={18} />
-              </Button>
-              <Button variant="default" size="icon" className="bg-slate-900 text-white">
-                1
-              </Button>
-              <Button variant="outline" size="icon">
-                2
-              </Button>
-              <Button variant="outline" size="icon">
-                3
-              </Button>
-              <Button variant="outline" size="icon">
-                <ChevronRight size={18} />
-              </Button>
-            </div>
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => loadEntries(false)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load More'
+                  )}
+                </Button>
+              </div>
+            )}
           </>
         )}
 
         {/* Grid View */}
-        {viewMode === 'grid' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {entriesData.map((entry) => (
-              <Card key={entry.id} className="hover:border-primary/50 transition-all group cursor-pointer">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                      {entry.date}
-                    </span>
-                    {entry.mood === 'neutral' ? (
-                      <Meh size={18} className="text-amber-500" />
-                    ) : (
-                      <Smile size={18} className="text-emerald-500" />
-                    )}
-                  </div>
-                  <Badge variant="secondary" className={`mb-3 ${entry.type === 'Morning Intent' ? 'bg-sky-100 text-primary border-sky-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
-                    {entry.type}
-                  </Badge>
-                  <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                    {entry.title}
-                  </h3>
-                  <p className="text-slate-600 text-sm line-clamp-3 mb-3">
-                    {entry.excerpt}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {entry.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="font-normal border-0 text-xs">{tag}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {viewMode === 'grid' && !isLoading && entries.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredEntries.map((entry) => (
+                <Link key={entry.id} href={`/journal/${entry.id}`}>
+                  <Card className="hover:border-primary/50 transition-all group cursor-pointer h-full">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                          {formatDate(entry)}
+                        </span>
+                        <MoodIcon mood={entry.mood} />
+                      </div>
+                      <Badge variant="secondary" className={`mb-3 ${TEMPLATE_COLORS[entry.template]}`}>
+                        {TEMPLATE_LABELS[entry.template]}
+                      </Badge>
+                      <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                        {entry.title}
+                      </h3>
+                      <p className="text-slate-600 text-sm line-clamp-3 mb-3">
+                        {getExcerpt(entry)}
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {entry.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="font-normal border-0 text-xs">{tag}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => loadEntries(false)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Calendar View */}
@@ -231,31 +411,41 @@ const JournalListPage: React.FC = () => {
                 {/* Days of the month */}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const entry = getEntryForDay(day);
-                  const isToday = day === 22; // Simulating today as Nov 22
+                  const dayEntries = getEntriesForDay(day);
+                  const hasEntry = dayEntries.length > 0;
+                  const today = new Date();
+                  const isToday =
+                    day === today.getDate() &&
+                    currentMonth.getMonth() === today.getMonth() &&
+                    currentMonth.getFullYear() === today.getFullYear();
+
+                  // Get the mood of the first entry if exists
+                  const firstEntryMood = hasEntry ? dayEntries[0].mood : null;
 
                   return (
-                    <div
+                    <Link
                       key={day}
+                      href={hasEntry ? `/journal/${dayEntries[0].id}` : '/journal/new'}
                       className={`aspect-square p-1 rounded-lg transition-colors cursor-pointer ${
-                        entry ? 'bg-primary/10 hover:bg-primary/20' : 'hover:bg-slate-100'
+                        hasEntry ? 'bg-primary/10 hover:bg-primary/20' : 'hover:bg-slate-100'
                       } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                     >
                       <div className="h-full flex flex-col items-center justify-center">
-                        <span className={`text-sm font-medium ${entry ? 'text-primary' : 'text-slate-700'} ${isToday ? 'font-bold' : ''}`}>
+                        <span className={`text-sm font-medium ${hasEntry ? 'text-primary' : 'text-slate-700'} ${isToday ? 'font-bold' : ''}`}>
                           {day}
                         </span>
-                        {entry && (
-                          <div className="mt-1">
-                            {entry.mood === 'neutral' ? (
-                              <Meh size={12} className="text-amber-500" />
-                            ) : (
-                              <Smile size={12} className="text-emerald-500" />
+                        {hasEntry && (
+                          <div className="mt-1 flex items-center gap-0.5">
+                            {firstEntryMood && firstEntryMood <= 2 && <Frown size={12} className="text-red-500" />}
+                            {firstEntryMood && firstEntryMood === 3 && <Meh size={12} className="text-amber-500" />}
+                            {firstEntryMood && firstEntryMood >= 4 && <Smile size={12} className="text-emerald-500" />}
+                            {dayEntries.length > 1 && (
+                              <span className="text-[10px] text-slate-500 ml-0.5">+{dayEntries.length - 1}</span>
                             )}
                           </div>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
