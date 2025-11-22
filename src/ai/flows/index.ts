@@ -1,20 +1,5 @@
-import { configureGenkit } from '@genkit-ai/core';
-import { googleGenAI } from '@genkit-ai/google-genai';
-import {
-  generateDailyPrompt,
-  generateWeeklyReflection,
-  generateChadInsight,
-  generateJournalSuggestions
-} from './journalFlows';
-
-// Configure Genkit with Google Generative AI
-export const ai = configureGenkit({
-  plugins: [
-    googleGenAI({
-      apiKey: process.env.GOOGLE_GENAI_API_KEY,
-    }),
-  ],
-});
+// Re-export AI instance from genkit config
+export { ai } from '@/ai/genkit';
 
 // Export all flows
 export {
@@ -22,4 +7,4 @@ export {
   generateWeeklyReflection,
   generateChadInsight,
   generateJournalSuggestions,
-};
+} from './journalFlows';

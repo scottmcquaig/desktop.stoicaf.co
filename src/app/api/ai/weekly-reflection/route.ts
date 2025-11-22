@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWeeklyReflection } from '@/ai/flows';
 import { auth } from '@/lib/firebase/auth';
-import { getJournalEntries } from '@/lib/firebase/journal';
-import { startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+import { getEntriesForLastNDays } from '@/lib/firebase/journal';
+import type { JournalEntry } from '@/lib/types';
+
+// Helper to extract content from entry blocks
+function getEntryContent(entry: JournalEntry): string {
+  if (!entry.blocks || entry.blocks.length === 0) return '';
+
+  return entry.blocks
+    .map((block) => {
+      if (block.type === 'dichotomy') {
+        const parts = [];
+        if (block.inControl) parts.push(`In my control: ${block.inControl}`);
+        if (block.notInControl) parts.push(`Not in my control: ${block.notInControl}`);
+        return parts.join('\n');
+      }
+      return block.content || '';
+    })
+    .filter(Boolean)
+    .join('\n\n');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { track, weekOffset = 0 } = body;
+    const { track } = body;
 
     if (!track) {
       return NextResponse.json(
@@ -25,16 +43,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the week's date range
-    const targetDate = weekOffset ? subWeeks(new Date(), weekOffset) : new Date();
-    const weekStart = startOfWeek(targetDate);
-    const weekEnd = endOfWeek(targetDate);
-
-    // Fetch journal entries for the week
-    const entries = await getJournalEntries(user.uid, {
-      startDate: weekStart.toISOString(),
-      endDate: weekEnd.toISOString(),
-    });
+    // Fetch journal entries for the last 7 days
+    const entries = await getEntriesForLastNDays(user.uid, 7);
 
     if (entries.length === 0) {
       return NextResponse.json(
@@ -45,14 +55,24 @@ export async function POST(request: NextRequest) {
 
     // Format entries for AI processing
     const formattedEntries = entries.map(entry => ({
-      content: entry.content,
-      date: entry.createdAt,
-      mood: entry.mood || undefined,
+      content: getEntryContent(entry),
+      date: entry.date || entry.createdAt.toDate().toISOString().split('T')[0],
+      mood: entry.mood ? String(entry.mood) : undefined,
     }));
+
+    // Filter out entries with no content
+    const validEntries = formattedEntries.filter(e => e.content.trim());
+
+    if (validEntries.length === 0) {
+      return NextResponse.json(
+        { error: 'No entries with content found for this week' },
+        { status: 404 }
+      );
+    }
 
     // Generate weekly reflection using AI flow
     const result = await generateWeeklyReflection({
-      entries: formattedEntries,
+      entries: validEntries,
       track,
       userId: user.uid,
     });
