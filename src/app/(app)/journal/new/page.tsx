@@ -23,6 +23,8 @@ import {
   Frown,
   Loader2,
   AlertTriangle,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,6 +39,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -45,7 +54,14 @@ import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
 import { createEntry, updateEntry, getEntryByDate, getPillarProgress } from '@/lib/firebase/journal';
+import { toast } from 'sonner';
 import type { Pillar, MoodScore, EntryBlock, DayPrompt, BlockType, JournalEntryInput } from '@/lib/types';
+
+interface ChadInsightResult {
+  insight: string;
+  tone: 'supportive' | 'challenging' | 'humorous' | 'philosophical';
+  actionItems: string[];
+}
 
 const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; color: string; activeColor: string }> = {
   money: { icon: DollarSign, color: 'text-slate-400', activeColor: 'text-emerald-500 bg-emerald-50' },
@@ -87,6 +103,11 @@ export default function JournalNewPage() {
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [isLoadingEntry, setIsLoadingEntry] = useState(true);
   const [todayDate] = useState(getTodayDateString());
+
+  // AI Insight state
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [chadInsight, setChadInsight] = useState<ChadInsightResult | null>(null);
+  const [showInsightDialog, setShowInsightDialog] = useState(false);
 
   // Check for existing entry and load pillar progress on mount
   useEffect(() => {
@@ -205,7 +226,55 @@ export default function JournalNewPage() {
     }
   };
 
-  const handleSave = async () => {
+  // Helper to get entry content as string for AI
+  const getEntryContentString = () => {
+    return blocks
+      .map((b) => {
+        if (b.type === 'dichotomy') {
+          return `In my control: ${b.inControl || ''}\nNot in my control: ${b.notInControl || ''}`;
+        }
+        return b.content;
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  };
+
+  // Generate Chad insight from AI
+  const handleGenerateInsight = async () => {
+    const content = getEntryContentString();
+    if (!content.trim()) {
+      toast.error('Write something first to get Chad\'s insight!');
+      return;
+    }
+
+    setIsGeneratingInsight(true);
+    try {
+      const response = await fetch('/api/ai/chad-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: content,
+          track: pillar,
+          previousInsights: [],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate insight');
+      }
+
+      const result = await response.json();
+      setChadInsight(result);
+      setShowInsightDialog(true);
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      toast.error('Failed to generate insight. Please try again.');
+    } finally {
+      setIsGeneratingInsight(false);
+    }
+  };
+
+  const handleSave = async (getInsightAfterSave = false) => {
     if (!user) return;
 
     // Check if there's any content to save
@@ -214,7 +283,7 @@ export default function JournalNewPage() {
     );
 
     if (!hasContent) {
-      alert('Please write something before saving.');
+      toast.error('Please write something before saving.');
       return;
     }
 
@@ -236,10 +305,17 @@ export default function JournalNewPage() {
         await createEntry(user.uid, entryData);
       }
 
-      router.push('/journal');
+      toast.success('Entry saved successfully!');
+
+      if (getInsightAfterSave) {
+        // Generate insight before redirecting
+        await handleGenerateInsight();
+      } else {
+        router.push('/journal');
+      }
     } catch (error) {
       console.error('Error saving:', error);
-      alert('Failed to save. Please try again.');
+      toast.error('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -282,29 +358,29 @@ export default function JournalNewPage() {
 
   return (
     <div className="h-full flex flex-col bg-slate-50">
-      {/* Sticky Toolbar */}
-      <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2 md:gap-4">
+      {/* Sticky Toolbar - Mobile optimized with 44px touch targets */}
+      <header className="bg-white border-b border-slate-200 px-2 md:px-4 py-2 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-1 md:gap-4">
           {/* Left: Back + Templates */}
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-0.5 md:gap-2">
             <Link
               href="/journal"
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+              className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={22} />
             </Link>
 
             <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center">
               {BLOCK_TYPES.map(({ type, icon: Icon, label }) => (
                 <Tooltip key={type}>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => addBlock(type)}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                      className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      <Icon size={18} />
+                      <Icon size={20} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>Add {label}</TooltipContent>
@@ -313,9 +389,9 @@ export default function JournalNewPage() {
             </div>
           </div>
 
-          {/* Center: Date + Pillar icons */}
-          <div className="flex items-center gap-2">
-            <span className="hidden md:block text-xs font-medium text-slate-400">
+          {/* Center: Pillar icons (Date hidden on mobile) */}
+          <div className="flex items-center gap-1 md:gap-2">
+            <span className="hidden lg:block text-xs font-medium text-slate-400">
               {new Date(todayDate + 'T00:00:00').toLocaleDateString('en-US', {
                 weekday: 'short',
                 month: 'short',
@@ -325,7 +401,7 @@ export default function JournalNewPage() {
                 <span className="ml-2 text-primary">(editing)</span>
               )}
             </span>
-            <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-1">
+            <div className="flex items-center bg-slate-50 rounded-lg p-0.5 md:p-1">
               {(Object.keys(PILLAR_CONFIG) as Pillar[]).map((p) => {
                 const { icon: Icon, color, activeColor } = PILLAR_CONFIG[p];
                 const isActive = pillar === p;
@@ -334,7 +410,7 @@ export default function JournalNewPage() {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handlePillarChange(p)}
-                        className={`p-1.5 md:p-2 rounded-lg transition-all ${
+                        className={`min-h-10 min-w-10 md:min-h-11 md:min-w-11 flex items-center justify-center rounded-lg transition-all ${
                           isActive ? activeColor : `${color} hover:bg-slate-100`
                         }`}
                       >
@@ -348,9 +424,10 @@ export default function JournalNewPage() {
             </div>
           </div>
 
-          {/* Right: Actions */}
+          {/* Right: Mood + Actions */}
           <div className="flex items-center gap-0.5 md:gap-1">
-            <div className="flex items-center gap-0.5 mr-1 md:mr-2">
+            {/* Mood selectors - compact on mobile */}
+            <div className="flex items-center bg-slate-50 rounded-lg p-0.5 mr-1 md:mr-2">
               {[
                 { score: 1 as MoodScore, icon: Frown, color: 'text-red-400', activeColor: 'text-red-600 bg-red-50' },
                 { score: 3 as MoodScore, icon: Meh, color: 'text-amber-400', activeColor: 'text-amber-600 bg-amber-50' },
@@ -359,45 +436,89 @@ export default function JournalNewPage() {
                 <button
                   key={score}
                   onClick={() => setMood(mood === score ? null : score)}
-                  className={`p-1.5 rounded-lg transition-all ${
+                  className={`min-h-10 min-w-10 flex items-center justify-center rounded-lg transition-all ${
                     mood === score ? activeColor : `${color} hover:bg-slate-100`
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon size={18} />
                 </button>
               ))}
             </div>
 
             <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
+            {/* AI Insight button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleGenerateInsight}
+                  disabled={isGeneratingInsight}
+                  className="min-h-11 min-w-11 flex items-center justify-center hover:bg-purple-50 rounded-lg text-purple-400 hover:text-purple-600 transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingInsight ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={20} />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Get Chad&apos;s Insight</TooltipContent>
+            </Tooltip>
+
+            {/* Save Default Layout - desktop only */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleSaveDefaultLayout}
-                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors hidden md:block"
+                  disabled={isSavingLayout}
+                  className="min-h-11 min-w-11 hidden md:flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <Layout size={18} />
+                  <Layout size={20} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>Save as Default Layout</TooltipContent>
             </Tooltip>
 
+            {/* Discard button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleDelete}
-                  className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                  className="min-h-11 min-w-11 flex items-center justify-center hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={20} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>Discard</TooltipContent>
             </Tooltip>
 
-            <Button onClick={handleSave} disabled={isSaving} size="sm" className="ml-1 md:ml-2">
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
-              <span className="ml-1.5 hidden md:inline">Save</span>
-            </Button>
+            {/* Save button with AI option */}
+            <div className="flex items-center gap-1 ml-1">
+              <Button
+                onClick={() => handleSave(false)}
+                disabled={isSaving || isGeneratingInsight}
+                size="sm"
+                className="min-h-11 px-3 md:px-4"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
+                <span className="ml-1.5 hidden sm:inline">Save</span>
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => handleSave(true)}
+                    disabled={isSaving || isGeneratingInsight}
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11 px-2 md:px-3 hidden sm:flex"
+                  >
+                    <Sparkles size={16} className="text-purple-500" />
+                    <span className="ml-1.5 hidden md:inline">+ AI</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Save & Get Chad&apos;s Insight</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
       </header>
@@ -495,6 +616,80 @@ export default function JournalNewPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Chad Insight Dialog */}
+      <Dialog open={showInsightDialog} onOpenChange={setShowInsightDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <ChadGPTSvg className="w-10 h-10" />
+              <span>Chad&apos;s Insight</span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              AI-generated insight based on your journal entry
+            </DialogDescription>
+          </DialogHeader>
+
+          {chadInsight && (
+            <div className="space-y-4">
+              {/* Tone badge */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded-full ${
+                  chadInsight.tone === 'supportive' ? 'bg-green-100 text-green-700' :
+                  chadInsight.tone === 'challenging' ? 'bg-orange-100 text-orange-700' :
+                  chadInsight.tone === 'humorous' ? 'bg-purple-100 text-purple-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {chadInsight.tone}
+                </span>
+              </div>
+
+              {/* Main insight */}
+              <div className="relative bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p className="text-slate-700 leading-relaxed">{chadInsight.insight}</p>
+              </div>
+
+              {/* Action items */}
+              {chadInsight.actionItems && chadInsight.actionItems.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-primary" />
+                    Action Items
+                  </h4>
+                  <ul className="space-y-2">
+                    {chadInsight.actionItems.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                        <span className="min-w-5 h-5 flex items-center justify-center bg-primary/10 text-primary rounded-full text-xs font-bold">
+                          {index + 1}
+                        </span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowInsightDialog(false);
+                    router.push('/journal');
+                  }}
+                >
+                  Done
+                </Button>
+                <Button
+                  onClick={() => setShowInsightDialog(false)}
+                >
+                  Keep Writing
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
