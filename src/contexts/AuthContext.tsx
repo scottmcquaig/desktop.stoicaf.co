@@ -21,7 +21,7 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  virtueFocus?: 'wisdom' | 'courage' | 'temperance' | 'justice';
+  pillarFocus?: 'money' | 'ego' | 'relationships' | 'discipline';
   chadTone?: 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
   currentStruggle?: string;
   reminderTime?: string;

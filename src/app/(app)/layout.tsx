@@ -17,7 +17,6 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuickCapture } from '@/components/QuickCapture';
-import { ChadFloatingButton } from '@/components/ChadFloatingButton';
 
 const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -106,9 +105,6 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
         {/* QuickCapture Modal */}
         <QuickCapture open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} />
-
-        {/* CHAD Floating Button */}
-        <ChadFloatingButton />
       </div>
     </TooltipProvider>
   );

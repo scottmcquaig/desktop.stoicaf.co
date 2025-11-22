@@ -12,7 +12,6 @@ import {
   LogOut,
   Home,
   BarChart3,
-  MessageSquare,
 } from 'lucide-react';
 import { StoicLogo } from './StoicLogo';
 import { cn } from '@/lib/utils';
@@ -165,7 +164,6 @@ export function AppSidebar({
         <NavItem href="/dashboard" icon={<Home size={20} className="flex-shrink-0"/>} label="Home" isCollapsed={isCollapsed} end />
         <NavItem href="/journal" icon={<BookOpen size={20} className="flex-shrink-0"/>} label="Journal" isCollapsed={isCollapsed} />
         <NavItem href="/insights" icon={<BarChart3 size={20} className="flex-shrink-0"/>} label="Insights" isCollapsed={isCollapsed} />
-        <NavItem href="/chadgpt" icon={<MessageSquare size={20} className="flex-shrink-0"/>} label="ChadGPT" isCollapsed={isCollapsed} />
       </nav>
 
       <div className="px-4 mb-4">
