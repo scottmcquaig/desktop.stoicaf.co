@@ -68,7 +68,7 @@ function getTodayDateString(): string {
 
 export default function JournalNewPage() {
   const router = useRouter();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, updateUserProfile } = useAuth();
 
   // Get user's active pillar from profile, default to 'ego'
   const defaultPillar = (userProfile?.pillarFocus as Pillar) || 'ego';
@@ -108,6 +108,17 @@ export default function JournalNewPage() {
           // Load pillar progress to determine next day
           const progress = await getPillarProgress(user.uid, defaultPillar);
           setDayInTrack(Math.min(progress + 1, 30)); // Next day, max 30
+
+          // Load default layout from user profile if available
+          if (userProfile?.defaultEntryLayout?.blocks?.length) {
+            const defaultBlocks = userProfile.defaultEntryLayout.blocks.map((b) => ({
+              id: nanoid(),
+              type: b.type as BlockType,
+              content: '',
+              ...(b.type === 'dichotomy' ? { inControl: '', notInControl: '' } : {}),
+            }));
+            setBlocks(defaultBlocks);
+          }
         }
       } catch (error) {
         console.error('Error loading entry:', error);
@@ -116,7 +127,7 @@ export default function JournalNewPage() {
       }
     };
     loadExistingEntry();
-  }, [user, todayDate, defaultPillar]);
+  }, [user, userProfile, todayDate, defaultPillar]);
 
   // Update dayInTrack when pillar changes (for new entries only)
   useEffect(() => {
@@ -238,9 +249,25 @@ export default function JournalNewPage() {
     router.push('/journal');
   };
 
-  const handleSaveDefaultLayout = () => {
-    // TODO: Save to user profile
-    alert('Default layout saved!');
+  const [isSavingLayout, setIsSavingLayout] = useState(false);
+
+  const handleSaveDefaultLayout = async () => {
+    setIsSavingLayout(true);
+    try {
+      const layoutBlocks = blocks.map((b) => ({
+        id: b.id,
+        type: b.type,
+      }));
+      await updateUserProfile({
+        defaultEntryLayout: { blocks: layoutBlocks },
+      });
+      alert('Default layout saved! New entries will use this layout.');
+    } catch (error) {
+      console.error('Error saving default layout:', error);
+      alert('Failed to save default layout. Please try again.');
+    } finally {
+      setIsSavingLayout(false);
+    }
   };
 
   // Show loading state while checking for existing entry

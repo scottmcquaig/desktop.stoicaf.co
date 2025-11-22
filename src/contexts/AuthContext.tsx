@@ -29,6 +29,7 @@ export interface UserProfile {
   emailReminders?: boolean;
   browserNotifications?: boolean;
   onboardingComplete?: boolean;
+  defaultEntryLayout?: { blocks: Array<{ id: string; type: string }> };
   createdAt?: Date;
 }
 
