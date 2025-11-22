@@ -13,7 +13,12 @@
       "Bash(git remote set-url:*)",
       "Bash(git push:*)",
       "Bash(gh --version:*)",
-      "Bash(gh repo create:*)"
+      "Bash(gh repo create:*)",
+      "Bash(npm install:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase use:*)",
+      "Bash(npx husky init)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

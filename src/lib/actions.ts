@@ -5,7 +5,12 @@ import { generateWeeklyReflections } from '@/ai/flows/generate-weekly-reflection
 import { journalEntries } from '@/lib/data';
 import type { JournalEntry } from '@/lib/types';
 
-export async function getAIChadGPTAction(prevState: any, formData: FormData) {
+type ActionState = {
+  advice: string;
+  error: string | null;
+};
+
+export async function getAIChadGPTAction(prevState: ActionState, formData: FormData) {
   const query = formData.get('query') as string;
   if (!query) {
     return { advice: '', error: 'Please enter a question.' };

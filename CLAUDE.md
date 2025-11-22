@@ -1,8 +1,8 @@
 # Stoic.af Development Status - Claude Reference
 
-**Last Updated**: 2025-11-22
-**Current Phase**: MVP Development
-**Active Branch**: `claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7`
+**Last Updated**: 2025-11-22 (Sprint 5 Complete)
+**Current Phase**: MVP Development - Sprint 6 Ready
+**Active Branch**: `main`
 
 ---
 
@@ -133,6 +133,43 @@
 - `getEntriesForLastNDays()` - Get entries for insights
 - `getPillarDistribution()` - Get pillar breakdown
 - `getMoodDataForDays()` - Get mood data for heatmap
+
+### ✅ Sprint 5: AI Integration & Settings (COMPLETE)
+
+**Completed**: 2025-11-22
+
+**What Was Built:**
+
+**AI Integration:**
+- ✅ Complete Genkit AI flow structure (`src/ai/flows/`)
+  - `generateDailyPrompt` - Generate daily journal prompts
+  - `generateWeeklyReflection` - Weekly reflection summaries
+  - `generateChadInsight` - Chad insights on entries
+  - `generateJournalSuggestions` - Entry suggestions based on mood
+- ✅ API routes for all AI features (`src/app/api/ai/`)
+  - `/api/ai/daily-prompt` - Daily prompt generation
+  - `/api/ai/weekly-reflection` - Weekly reflection
+  - `/api/ai/chad-insight` - Chad insights
+
+**Settings Page Enhancements:**
+- ✅ Display name update with inline editing
+- ✅ Profile photo upload with Firebase Storage
+- ✅ Export data feature (downloads all data as JSON)
+- ✅ Delete account with confirmation dialog (AlertDialog)
+- ✅ Proper error handling and toast notifications
+
+**Code Quality & DevOps:**
+- ✅ Fixed all TypeScript `any` types
+- ✅ ESLint configured with strict rules (`.eslintrc.json`)
+- ✅ Prettier configured for code formatting (`.prettierrc`)
+- ✅ Husky pre-commit hooks with lint-staged
+- ✅ Jest testing framework configured
+- ✅ Sample test suite created (`src/__tests__/`)
+
+**Security Improvements:**
+- ✅ Removed hardcoded Firebase credentials
+- ✅ Environment variables properly configured
+- ✅ Created `.env.local` template
 
 ---
 
@@ -312,54 +349,83 @@ firebase deploy --only firestore:rules
 
 ---
 
-## Next To-Do's (Sprint 5: AI & Settings)
+## Next To-Do's (Sprint 6: Production Ready)
 
-### High Priority
+### 🔥 Immediate Actions Required
 
-1. **Settings Enhancements**
-   - [ ] Update display name
-   - [ ] Photo upload
-   - [ ] Export data feature (JSON download)
-   - [ ] Delete account with confirmation
+1. **Firebase Setup (Manual)**
+   - [ ] Run `firebase login` to authenticate
+   - [ ] Deploy rules: `firebase deploy --only firestore:rules`
+   - [ ] Add real Firebase API key to `.env.local`
+   - [ ] Add Gemini API key to `.env.local` for AI features
 
-2. **Mobile Responsiveness**
-   - [ ] Test all views on mobile
-   - [ ] Fix sticky toolbar on mobile
-   - [ ] Ensure touch targets are adequate
+### High Priority - Sprint 6
 
-3. **AI Integration**
-   - [ ] Daily prompt generation via Cloud Functions
-   - [ ] Weekly reflection summaries
-   - [ ] Chad insights on entries
+1. **Mobile Responsiveness**
+   - [ ] Test all views on mobile devices
+   - [ ] Fix sticky toolbar behavior on mobile
+   - [ ] Ensure 44x44px minimum touch targets
+   - [ ] Test QuickCapture modal (Cmd+K) on mobile
+   - [ ] Verify bottom navigation works correctly
 
-### Medium Priority
+2. **AI Feature Activation**
+   - [ ] Connect AI flows to journal editor UI
+   - [ ] Add "Generate with AI" button to journal page
+   - [ ] Display Chad insights after saving entries
+   - [ ] Show weekly reflection on dashboard
+   - [ ] Test AI features with real Gemini API key
 
-4. **Notifications**
-   - [ ] Email reminders (Firebase Functions)
-   - [ ] Browser push notifications
+3. **Notifications System**
+   - [ ] Email reminders via Firebase Functions
+   - [ ] Browser push notifications setup
+   - [ ] Notification preferences in settings
+   - [ ] Daily prompt delivery system
 
-5. **Polish & UX**
-   - [ ] Keyboard shortcuts in editor
+### Medium Priority - Sprint 7
+
+4. **Editor UX Improvements**
+   - [ ] Keyboard shortcuts (Cmd+S to save, etc.)
    - [ ] Auto-focus on first empty block
+   - [ ] Auto-save draft functionality
+   - [ ] Rich text editing (bold, italic, lists)
+   - [ ] Block reordering (drag and drop)
+
+5. **Performance Optimization**
+   - [ ] Implement React Query for data fetching
+   - [ ] Add loading skeletons
+   - [ ] Optimize bundle size
+   - [ ] Lazy load components
+   - [ ] Image optimization
 
 ### Future Sprints (Backlog)
 
-6. **Payments (Sprint 6)**
+6. **Payments & Monetization (Sprint 8)**
    - [ ] Stripe integration
    - [ ] Pro subscription features
+   - [ ] Usage limits for free tier
+   - [ ] Payment settings page
 
-7. **Landing Page**
+7. **Landing Page & Marketing (Sprint 9)**
    - [ ] Marketing landing page at `/`
    - [ ] Feature highlights
    - [ ] Pricing section
+   - [ ] Testimonials
+   - [ ] SEO optimization
+
+8. **Community Features (Sprint 10)**
+   - [ ] Public profiles
+   - [ ] Share journal entries
+   - [ ] Community challenges
+   - [ ] Leaderboards
 
 ---
 
 ## Known Issues
 
-1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules`
-2. **AI Flows**: Genkit flows exist in `src/ai/flows/` but are not connected
-3. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
+1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules` (requires Firebase auth)
+2. **Firebase API Key**: Default placeholder "your-api-key" needs to be replaced with actual key
+3. **Gemini API Key**: Needs to be added to `.env.local` for AI features to work
+4. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
 
 ---
 
@@ -374,19 +440,51 @@ firebase deploy --only firestore:rules
 
 ---
 
+## Available Scripts
+
+```bash
+# Development
+npm run dev              # Start dev server with Turbopack on port 3000
+npm run build            # Build for production
+npm start                # Start production server
+
+# Code Quality
+npm run lint             # Run ESLint
+npm run typecheck        # Check TypeScript types
+npm run format           # Format code with Prettier
+npm run format:check     # Check formatting without fixing
+
+# Testing
+npm test                 # Run tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage report
+
+# AI Development
+npm run genkit:dev       # Start Genkit development environment
+npm run genkit:watch     # Start Genkit with file watching
+
+# Git Hooks
+npm run prepare          # Set up Husky (runs automatically after install)
+```
+
 ## Quick Start for New Context
 
 ```bash
-# 1. Ensure on correct branch
-git checkout claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7
+# 1. Clone and setup
+git clone https://github.com/scottmcquaig/desktop.stoicaf.co.git
+cd desktop.stoicaf.co
 
 # 2. Install dependencies
 npm install
 
-# 3. Start dev server
+# 3. Configure environment
+cp .env.example .env.local
+# Edit .env.local with your Firebase and Gemini API keys
+
+# 4. Start dev server
 npm run dev
 
-# 4. View app at http://localhost:3000
+# 5. View app at http://localhost:3000
 ```
 
 **Test Journal Flow**:

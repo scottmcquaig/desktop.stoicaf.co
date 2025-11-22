@@ -1,11 +1,28 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, Sliders, Bell, CreditCard, LogOut, Loader2 } from 'lucide-react';
+import { User, Sliders, Bell, CreditCard, LogOut, Loader2, Download, Trash2, Upload, Edit2, Camera } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { getJournalEntries } from '@/lib/firebase/journal';
+import { updateProfile } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const settingsNav = [
   { id: 'Profile', icon: <User size={20} /> },
@@ -24,6 +41,11 @@ const SettingsPage: React.FC = () => {
   const [pillarFocus, setPillarFocus] = useState<PillarFocus>('money');
   const [dailyPrompt, setDailyPrompt] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const isMobile = useIsMobile();
   const { user, userProfile, signOut, updateUserProfile } = useAuth();
   const router = useRouter();
@@ -56,6 +78,128 @@ const SettingsPage: React.FC = () => {
       console.error('Error saving preferences:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdateDisplayName = async () => {
+    if (!user || !newDisplayName.trim()) return;
+
+    setSaving(true);
+    try {
+      await updateProfile(user, {
+        displayName: newDisplayName.trim()
+      });
+      await updateUserProfile({
+        displayName: newDisplayName.trim()
+      });
+      setEditingName(false);
+      toast.success('Display name updated successfully');
+    } catch (error) {
+      console.error('Error updating display name:', error);
+      toast.error('Failed to update display name');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Photo must be less than 5MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `profile-photos/${user.uid}/${Date.now()}`);
+
+      await uploadBytes(storageRef, file);
+      const photoURL = await getDownloadURL(storageRef);
+
+      await updateProfile(user, { photoURL });
+      await updateUserProfile({ photoURL });
+
+      toast.success('Profile photo updated successfully');
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+
+    setExporting(true);
+    try {
+      // Fetch all journal entries
+      const entries = await getJournalEntries(user.uid, {});
+
+      // Prepare export data
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        user: {
+          email: user.email,
+          displayName: userProfile?.displayName || user.displayName,
+          uid: user.uid,
+          createdAt: user.metadata.creationTime,
+        },
+        profile: userProfile,
+        journalEntries: entries,
+        metadata: {
+          totalEntries: entries.length,
+          exportVersion: '1.0',
+        }
+      };
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stoicaf-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Data exported successfully');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast.error('Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setDeleting(true);
+    try {
+      // Delete user data from Firestore
+      // This would typically be handled by a Cloud Function
+      await user.delete();
+      toast.success('Account deleted successfully');
+      router.push('/');
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      if (error.code === 'auth/requires-recent-login') {
+        toast.error('Please sign in again before deleting your account');
+        await signOut();
+        router.push('/auth/signin');
+      } else {
+        toast.error('Failed to delete account');
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -131,13 +275,69 @@ const SettingsPage: React.FC = () => {
             {activeTab === 'Profile' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
-                  <div className="w-16 h-16 rounded-full bg-stoic-blue/10 flex items-center justify-center">
-                    <User size={32} className="text-stoic-blue" />
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-stoic-blue/10 flex items-center justify-center overflow-hidden">
+                      {user?.photoURL ? (
+                        <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={32} className="text-stoic-blue" />
+                      )}
+                    </div>
+                    <label htmlFor="photo-upload" className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md cursor-pointer hover:bg-slate-50">
+                      <Camera size={16} className="text-slate-700" />
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                        disabled={uploadingPhoto}
+                      />
+                    </label>
                   </div>
-                  <div>
-                    <p className="font-bold text-lg text-slate-900">
-                      {userProfile?.displayName || user?.displayName || 'User'}
-                    </p>
+                  <div className="flex-1">
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={newDisplayName}
+                          onChange={(e) => setNewDisplayName(e.target.value)}
+                          placeholder="Enter new name"
+                          className="max-w-xs"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleUpdateDisplayName}
+                          disabled={saving}
+                        >
+                          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingName(false);
+                            setNewDisplayName('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-lg text-slate-900">
+                          {userProfile?.displayName || user?.displayName || 'User'}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setEditingName(true);
+                            setNewDisplayName(userProfile?.displayName || user?.displayName || '');
+                          }}
+                          className="p-1 hover:bg-slate-200 rounded-md transition-colors"
+                        >
+                          <Edit2 size={16} className="text-slate-600" />
+                        </button>
+                      </div>
+                    )}
                     <p className="text-slate-500">{user?.email}</p>
                   </div>
                 </div>
@@ -160,6 +360,77 @@ const SettingsPage: React.FC = () => {
                     <span className={`font-medium ${userProfile?.onboardingComplete ? 'text-emerald-600' : 'text-amber-600'}`}>
                       {userProfile?.onboardingComplete ? 'Complete' : 'Incomplete'}
                     </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleExportData}
+                      disabled={exporting}
+                      className="flex-1"
+                    >
+                      {exporting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Exporting...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Export My Data
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-200">
+                    <div className="bg-red-50 border border-red-100 rounded-lg p-4">
+                      <h3 className="font-bold text-red-900 mb-2">Danger Zone</h3>
+                      <p className="text-sm text-red-700 mb-4">
+                        Once you delete your account, there is no going back. Please be certain.
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Account
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete your
+                              account and remove all of your data from our servers, including
+                              all journal entries, preferences, and progress.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDeleteAccount}
+                              disabled={deleting}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deleting ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Deleting...
+                                </>
+                              ) : (
+                                'Yes, delete my account'
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               </div>
