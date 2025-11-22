@@ -20,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { getJournalEntries } from '@/lib/firebase/journal';
+import { getRecentEntries } from '@/lib/firebase/journal';
 import { updateProfile } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -137,8 +137,8 @@ const SettingsPage: React.FC = () => {
 
     setExporting(true);
     try {
-      // Fetch all journal entries
-      const entries = await getJournalEntries(user.uid, {});
+      // Fetch all journal entries (using a high limit to get all)
+      const entries = await getRecentEntries(user.uid, 1000);
 
       // Prepare export data
       const exportData = {
