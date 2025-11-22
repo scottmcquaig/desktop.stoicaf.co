@@ -37,7 +37,7 @@ import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 type ViewMode = 'list' | 'grid' | 'calendar';
-type MoodFilter = 'all' | 'great' | 'good' | 'okay' | 'bad' | 'awful';
+type MoodFilter = 'all' | 'good' | 'okay' | 'bad';
 type PillarFilter = 'all' | Pillar;
 
 const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string }> = {
@@ -240,17 +240,15 @@ const JournalListPage: React.FC = () => {
   // Filter entries by search, mood, and pillar
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      // Mood filter
+      // Mood filter (good = 4-5, okay = 3, bad = 1-2)
       if (moodFilter !== 'all') {
         const mood = entry.mood;
         if (mood === null) return false;
 
         switch (moodFilter) {
-          case 'great': if (mood < 5) return false; break;
-          case 'good': if (mood < 4 || mood >= 5) return false; break;
-          case 'okay': if (mood < 3 || mood >= 4) return false; break;
-          case 'bad': if (mood < 2 || mood >= 3) return false; break;
-          case 'awful': if (mood >= 2) return false; break;
+          case 'good': if (mood < 4) return false; break;
+          case 'okay': if (mood !== 3) return false; break;
+          case 'bad': if (mood > 2) return false; break;
         }
       }
 
@@ -303,7 +301,7 @@ const JournalListPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 p-4 md:p-8 min-h-screen">
+    <div className="bg-slate-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -362,14 +360,9 @@ const JournalListPage: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Moods</SelectItem>
-                  <SelectItem value="great">
-                    <span className="flex items-center gap-2">
-                      <Smile size={14} className="text-emerald-500" /> Great
-                    </span>
-                  </SelectItem>
                   <SelectItem value="good">
                     <span className="flex items-center gap-2">
-                      <Smile size={14} className="text-emerald-400" /> Good
+                      <Smile size={14} className="text-emerald-500" /> Good
                     </span>
                   </SelectItem>
                   <SelectItem value="okay">
@@ -379,12 +372,7 @@ const JournalListPage: React.FC = () => {
                   </SelectItem>
                   <SelectItem value="bad">
                     <span className="flex items-center gap-2">
-                      <Frown size={14} className="text-red-400" /> Bad
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="awful">
-                    <span className="flex items-center gap-2">
-                      <Frown size={14} className="text-red-500" /> Awful
+                      <Frown size={14} className="text-red-500" /> Bad
                     </span>
                   </SelectItem>
                 </SelectContent>

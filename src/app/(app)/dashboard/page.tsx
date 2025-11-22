@@ -4,14 +4,12 @@ import Link from 'next/link';
 import {
   Flame,
   TrendingUp,
-  MoreHorizontal,
   Smile,
   Meh,
   Frown,
   Search,
   Bell,
   Loader2,
-  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
 import { calculateStreak, getRecentEntries, getEntryCount } from '@/lib/firebase/journal';
-import { getDailyQuote, getRandomQuote } from '@/lib/dailyQuote';
+import { getDailyQuote } from '@/lib/dailyQuote';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 
 interface DailyQuoteData {
@@ -42,7 +40,6 @@ const DashboardPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyQuote, setDailyQuote] = useState<DailyQuoteData | null>(null);
-  const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
 
   // Load dashboard data
   const loadDashboardData = useCallback(async () => {
@@ -97,19 +94,6 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     getDailyQuote().then(setDailyQuote).catch(console.error);
   }, []);
-
-  // Refresh quote (get a random one)
-  const handleRefreshQuote = async () => {
-    setIsRefreshingQuote(true);
-    try {
-      const quote = await getRandomQuote();
-      setDailyQuote(quote);
-    } catch (error) {
-      console.error('Error refreshing quote:', error);
-    } finally {
-      setIsRefreshingQuote(false);
-    }
-  };
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -225,59 +209,69 @@ const DashboardPage: React.FC = () => {
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">5-Day Mood Trend</span>
                   <TrendingUp className="text-primary" size={20} />
                 </div>
-                {/* Line Chart */}
-                <div className="relative h-20">
-                  <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
-                    {/* Grid lines */}
-                    <line x1="0" y1="20" x2="200" y2="20" stroke="#e2e8f0" strokeWidth="1" />
-                    <line x1="0" y1="40" x2="200" y2="40" stroke="#e2e8f0" strokeWidth="1" />
-                    <line x1="0" y1="60" x2="200" y2="60" stroke="#e2e8f0" strokeWidth="1" />
+                {recentEntries.length === 0 ? (
+                  <div className="h-[120px] flex flex-col items-center justify-center text-center">
+                    <Meh size={32} className="text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-400">No mood data yet</p>
+                    <p className="text-xs text-slate-300">Start journaling to track your mood</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Line Chart */}
+                    <div className="relative h-20">
+                      <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
+                        {/* Grid lines */}
+                        <line x1="0" y1="20" x2="200" y2="20" stroke="#e2e8f0" strokeWidth="1" />
+                        <line x1="0" y1="40" x2="200" y2="40" stroke="#e2e8f0" strokeWidth="1" />
+                        <line x1="0" y1="60" x2="200" y2="60" stroke="#e2e8f0" strokeWidth="1" />
 
-                    {/* Area fill */}
-                    <path
-                      d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70} L200,80 L0,80 Z`}
-                      fill="url(#moodGradient)"
-                    />
+                        {/* Area fill */}
+                        <path
+                          d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70} L200,80 L0,80 Z`}
+                          fill="url(#moodGradient)"
+                        />
 
-                    {/* Line */}
-                    <path
-                      d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70}`}
-                      fill="none"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                        {/* Line */}
+                        <path
+                          d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70}`}
+                          fill="none"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
 
-                    {/* Data points */}
-                    {moodData.map((point, i) => (
-                      <circle
-                        key={i}
-                        cx={i * 50}
-                        cy={80 - (point.value / 5) * 70}
-                        r="4"
-                        fill="white"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="2"
-                      />
-                    ))}
+                        {/* Data points */}
+                        {moodData.map((point, i) => (
+                          <circle
+                            key={i}
+                            cx={i * 50}
+                            cy={80 - (point.value / 5) * 70}
+                            r="4"
+                            fill="white"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth="2"
+                          />
+                        ))}
 
-                    {/* Gradient definition */}
-                    <defs>
-                      <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </div>
-                {/* Day labels */}
-                <div className="flex justify-between mt-2">
-                  {moodData.map((point) => (
-                    <span key={point.day} className="text-[10px] text-slate-400 font-medium">{point.day}</span>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-400 mt-2 text-right">Avg: {(moodData.reduce((a, b) => a + b.value, 0) / moodData.length).toFixed(1)}/5</p>
+                        {/* Gradient definition */}
+                        <defs>
+                          <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+                    {/* Day labels */}
+                    <div className="flex justify-between mt-2">
+                      {moodData.map((point, i) => (
+                        <span key={`${point.day}-${i}`} className="text-[10px] text-slate-400 font-medium">{point.day}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 text-right">Avg: {(moodData.reduce((a, b) => a + b.value, 0) / moodData.length).toFixed(1)}/5</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -285,18 +279,10 @@ const DashboardPage: React.FC = () => {
           {/* Quote of the Day */}
           <Card className="border-l-4 border-l-primary">
             <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
+              <div className="mb-4">
                 <Badge variant="secondary" className="border-0">
                   Daily Stoic Quote
                 </Badge>
-                <button
-                  onClick={handleRefreshQuote}
-                  disabled={isRefreshingQuote}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
-                  title="Get a different quote"
-                >
-                  <RefreshCw size={18} className={`text-slate-400 ${isRefreshingQuote ? 'animate-spin' : ''}`} />
-                </button>
               </div>
               {dailyQuote ? (
                 <>
@@ -314,7 +300,7 @@ const DashboardPage: React.FC = () => {
                       </div>
 
                       {/* Speech Bubble */}
-                      <div className="relative flex-1 bg-slate-50 p-4 rounded-2xl rounded-tl-sm border border-dashed border-slate-300">
+                      <div className="relative flex-1 bg-slate-50 p-4 rounded-2xl" style={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: '#cbd5e1', borderSpacing: '8px' }}>
                         {/* Speech bubble pointer */}
                         <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-300"></div>
                         <div className="absolute -left-[6px] top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-50"></div>
