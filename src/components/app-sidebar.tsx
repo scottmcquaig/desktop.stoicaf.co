@@ -9,6 +9,7 @@ import {
   Edit,
   CircleUser,
   ChevronLeft,
+  ChevronRight,
   LogOut,
   Home,
   BarChart3,
@@ -101,13 +102,8 @@ export function AppSidebar({
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >
-      <div className={cn('p-4 flex items-center justify-between')}>
-        <button
-          onClick={() => {
-            if (isCollapsed) setCollapsed(false);
-          }}
-          className={cn('flex items-center gap-3 w-full', isCollapsed ? 'justify-center' : 'justify-start')}
-        >
+      <div className={cn('p-4 flex items-center', isCollapsed ? 'justify-center' : 'justify-start')}>
+        <div className={cn('flex items-center gap-3', isCollapsed ? 'justify-center' : 'justify-start')}>
           <div className="w-10 h-10 flex items-center justify-center text-white font-bold flex-shrink-0">
             <StoicLogo className="w-full h-full" />
           </div>
@@ -119,16 +115,7 @@ export function AppSidebar({
           >
             STOIC AF
           </span>
-        </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!isCollapsed)}
-          className={cn('transition-opacity', isCollapsed ? 'sr-only opacity-0 w-0' : 'opacity-100 w-auto')}
-        >
-          <ChevronLeft size={20} />
-          <span className="sr-only">Collapse sidebar</span>
-        </Button>
+        </div>
       </div>
 
       <div className="px-4 mb-4">
@@ -165,6 +152,28 @@ export function AppSidebar({
         <NavItem href="/journal" icon={<BookOpen size={20} className="flex-shrink-0"/>} label="Journal" isCollapsed={isCollapsed} />
         <NavItem href="/insights" icon={<BarChart3 size={20} className="flex-shrink-0"/>} label="Insights" isCollapsed={isCollapsed} />
       </nav>
+
+      {/* Collapse Toggle */}
+      <div className={cn('px-4 mb-2', isCollapsed ? 'flex justify-center' : '')}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!isCollapsed)}
+          className={cn(
+            'text-slate-400 hover:text-slate-600 hover:bg-slate-100',
+            isCollapsed ? 'w-10 h-10 p-0' : 'w-full justify-start gap-2'
+          )}
+        >
+          {isCollapsed ? (
+            <ChevronRight size={18} />
+          ) : (
+            <>
+              <ChevronLeft size={18} />
+              <span>Collapse</span>
+            </>
+          )}
+        </Button>
+      </div>
 
       <div className="px-4 mb-4">
         <Separator />
