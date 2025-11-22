@@ -256,6 +256,7 @@ export default function JournalNewPage() {
           entry: content,
           track: pillar,
           previousInsights: [],
+          userId: user?.uid,
         }),
       });
 

@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateChadInsight } from '@/ai/flows';
-import { auth } from '@/lib/firebase/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const user = await auth.currentUser;
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
-    const { entry, track, previousInsights } = body;
+    const { entry, track, previousInsights, userId } = body;
 
     if (!entry || !track) {
       return NextResponse.json(
@@ -28,7 +18,7 @@ export async function POST(request: NextRequest) {
       entry,
       track,
       previousInsights: previousInsights || [],
-      userId: user.uid,
+      userId: userId || 'anonymous',
     });
 
     return NextResponse.json(result);
