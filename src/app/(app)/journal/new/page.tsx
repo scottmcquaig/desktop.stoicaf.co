@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Sparkles,
   CheckCircle2,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +51,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
@@ -359,40 +366,21 @@ export default function JournalNewPage() {
 
   return (
     <div className="h-full flex flex-col bg-slate-50">
-      {/* Sticky Toolbar - Mobile optimized with 44px touch targets */}
-      <header className="bg-white border-b border-slate-200 px-2 md:px-4 py-2 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-1 md:gap-4">
-          {/* Left: Back + Templates */}
-          <div className="flex items-center gap-0.5 md:gap-2">
-            <Link
-              href="/journal"
-              className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
-            >
-              <ChevronLeft size={22} />
-            </Link>
+      {/* ===== TOP BAR ===== */}
+      <header className="bg-white border-b border-slate-200 px-3 md:px-4 py-2 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+          {/* Left: Back button */}
+          <Link
+            href="/journal"
+            className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+          >
+            <ChevronLeft size={22} />
+          </Link>
 
-            <div className="h-6 w-px bg-slate-200 hidden md:block" />
-
-            <div className="flex items-center">
-              {BLOCK_TYPES.map(({ type, icon: Icon, label }) => (
-                <Tooltip key={type}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => addBlock(type)}
-                      className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <Icon size={20} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Add {label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-
-          {/* Center: Pillar icons (Date hidden on mobile) */}
-          <div className="flex items-center gap-1 md:gap-2">
-            <span className="hidden lg:block text-xs font-medium text-slate-400">
+          {/* Center: Pillar selector */}
+          <div className="flex items-center gap-2">
+            {/* Date - desktop only */}
+            <span className="hidden lg:block text-xs font-medium text-slate-400 mr-2">
               {new Date(todayDate + 'T00:00:00').toLocaleDateString('en-US', {
                 weekday: 'short',
                 month: 'short',
@@ -402,7 +390,7 @@ export default function JournalNewPage() {
                 <span className="ml-2 text-primary">(editing)</span>
               )}
             </span>
-            <div className="flex items-center bg-slate-50 rounded-lg p-0.5 md:p-1">
+            <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
               {(Object.keys(PILLAR_CONFIG) as Pillar[]).map((p) => {
                 const { icon: Icon, color, activeColor } = PILLAR_CONFIG[p];
                 const isActive = pillar === p;
@@ -411,7 +399,7 @@ export default function JournalNewPage() {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handlePillarChange(p)}
-                        className={`min-h-10 min-w-10 md:min-h-11 md:min-w-11 flex items-center justify-center rounded-lg transition-all ${
+                        className={`min-h-10 min-w-10 flex items-center justify-center rounded-lg transition-all ${
                           isActive ? activeColor : `${color} hover:bg-slate-100`
                         }`}
                       >
@@ -425,10 +413,28 @@ export default function JournalNewPage() {
             </div>
           </div>
 
-          {/* Right: Mood + Actions */}
-          <div className="flex items-center gap-0.5 md:gap-1">
-            {/* Mood selectors - compact on mobile */}
-            <div className="flex items-center bg-slate-50 rounded-lg p-0.5 mr-1 md:mr-2">
+          {/* Right: Desktop actions + Save button */}
+          <div className="flex items-center gap-1">
+            {/* Desktop-only: Block types */}
+            <div className="hidden md:flex items-center">
+              {BLOCK_TYPES.map(({ type, icon: Icon, label }) => (
+                <Tooltip key={type}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => addBlock(type)}
+                      className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <Icon size={20} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Add {label}</TooltipContent>
+                </Tooltip>
+              ))}
+              <div className="h-6 w-px bg-slate-200 mx-1" />
+            </div>
+
+            {/* Desktop-only: Mood selectors */}
+            <div className="hidden md:flex items-center bg-slate-50 rounded-lg p-0.5 mr-1">
               {[
                 { score: 1 as MoodScore, icon: Frown, color: 'text-red-400', activeColor: 'text-red-600 bg-red-50' },
                 { score: 3 as MoodScore, icon: Meh, color: 'text-amber-400', activeColor: 'text-amber-600 bg-amber-50' },
@@ -446,86 +452,155 @@ export default function JournalNewPage() {
               ))}
             </div>
 
-            <div className="h-6 w-px bg-slate-200 hidden md:block" />
-
-            {/* AI Insight button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleGenerateInsight}
-                  disabled={isGeneratingInsight}
-                  className="min-h-11 min-w-11 flex items-center justify-center hover:bg-purple-50 rounded-lg text-purple-400 hover:text-purple-600 transition-colors disabled:opacity-50"
-                >
-                  {isGeneratingInsight ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={20} />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Get Chad&apos;s Insight</TooltipContent>
-            </Tooltip>
-
-            {/* Save Default Layout - desktop only */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleSaveDefaultLayout}
-                  disabled={isSavingLayout}
-                  className="min-h-11 min-w-11 hidden md:flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <Layout size={20} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Save as Default Layout</TooltipContent>
-            </Tooltip>
-
-            {/* Discard button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleDelete}
-                  className="min-h-11 min-w-11 flex items-center justify-center hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Discard</TooltipContent>
-            </Tooltip>
-
-            {/* Save button with AI option */}
-            <div className="flex items-center gap-1 ml-1">
-              <Button
-                onClick={() => handleSave(false)}
-                disabled={isSaving || isGeneratingInsight}
-                size="sm"
-                className="min-h-11 px-3 md:px-4"
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
-                <span className="ml-1.5 hidden sm:inline">Save</span>
-              </Button>
+            {/* Desktop-only: AI + Layout + Trash */}
+            <div className="hidden md:flex items-center">
+              <div className="h-6 w-px bg-slate-200 mx-1" />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => handleSave(true)}
-                    disabled={isSaving || isGeneratingInsight}
-                    size="sm"
-                    variant="outline"
-                    className="min-h-11 px-2 md:px-3 hidden sm:flex"
+                  <button
+                    onClick={handleGenerateInsight}
+                    disabled={isGeneratingInsight}
+                    className="min-h-11 min-w-11 flex items-center justify-center hover:bg-purple-50 rounded-lg text-purple-400 hover:text-purple-600 transition-colors disabled:opacity-50"
                   >
-                    <Sparkles size={16} className="text-purple-500" />
-                    <span className="ml-1.5 hidden md:inline">+ AI</span>
-                  </Button>
+                    {isGeneratingInsight ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={20} />
+                    )}
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent>Save & Get Chad&apos;s Insight</TooltipContent>
+                <TooltipContent>Get Chad&apos;s Insight</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleSaveDefaultLayout}
+                    disabled={isSavingLayout}
+                    className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <Layout size={20} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Save as Default Layout</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleDelete}
+                    className="min-h-11 min-w-11 flex items-center justify-center hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Discard</TooltipContent>
               </Tooltip>
             </div>
+
+            {/* Save button - all screens */}
+            <Button
+              onClick={() => handleSave(false)}
+              disabled={isSaving || isGeneratingInsight}
+              size="sm"
+              className="min-h-11 px-3 md:px-4 ml-1"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
+              <span className="ml-1.5 hidden sm:inline">Save</span>
+            </Button>
+
+            {/* Desktop-only: Save + AI button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving || isGeneratingInsight}
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11 px-3 hidden md:flex"
+                >
+                  <Sparkles size={16} className="text-purple-500" />
+                  <span className="ml-1.5">+ AI</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Save & Get Chad&apos;s Insight</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* ===== MOBILE BOTTOM BAR ===== */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-20 safe-area-bottom">
+        <div className="flex items-center justify-between gap-1">
+          {/* Block type buttons */}
+          <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
+            {BLOCK_TYPES.map(({ type, icon: Icon, label }) => (
+              <button
+                key={type}
+                onClick={() => addBlock(type)}
+                className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label={`Add ${label}`}
+              >
+                <Icon size={20} />
+              </button>
+            ))}
+          </div>
+
+          {/* Mood selector */}
+          <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
+            {[
+              { score: 1 as MoodScore, icon: Frown, color: 'text-red-400', activeColor: 'text-red-600 bg-red-50' },
+              { score: 3 as MoodScore, icon: Meh, color: 'text-amber-400', activeColor: 'text-amber-600 bg-amber-50' },
+              { score: 5 as MoodScore, icon: Smile, color: 'text-emerald-400', activeColor: 'text-emerald-600 bg-emerald-50' },
+            ].map(({ score, icon: Icon, color, activeColor }) => (
+              <button
+                key={score}
+                onClick={() => setMood(mood === score ? null : score)}
+                className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg transition-all ${
+                  mood === score ? activeColor : `${color} hover:bg-slate-100`
+                }`}
+              >
+                <Icon size={18} />
+              </button>
+            ))}
+          </div>
+
+          {/* Overflow menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+                <MoreVertical size={20} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={handleGenerateInsight}
+                disabled={isGeneratingInsight}
+                className="gap-2"
+              >
+                <Sparkles size={16} className="text-purple-500" />
+                Chad&apos;s Insight
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleSaveDefaultLayout}
+                disabled={isSavingLayout}
+                className="gap-2"
+              >
+                <Layout size={16} />
+                Save Layout
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="gap-2 text-red-600 focus:text-red-600"
+              >
+                <Trash2 size={16} />
+                Discard
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Scrollable Content - add padding for mobile bottom bar */}
+      <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
         <div className="max-w-3xl mx-auto p-4 md:p-8">
           {/* Daily Prompt Card */}
           <Card className="mb-6 border-l-4 border-l-primary bg-gradient-to-r from-sky-50 to-white">
