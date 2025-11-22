@@ -6,6 +6,7 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  getCountFromServer,
   query,
   where,
   orderBy,
@@ -186,13 +187,18 @@ export async function getRecentEntriesForProgress(
  * Get entry count for a user
  */
 export async function getEntryCount(userId: string): Promise<number> {
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId)
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
 
-  const snapshot = await getDocs(q);
-  return snapshot.size;
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error('Error getting entry count:', error);
+    throw error;
+  }
 }
 
 /**
