@@ -1,13 +1,14 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { nanoid } from 'nanoid';
 import {
   ChevronLeft,
   MoreVertical,
-  Ban,
-  CheckCircle2,
-  Tag,
+  Sun,
+  Moon,
+  Columns,
   Smile,
   Meh,
   Frown,
@@ -18,6 +19,12 @@ import {
   X,
   Calendar,
   Clock,
+  DollarSign,
+  User,
+  Heart,
+  Target,
+  Plus,
+  GripVertical,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,31 +45,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEntry, updateEntry, deleteEntry } from '@/lib/firebase/journal';
-import type { JournalEntry, JournalTemplate, MoodScore, Pillar } from '@/lib/types';
+import type { JournalEntry, MoodScore, Pillar, EntryBlock, BlockType } from '@/lib/types';
 
-const TEMPLATE_LABELS: Record<JournalTemplate, string> = {
-  'morning-intent': 'Morning Intent',
-  'evening-audit': 'Evening Audit',
-  'dichotomy': 'Dichotomy of Control',
-  'free-form': 'Free Form',
-};
-
-const TEMPLATE_COLORS: Record<JournalTemplate, string> = {
-  'morning-intent': 'bg-sky-100 text-primary border-sky-200',
-  'evening-audit': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  'dichotomy': 'bg-purple-100 text-purple-700 border-purple-200',
-  'free-form': 'bg-slate-100 text-slate-700 border-slate-200',
-};
-
-const PILLAR_COLORS: Record<Pillar, string> = {
-  money: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  ego: 'bg-purple-100 text-purple-700 border-purple-200',
-  relationships: 'bg-pink-100 text-pink-700 border-pink-200',
-  discipline: 'bg-amber-100 text-amber-700 border-amber-200',
+const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string }> = {
+  money: { icon: DollarSign, label: 'Money', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  ego: { icon: User, label: 'Ego', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  relationships: { icon: Heart, label: 'Relationships', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+  discipline: { icon: Target, label: 'Discipline', color: 'bg-amber-100 text-amber-700 border-amber-200' },
 };
 
 const JournalEntryPage: React.FC = () => {
@@ -79,16 +71,10 @@ const JournalEntryPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Edit form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [blocks, setBlocks] = useState<EntryBlock[]>([]);
   const [mood, setMood] = useState<MoodScore | null>(null);
-  const [pillar, setPillar] = useState<Pillar | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [notInControl, setNotInControl] = useState('');
-  const [inControl, setInControl] = useState('');
-  const [showTagInput, setShowTagInput] = useState(false);
-  const [showPillarSelect, setShowPillarSelect] = useState(false);
+  const [pillar, setPillar] = useState<Pillar>('ego');
+  const [dayInTrack, setDayInTrack] = useState(1);
 
   // Load entry
   useEffect(() => {
@@ -106,13 +92,10 @@ const JournalEntryPage: React.FC = () => {
           }
           setEntry(loadedEntry);
           // Initialize edit form state
-          setTitle(loadedEntry.title);
-          setContent(loadedEntry.content);
+          setBlocks(loadedEntry.blocks || [{ id: nanoid(), type: 'freeform', content: '' }]);
           setMood(loadedEntry.mood);
-          setPillar(loadedEntry.pillar);
-          setTags(loadedEntry.tags);
-          setNotInControl(loadedEntry.notInControl || '');
-          setInControl(loadedEntry.inControl || '');
+          setPillar(loadedEntry.pillar || 'ego');
+          setDayInTrack(loadedEntry.dayInTrack || 1);
         } else {
           router.push('/journal');
         }
@@ -127,17 +110,25 @@ const JournalEntryPage: React.FC = () => {
     loadEntry();
   }, [entryId, user, router]);
 
-  // Handle tag input
-  const addTag = () => {
-    const tag = tagInput.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag.startsWith('#') ? tag : `#${tag}`]);
-    }
-    setTagInput('');
+  // Block management
+  const updateBlock = (id: string, updates: Partial<EntryBlock>) => {
+    setBlocks(blocks.map((b) => (b.id === id ? { ...b, ...updates } : b)));
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
+  const deleteBlock = (id: string) => {
+    if (blocks.length > 1) {
+      setBlocks(blocks.filter((b) => b.id !== id));
+    }
+  };
+
+  const addBlock = (type: BlockType) => {
+    const newBlock: EntryBlock = {
+      id: nanoid(),
+      type,
+      content: '',
+      ...(type === 'dichotomy' ? { inControl: '', notInControl: '' } : {}),
+    };
+    setBlocks([...blocks, newBlock]);
   };
 
   // Handle save
@@ -147,25 +138,19 @@ const JournalEntryPage: React.FC = () => {
     setIsSaving(true);
     try {
       await updateEntry(entry.id, {
-        title,
-        content,
+        blocks,
         mood,
         pillar,
-        tags,
-        notInControl: entry.template === 'dichotomy' ? notInControl : undefined,
-        inControl: entry.template === 'dichotomy' ? inControl : undefined,
+        dayInTrack,
       });
 
       // Update local state
       setEntry({
         ...entry,
-        title,
-        content,
+        blocks,
         mood,
         pillar,
-        tags,
-        notInControl,
-        inControl,
+        dayInTrack,
       });
 
       setIsEditing(false);
@@ -196,19 +181,26 @@ const JournalEntryPage: React.FC = () => {
   // Cancel editing
   const handleCancelEdit = () => {
     if (entry) {
-      setTitle(entry.title);
-      setContent(entry.content);
+      setBlocks(entry.blocks || [{ id: nanoid(), type: 'freeform', content: '' }]);
       setMood(entry.mood);
-      setPillar(entry.pillar);
-      setTags(entry.tags);
-      setNotInControl(entry.notInControl || '');
-      setInControl(entry.inControl || '');
+      setPillar(entry.pillar || 'ego');
+      setDayInTrack(entry.dayInTrack || 1);
     }
     setIsEditing(false);
   };
 
   // Format date
   const formatDate = (entry: JournalEntry) => {
+    if (entry.date) {
+      const [year, month, day] = entry.date.split('-');
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
     const date = entry.createdAt.toDate();
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -226,8 +218,37 @@ const JournalEntryPage: React.FC = () => {
     });
   };
 
-  // Word count
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  // Get entry title
+  const getEntryTitle = (entry: JournalEntry) => {
+    // Legacy entries have title
+    const legacyEntry = entry as JournalEntry & { title?: string };
+    if (legacyEntry.title) return legacyEntry.title;
+
+    // New entries: generate title from pillar and day
+    if (entry.pillar && entry.dayInTrack) {
+      const pillarLabel = PILLAR_CONFIG[entry.pillar]?.label || entry.pillar;
+      return `Day ${entry.dayInTrack} - ${pillarLabel}`;
+    }
+
+    return 'Journal Entry';
+  };
+
+  // Get word count
+  const getWordCount = () => {
+    let count = 0;
+    for (const block of blocks) {
+      if (block.content) {
+        count += block.content.trim().split(/\s+/).filter(Boolean).length;
+      }
+      if (block.inControl) {
+        count += block.inControl.trim().split(/\s+/).filter(Boolean).length;
+      }
+      if (block.notInControl) {
+        count += block.notInControl.trim().split(/\s+/).filter(Boolean).length;
+      }
+    }
+    return count;
+  };
 
   if (isLoading) {
     return (
@@ -244,6 +265,8 @@ const JournalEntryPage: React.FC = () => {
     return null;
   }
 
+  const PillarIcon = PILLAR_CONFIG[pillar]?.icon || User;
+
   return (
     <div className="h-full flex flex-col bg-white md:bg-slate-50">
       {/* Header */}
@@ -257,12 +280,16 @@ const JournalEntryPage: React.FC = () => {
           </Link>
           <div>
             <h2 className="font-bold text-slate-900 leading-tight">
-              {isEditing ? 'Edit Entry' : 'View Entry'}
+              {isEditing ? 'Edit Entry' : getEntryTitle(entry)}
             </h2>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Badge variant="secondary" className={TEMPLATE_COLORS[entry.template]}>
-                {TEMPLATE_LABELS[entry.template]}
+              <Badge variant="secondary" className={PILLAR_CONFIG[entry.pillar || 'ego']?.color}>
+                <PillarIcon size={12} className="mr-1" />
+                {PILLAR_CONFIG[entry.pillar || 'ego']?.label}
               </Badge>
+              {entry.dayInTrack && (
+                <span>Day {entry.dayInTrack}</span>
+              )}
             </div>
           </div>
         </div>
@@ -333,100 +360,58 @@ const JournalEntryPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Title */}
-          {isEditing ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Entry title"
-              className="w-full text-2xl font-bold text-slate-900 placeholder-slate-300 outline-none mb-6 bg-transparent border-b border-slate-200 pb-2 focus:border-primary"
-            />
-          ) : (
-            <h1 className="text-2xl font-bold text-slate-900 mb-6">{entry.title}</h1>
-          )}
-
-          {/* Mood & Pillar & Tags display (view mode) */}
-          {!isEditing && (
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              {entry.mood && (
-                <div className="flex items-center gap-1 text-sm">
-                  {entry.mood <= 2 && <Frown size={18} className="text-red-500" />}
-                  {entry.mood === 3 && <Meh size={18} className="text-amber-500" />}
-                  {entry.mood >= 4 && <Smile size={18} className="text-emerald-500" />}
-                  <span className="text-slate-500">Mood: {entry.mood}/5</span>
-                </div>
-              )}
-              {entry.pillar && (
-                <Badge variant="outline" className={PILLAR_COLORS[entry.pillar]}>
-                  {entry.pillar.charAt(0).toUpperCase() + entry.pillar.slice(1)}
-                </Badge>
-              )}
-              {entry.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="font-normal">
-                  {tag}
-                </Badge>
-              ))}
+          {/* Mood display (view mode) */}
+          {!isEditing && entry.mood && (
+            <div className="flex items-center gap-2 mb-6">
+              {entry.mood <= 2 && <Frown size={24} className="text-red-500" />}
+              {entry.mood === 3 && <Meh size={24} className="text-amber-500" />}
+              {entry.mood >= 4 && <Smile size={24} className="text-emerald-500" />}
+              <span className="text-slate-500 text-sm">Mood: {entry.mood}/5</span>
             </div>
           )}
 
-          {/* Dichotomy Template Blocks */}
-          {entry.template === 'dichotomy' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <Card className="bg-red-50/50 border-red-100">
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-red-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
-                    <Ban size={16} className="text-red-600" /> Not in my control
-                  </h3>
-                  {isEditing ? (
-                    <textarea
-                      value={notInControl}
-                      onChange={(e) => setNotInControl(e.target.value)}
-                      className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[150px]"
-                      placeholder="What's not in your control..."
-                    />
-                  ) : (
-                    <p className="text-slate-700 whitespace-pre-wrap">
-                      {entry.notInControl || 'Nothing noted'}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-              <Card className="bg-emerald-50/50 border-emerald-100">
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-emerald-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
-                    <CheckCircle2 size={16} className="text-emerald-600" /> In my control
-                  </h3>
-                  {isEditing ? (
-                    <textarea
-                      value={inControl}
-                      onChange={(e) => setInControl(e.target.value)}
-                      className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[150px]"
-                      placeholder="What's in your control..."
-                    />
-                  ) : (
-                    <p className="text-slate-700 whitespace-pre-wrap">
-                      {entry.inControl || 'Nothing noted'}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Blocks */}
+          <div className="space-y-4">
+            {(isEditing ? blocks : entry.blocks || []).map((block) => (
+              <BlockDisplay
+                key={block.id}
+                block={block}
+                isEditing={isEditing}
+                onUpdate={(updates) => updateBlock(block.id, updates)}
+                onDelete={() => deleteBlock(block.id)}
+                canDelete={blocks.length > 1}
+              />
+            ))}
+          </div>
 
-          {/* Main Content */}
-          {isEditing ? (
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full min-h-[300px] resize-none outline-none text-lg text-slate-800 placeholder-slate-300 font-serif leading-loose"
-              placeholder="Your reflection..."
-            />
-          ) : (
-            <div className="prose prose-slate max-w-none">
-              <p className="text-lg text-slate-800 font-serif leading-loose whitespace-pre-wrap">
-                {entry.content || 'No content'}
-              </p>
+          {/* Add block buttons (edit mode) */}
+          {isEditing && (
+            <div className="mt-6 flex items-center gap-2">
+              <span className="text-xs text-slate-400">Add:</span>
+              <button
+                onClick={() => addBlock('freeform')}
+                className="px-3 py-1.5 text-xs font-medium text-slate-500 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                + Text
+              </button>
+              <button
+                onClick={() => addBlock('morning-intent')}
+                className="px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-1"
+              >
+                <Sun size={12} /> Morning
+              </button>
+              <button
+                onClick={() => addBlock('evening-audit')}
+                className="px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+              >
+                <Moon size={12} /> Evening
+              </button>
+              <button
+                onClick={() => addBlock('dichotomy')}
+                className="px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-1"
+              >
+                <Columns size={12} /> Dichotomy
+              </button>
             </div>
           )}
         </div>
@@ -436,67 +421,6 @@ const JournalEntryPage: React.FC = () => {
       {isEditing && (
         <footer className="bg-white border-t border-slate-200 p-3 md:p-4 sticky bottom-0 z-10">
           <div className="max-w-3xl mx-auto">
-            {/* Tags display */}
-            {(tags.length > 0 || showTagInput) && (
-              <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-slate-100">
-                {tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="font-normal cursor-pointer hover:bg-slate-200"
-                    onClick={() => removeTag(tag)}
-                  >
-                    {tag} <X size={12} className="ml-1" />
-                  </Badge>
-                ))}
-                {showTagInput && (
-                  <Input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addTag();
-                      } else if (e.key === 'Escape') {
-                        setShowTagInput(false);
-                        setTagInput('');
-                      }
-                    }}
-                    onBlur={() => {
-                      if (tagInput) addTag();
-                      setShowTagInput(false);
-                    }}
-                    placeholder="Add tag..."
-                    className="w-24 h-6 text-xs"
-                    autoFocus
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Pillar selector */}
-            {showPillarSelect && (
-              <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-slate-100">
-                <span className="text-xs text-slate-500 mr-2">Pillar:</span>
-                {(['money', 'ego', 'relationships', 'discipline'] as Pillar[]).map((p) => (
-                  <Badge
-                    key={p}
-                    variant="outline"
-                    className={`cursor-pointer capitalize ${
-                      pillar === p ? PILLAR_COLORS[p] : 'hover:bg-slate-100'
-                    }`}
-                    onClick={() => {
-                      setPillar(pillar === p ? null : p);
-                      setShowPillarSelect(false);
-                    }}
-                  >
-                    {p}
-                  </Badge>
-                ))}
-              </div>
-            )}
-
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
                 {/* Mood Selector */}
@@ -517,29 +441,10 @@ const JournalEntryPage: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
-                <div className="hidden md:flex items-center gap-2">
-                  <button
-                    onClick={() => setShowTagInput(true)}
-                    className="text-slate-500 hover:text-stoic-blue text-sm font-bold flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-50 transition-colors"
-                  >
-                    <Tag size={16} /> Tags
-                  </button>
-                  <button
-                    onClick={() => setShowPillarSelect(!showPillarSelect)}
-                    className={`text-sm font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-                      pillar
-                        ? PILLAR_COLORS[pillar]
-                        : 'text-slate-500 hover:text-stoic-blue hover:bg-slate-50'
-                    }`}
-                  >
-                    {pillar ? pillar.charAt(0).toUpperCase() + pillar.slice(1) : 'Pillar'}
-                  </button>
-                </div>
               </div>
 
               <div className="flex items-center gap-4 text-slate-400 text-xs font-mono">
-                <span className="hidden md:inline">{wordCount} words</span>
+                <span className="hidden md:inline">{getWordCount()} words</span>
               </div>
             </div>
           </div>
@@ -577,5 +482,189 @@ const JournalEntryPage: React.FC = () => {
     </div>
   );
 };
+
+// Block Display/Editor Component
+function BlockDisplay({
+  block,
+  isEditing,
+  onUpdate,
+  onDelete,
+  canDelete,
+}: {
+  block: EntryBlock;
+  isEditing: boolean;
+  onUpdate: (updates: Partial<EntryBlock>) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}) {
+  if (block.type === 'dichotomy') {
+    return (
+      <div className="group relative">
+        {isEditing && (
+          <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+            <button className="p-1 text-slate-300 hover:text-slate-500">
+              <GripVertical size={16} />
+            </button>
+            {canDelete && (
+              <button onClick={onDelete} className="p-1 text-slate-300 hover:text-red-500">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-red-50/50 border-red-100">
+            <CardContent className="p-4">
+              <h3 className="font-bold text-red-900 mb-2 text-sm uppercase tracking-wide">
+                Not in my control
+              </h3>
+              {isEditing ? (
+                <textarea
+                  value={block.notInControl || ''}
+                  onChange={(e) => onUpdate({ notInControl: e.target.value })}
+                  className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[100px]"
+                  placeholder="• Other people's opinions..."
+                />
+              ) : (
+                <p className="text-slate-700 whitespace-pre-wrap">
+                  {block.notInControl || 'Nothing noted'}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="bg-emerald-50/50 border-emerald-100">
+            <CardContent className="p-4">
+              <h3 className="font-bold text-emerald-900 mb-2 text-sm uppercase tracking-wide">
+                In my control
+              </h3>
+              {isEditing ? (
+                <textarea
+                  value={block.inControl || ''}
+                  onChange={(e) => onUpdate({ inControl: e.target.value })}
+                  className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[100px]"
+                  placeholder="• My effort..."
+                />
+              ) : (
+                <p className="text-slate-700 whitespace-pre-wrap">
+                  {block.inControl || 'Nothing noted'}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (block.type === 'morning-intent') {
+    return (
+      <div className="group relative">
+        {isEditing && (
+          <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+            <button className="p-1 text-slate-300 hover:text-slate-500">
+              <GripVertical size={16} />
+            </button>
+            {canDelete && (
+              <button onClick={onDelete} className="p-1 text-slate-300 hover:text-red-500">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100">
+          <h3 className="font-bold text-amber-900 mb-2 text-sm uppercase tracking-wide flex items-center gap-2">
+            <Sun size={16} /> Morning Intent
+          </h3>
+          {isEditing ? (
+            <textarea
+              value={block.content}
+              onChange={(e) => onUpdate({ content: e.target.value })}
+              className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[100px]"
+              placeholder="What do I intend to focus on today?"
+            />
+          ) : (
+            <p className="text-slate-700 whitespace-pre-wrap">
+              {block.content || 'No content'}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (block.type === 'evening-audit') {
+    return (
+      <div className="group relative">
+        {isEditing && (
+          <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+            <button className="p-1 text-slate-300 hover:text-slate-500">
+              <GripVertical size={16} />
+            </button>
+            {canDelete && (
+              <button onClick={onDelete} className="p-1 text-slate-300 hover:text-red-500">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100">
+          <h3 className="font-bold text-indigo-900 mb-2 text-sm uppercase tracking-wide flex items-center gap-2">
+            <Moon size={16} /> Evening Audit
+          </h3>
+          {isEditing ? (
+            <textarea
+              value={block.content}
+              onChange={(e) => onUpdate({ content: e.target.value })}
+              className="w-full bg-transparent outline-none text-slate-700 resize-none leading-relaxed min-h-[100px]"
+              placeholder="What went well today? What could have gone better?"
+            />
+          ) : (
+            <p className="text-slate-700 whitespace-pre-wrap">
+              {block.content || 'No content'}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Freeform block
+  return (
+    <div className="group relative">
+      {isEditing && (
+        <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+          <button className="p-1 text-slate-300 hover:text-slate-500">
+            <GripVertical size={16} />
+          </button>
+          {canDelete && (
+            <button onClick={onDelete} className="p-1 text-slate-300 hover:text-red-500">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {isEditing ? (
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <textarea
+            value={block.content}
+            onChange={(e) => onUpdate({ content: e.target.value })}
+            className="w-full bg-transparent outline-none text-slate-800 resize-none leading-relaxed min-h-[150px] text-lg font-serif"
+            placeholder="Write your reflection..."
+          />
+        </div>
+      ) : (
+        <div className="prose prose-slate max-w-none">
+          <p className="text-lg text-slate-800 font-serif leading-loose whitespace-pre-wrap">
+            {block.content || 'No content'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default JournalEntryPage;
