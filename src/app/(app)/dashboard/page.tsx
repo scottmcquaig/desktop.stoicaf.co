@@ -10,6 +10,12 @@ import {
   Search,
   Bell,
   Loader2,
+  Sparkles,
+  RefreshCw,
+  ChevronRight,
+  Target,
+  Lightbulb,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +29,7 @@ import {
   getEntryCount,
 } from '@/lib/firebase/journal';
 import { getDailyQuote } from '@/lib/dailyQuote';
+import { toast } from 'sonner';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
 
 interface DailyQuoteData {
@@ -30,6 +37,14 @@ interface DailyQuoteData {
   author: string;
   pillar: Pillar;
   broTranslation: string;
+}
+
+interface WeeklyReflectionData {
+  summary: string;
+  keyThemes: string[];
+  insights: string[];
+  growthAreas: string[];
+  recommendations: string[];
 }
 
 const DashboardPage: React.FC = () => {
@@ -45,6 +60,11 @@ const DashboardPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyQuote, setDailyQuote] = useState<DailyQuoteData | null>(null);
+
+  // Weekly reflection state
+  const [weeklyReflection, setWeeklyReflection] = useState<WeeklyReflectionData | null>(null);
+  const [isLoadingReflection, setIsLoadingReflection] = useState(false);
+  const [reflectionError, setReflectionError] = useState<string | null>(null);
 
   const PROGRESS_WINDOW = 30;
 
@@ -103,6 +123,43 @@ const DashboardPage: React.FC = () => {
     getDailyQuote().then(setDailyQuote).catch(console.error);
   }, []);
 
+  // Generate weekly reflection
+  const generateWeeklyReflection = useCallback(async () => {
+    if (!user || !userProfile?.pillarFocus) return;
+
+    setIsLoadingReflection(true);
+    setReflectionError(null);
+
+    try {
+      const response = await fetch('/api/ai/weekly-reflection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          track: userProfile.pillarFocus,
+          weekOffset: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setReflectionError('Not enough entries this week for a reflection.');
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to generate reflection');
+      }
+
+      const result = await response.json();
+      setWeeklyReflection(result);
+    } catch (error) {
+      console.error('Error generating weekly reflection:', error);
+      setReflectionError('Unable to generate reflection right now.');
+      toast.error('Failed to generate weekly reflection');
+    } finally {
+      setIsLoadingReflection(false);
+    }
+  }, [user, userProfile?.pillarFocus]);
+
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -159,15 +216,41 @@ const DashboardPage: React.FC = () => {
     return <Smile size={16} className="text-emerald-500" />;
   };
 
-  // Get template label
-  const getTemplateLabel = (template: string) => {
-    const labels: Record<string, string> = {
-      'morning-intent': 'Morning Intent',
-      'evening-audit': 'Evening Audit',
-      'dichotomy': 'Dichotomy',
-      'free-form': 'Free-Form',
+  // Get display label for entry (based on pillar or block types)
+  const getEntryLabel = (entry: JournalEntry) => {
+    // Try to get a meaningful label from blocks
+    const blockTypes = entry.blocks?.map(b => b.type) || [];
+    if (blockTypes.includes('morning-intent')) return 'Morning Intent';
+    if (blockTypes.includes('evening-audit')) return 'Evening Audit';
+    if (blockTypes.includes('dichotomy')) return 'Dichotomy';
+
+    // Fall back to pillar name
+    const pillarLabels: Record<Pillar, string> = {
+      money: 'Money',
+      ego: 'Ego',
+      relationships: 'Relationships',
+      discipline: 'Discipline',
     };
-    return labels[template] || template;
+    return pillarLabels[entry.pillar] || 'Journal Entry';
+  };
+
+  // Get preview text from entry blocks
+  const getEntryPreview = (entry: JournalEntry) => {
+    if (!entry.blocks || entry.blocks.length === 0) return '';
+
+    // Find first block with content
+    for (const block of entry.blocks) {
+      if (block.content?.trim()) {
+        return block.content.trim().slice(0, 100);
+      }
+      if (block.inControl?.trim()) {
+        return `In control: ${block.inControl.trim().slice(0, 80)}`;
+      }
+      if (block.notInControl?.trim()) {
+        return `Not in control: ${block.notInControl.trim().slice(0, 80)}`;
+      }
+    }
+    return '';
   };
 
   return (
@@ -327,6 +410,130 @@ const DashboardPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Weekly AI Reflection */}
+          <Card className="border-l-4 border-l-purple-500 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="text-purple-500" size={20} />
+                  <h3 className="font-bold text-slate-900">Weekly Reflection</h3>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-0 text-[10px]">
+                    AI Powered
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={generateWeeklyReflection}
+                  disabled={isLoadingReflection}
+                  className="text-xs min-h-10"
+                >
+                  {isLoadingReflection ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  <span className="ml-1.5 hidden sm:inline">
+                    {weeklyReflection ? 'Refresh' : 'Generate'}
+                  </span>
+                </Button>
+              </div>
+
+              {isLoadingReflection ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                  <p className="text-sm text-slate-500">Analyzing your week...</p>
+                </div>
+              ) : reflectionError ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-slate-500 mb-3">{reflectionError}</p>
+                  <Button asChild variant="outline" size="sm" className="min-h-10">
+                    <Link href="/journal/new">
+                      Write an Entry
+                      <ChevronRight size={16} className="ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : weeklyReflection ? (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="bg-purple-50 p-4 rounded-xl">
+                    <p className="text-sm text-slate-700 leading-relaxed">{weeklyReflection.summary}</p>
+                  </div>
+
+                  {/* Key Themes */}
+                  {weeklyReflection.keyThemes && weeklyReflection.keyThemes.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {weeklyReflection.keyThemes.slice(0, 4).map((theme, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {theme}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Insights */}
+                  {weeklyReflection.insights && weeklyReflection.insights.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <Lightbulb size={14} />
+                        Key Insights
+                      </h4>
+                      <ul className="space-y-1">
+                        {weeklyReflection.insights.slice(0, 3).map((insight, index) => (
+                          <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                            <span className="text-purple-500 mt-1">•</span>
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
+                  {weeklyReflection.recommendations && weeklyReflection.recommendations.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <Target size={14} />
+                        Focus Areas
+                      </h4>
+                      <ul className="space-y-1">
+                        {weeklyReflection.recommendations.slice(0, 2).map((rec, index) => (
+                          <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                            <ArrowUpRight size={14} className="text-primary mt-0.5 flex-shrink-0" />
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <ChadGPTSvg className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm text-slate-500 mb-3">
+                    Get AI-powered insights from your journal entries
+                  </p>
+                  <Button
+                    onClick={generateWeeklyReflection}
+                    disabled={isLoadingReflection || !userProfile?.pillarFocus}
+                    size="sm"
+                    className="min-h-10 bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Sparkles size={16} className="mr-2" />
+                    Generate Reflection
+                  </Button>
+                  {!userProfile?.pillarFocus && (
+                    <p className="text-xs text-slate-400 mt-2">
+                      Complete onboarding to unlock AI reflections
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Recent Entries */}
           <Card>
             <CardContent className="p-6">
@@ -360,9 +567,9 @@ const DashboardPage: React.FC = () => {
                         <span className="text-sm text-slate-400">{getMoodIcon(entry.mood)}</span>
                       </div>
                       <h4 className="font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-                        {getTemplateLabel(entry.template)}
+                        {getEntryLabel(entry)}
                       </h4>
-                      <p className="text-sm text-slate-500 truncate">{entry.title}</p>
+                      <p className="text-sm text-slate-500 truncate">{getEntryPreview(entry)}</p>
                     </Link>
                   ))}
                 </div>

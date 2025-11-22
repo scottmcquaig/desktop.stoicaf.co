@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,16 +44,19 @@ export function QuickCapture({ open, onOpenChange }: QuickCaptureProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md mx-auto rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Quick Capture</span>
-            <span className="text-xs text-slate-400 font-normal">
+            <span className="text-xs text-slate-400 font-normal hidden sm:inline">
               <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px]">Cmd</kbd>
               {' + '}
               <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px]">K</kbd>
             </span>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Quickly capture a thought to add to your journal
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -61,7 +65,7 @@ export function QuickCapture({ open, onOpenChange }: QuickCaptureProps) {
               placeholder="Capture a quick thought..."
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, maxLength))}
-              className="min-h-[120px] resize-none pr-12 border-slate-300 focus:ring-2 focus:ring-stoic-blue focus:border-transparent"
+              className="min-h-[120px] sm:min-h-[120px] resize-none pr-12 border-slate-300 focus:ring-2 focus:ring-stoic-blue focus:border-transparent text-base"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -75,44 +79,43 @@ export function QuickCapture({ open, onOpenChange }: QuickCaptureProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* Mobile-optimized button layout */}
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-between gap-3">
             <Button
               variant="outline"
-              size="sm"
-              className="text-slate-500"
+              className="text-slate-500 min-h-11 justify-center"
               disabled
               title="Voice capture coming soon"
             >
-              <Mic className="h-4 w-4 mr-2" />
-              Voice
+              <Mic className="h-5 w-5 mr-2" />
+              Voice (coming soon)
             </Button>
 
             <div className="flex gap-2">
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={handleClose}
+                className="flex-1 sm:flex-none min-h-11"
               >
-                <X className="h-4 w-4 mr-1" />
+                <X className="h-5 w-5 mr-1" />
                 Cancel
               </Button>
               <Button
-                size="sm"
                 onClick={handleSubmit}
                 disabled={!text.trim() || saving}
-                className="bg-stoic-blue hover:bg-sky-600"
+                className="flex-1 sm:flex-none min-h-11 bg-stoic-blue hover:bg-sky-600"
               >
                 {saving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="h-5 w-5 mr-2" />
                 )}
                 Save
               </Button>
             </div>
           </div>
 
-          <p className="text-xs text-slate-400 text-center">
+          <p className="text-xs text-slate-400 text-center hidden sm:block">
             Press <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">Cmd+Enter</kbd> to save
           </p>
         </div>
