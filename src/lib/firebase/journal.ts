@@ -329,3 +329,95 @@ export async function getPillarProgress(
   const data = snapshot.docs[0].data();
   return data.dayInTrack as number;
 }
+
+/**
+ * Get entries for the last N days (for insights)
+ */
+export async function getEntriesForLastNDays(
+  userId: string,
+  days: number = 30
+): Promise<JournalEntry[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  const q = query(
+    collection(db, ENTRIES_COLLECTION),
+    where('userId', '==', userId),
+    where('createdAt', '>=', Timestamp.fromDate(startDate)),
+    orderBy('createdAt', 'desc')
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as JournalEntry[];
+}
+
+/**
+ * Get pillar distribution for user
+ */
+export async function getPillarDistribution(
+  userId: string
+): Promise<Record<string, number>> {
+  const q = query(
+    collection(db, ENTRIES_COLLECTION),
+    where('userId', '==', userId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  const distribution: Record<string, number> = {
+    money: 0,
+    ego: 0,
+    relationships: 0,
+    discipline: 0,
+  };
+
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    if (data.pillar && distribution[data.pillar] !== undefined) {
+      distribution[data.pillar]++;
+    }
+  });
+
+  return distribution;
+}
+
+/**
+ * Get mood data for last N days (for insights chart)
+ */
+export async function getMoodDataForDays(
+  userId: string,
+  days: number = 30
+): Promise<{ date: string; mood: number | null }[]> {
+  const entries = await getEntriesForLastNDays(userId, days);
+
+  // Create a map of date -> mood
+  const moodByDate: Record<string, number | null> = {};
+
+  entries.forEach((entry) => {
+    const dateStr = entry.date || entry.createdAt.toDate().toISOString().split('T')[0];
+    if (!moodByDate[dateStr]) {
+      moodByDate[dateStr] = entry.mood;
+    }
+  });
+
+  // Fill in all days in the range
+  const result: { date: string; mood: number | null }[] = [];
+  const today = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    result.push({
+      date: dateStr,
+      mood: moodByDate[dateStr] ?? null,
+    });
+  }
+
+  return result;
+}

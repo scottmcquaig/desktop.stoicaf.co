@@ -17,6 +17,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuickCapture } from '@/components/QuickCapture';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
@@ -84,7 +85,9 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto md:h-screen pb-20 md:pb-0">{children}</main>
+          <main className="flex-1 overflow-y-auto md:h-screen pb-20 md:pb-0">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
         </div>
 
         {/* Mobile Bottom Nav */}

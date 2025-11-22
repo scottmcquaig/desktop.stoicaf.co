@@ -11,6 +11,7 @@ import {
   Search,
   Bell,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,15 @@ import { Badge } from '@/components/ui/badge';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
 import { calculateStreak, getRecentEntries, getEntryCount } from '@/lib/firebase/journal';
+import { getDailyQuote, getRandomQuote } from '@/lib/dailyQuote';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
+
+interface DailyQuoteData {
+  quote: string;
+  author: string;
+  pillar: Pillar;
+  broTranslation: string;
+}
 
 const DashboardPage: React.FC = () => {
   const { user, userProfile } = useAuth();
@@ -32,6 +41,8 @@ const DashboardPage: React.FC = () => {
     discipline: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyQuote, setDailyQuote] = useState<DailyQuoteData | null>(null);
+  const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
 
   // Load dashboard data
   const loadDashboardData = useCallback(async () => {
@@ -81,6 +92,24 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  // Load daily quote
+  useEffect(() => {
+    getDailyQuote().then(setDailyQuote).catch(console.error);
+  }, []);
+
+  // Refresh quote (get a random one)
+  const handleRefreshQuote = async () => {
+    setIsRefreshingQuote(true);
+    try {
+      const quote = await getRandomQuote();
+      setDailyQuote(quote);
+    } catch (error) {
+      console.error('Error refreshing quote:', error);
+    } finally {
+      setIsRefreshingQuote(false);
+    }
+  };
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -260,35 +289,48 @@ const DashboardPage: React.FC = () => {
                 <Badge variant="secondary" className="border-0">
                   Daily Stoic Quote
                 </Badge>
-                <MoreHorizontal className="text-slate-400 cursor-pointer" size={20} />
+                <button
+                  onClick={handleRefreshQuote}
+                  disabled={isRefreshingQuote}
+                  className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                  title="Get a different quote"
+                >
+                  <RefreshCw size={18} className={`text-slate-400 ${isRefreshingQuote ? 'animate-spin' : ''}`} />
+                </button>
               </div>
-              <blockquote className="text-xl font-serif text-slate-800 italic mb-4 leading-relaxed">
-                "The impediment to action advances action. What stands in the way becomes the way."
-              </blockquote>
-              <p className="text-sm font-bold text-slate-900 mb-6">— Marcus Aurelius</p>
+              {dailyQuote ? (
+                <>
+                  <blockquote className="text-xl font-serif text-slate-800 italic mb-4 leading-relaxed">
+                    &ldquo;{dailyQuote.quote}&rdquo;
+                  </blockquote>
+                  <p className="text-sm font-bold text-slate-900 mb-6">&mdash; {dailyQuote.author}</p>
 
-              {/* ChadGPT Speech Bubble */}
-              <div className="relative -mx-2 -mb-2">
-                <div className="flex items-start gap-3">
-                  {/* ChadGPT Avatar */}
-                  <div className="relative -mt-1 flex-shrink-0">
-                    <ChadGPTSvg className="w-11 h-11" />
+                  {/* ChadGPT Speech Bubble */}
+                  <div className="relative -mx-2 -mb-2">
+                    <div className="flex items-start gap-3">
+                      {/* ChadGPT Avatar */}
+                      <div className="relative -mt-1 flex-shrink-0">
+                        <ChadGPTSvg className="w-11 h-11" />
+                      </div>
+
+                      {/* Speech Bubble */}
+                      <div className="relative flex-1 bg-slate-50 p-4 rounded-2xl rounded-tl-sm border border-dashed border-slate-300">
+                        {/* Speech bubble pointer */}
+                        <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-300"></div>
+                        <div className="absolute -left-[6px] top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-50"></div>
+
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          <span className="font-bold text-stoic-dark">ChadGPT says:</span> {dailyQuote.broTranslation}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Speech Bubble */}
-                  <div className="relative flex-1 bg-slate-50 p-4 rounded-2xl rounded-tl-sm border border-dashed border-slate-300">
-                    {/* Speech bubble pointer */}
-                    <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-300"></div>
-                    <div className="absolute -left-[6px] top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-50"></div>
-
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      <span className="font-bold text-stoic-dark">ChadGPT says:</span> This reminds us that obstacles aren&apos;t
-                      stop signs—they&apos;re training grounds. The difficult coworker is patience training. The lost deal is
-                      resilience training.
-                    </p>
-                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
           {/* Recent Entries */}
