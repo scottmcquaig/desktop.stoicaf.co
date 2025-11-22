@@ -140,7 +140,7 @@ export function AppSidebar({
         <Link
           href="/journal/new"
           className={cn(
-            'w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 transition-all group'
+            'w-full bg-stoic-dark hover:bg-stoic-dark/90 text-white py-3 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 transition-all group'
           )}
         >
           <Edit size={20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
