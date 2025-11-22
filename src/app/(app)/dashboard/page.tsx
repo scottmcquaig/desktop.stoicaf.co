@@ -131,21 +131,58 @@ const DashboardPage: React.FC = () => {
     setReflectionError(null);
 
     try {
+      // Use recentEntries that are already loaded, or fetch if needed
+      let entries = recentEntries;
+      if (entries.length === 0) {
+        const { getEntriesForLastNDays } = await import('@/lib/firebase/journal');
+        entries = await getEntriesForLastNDays(user.uid, 7);
+      }
+
+      if (entries.length === 0) {
+        setReflectionError('Not enough entries this week for a reflection.');
+        return;
+      }
+
+      // Format entries for AI processing
+      const formattedEntries = entries.map(entry => {
+        // Extract content from blocks
+        const content = entry.blocks
+          ?.map((block) => {
+            if (block.type === 'dichotomy') {
+              const parts: string[] = [];
+              if (block.inControl) parts.push(`In my control: ${block.inControl}`);
+              if (block.notInControl) parts.push(`Not in my control: ${block.notInControl}`);
+              return parts.join('\n');
+            }
+            return block.content || '';
+          })
+          .filter(Boolean)
+          .join('\n\n') || '';
+
+        return {
+          content,
+          date: entry.date || entry.createdAt.toDate().toISOString().split('T')[0],
+          mood: entry.mood ? String(entry.mood) : undefined,
+        };
+      }).filter(e => e.content.trim());
+
+      if (formattedEntries.length === 0) {
+        setReflectionError('Not enough entries with content this week.');
+        return;
+      }
+
       const response = await fetch('/api/ai/weekly-reflection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          entries: formattedEntries,
           track: userProfile.pillarFocus,
-          weekOffset: 0,
+          userId: user.uid,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        if (response.status === 404) {
-          setReflectionError('Not enough entries this week for a reflection.');
-          return;
-        }
         throw new Error(errorData.error || 'Failed to generate reflection');
       }
 
@@ -158,7 +195,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoadingReflection(false);
     }
-  }, [user, userProfile?.pillarFocus]);
+  }, [user, userProfile?.pillarFocus, recentEntries]);
 
   // Get greeting based on time of day
   const getGreeting = () => {
