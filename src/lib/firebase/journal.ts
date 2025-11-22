@@ -96,32 +96,66 @@ export async function getEntries(
 }> {
   const { pageSize = 10, lastDoc } = options;
 
-  let q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(pageSize + 1) // Fetch one extra to check if there are more
-  );
+  try {
+    // Try the indexed query first
+    let q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(pageSize + 1)
+    );
 
-  if (lastDoc) {
-    q = query(q, startAfter(lastDoc));
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+
+    const snapshot = await getDocs(q);
+    const docs = snapshot.docs;
+    const hasMore = docs.length > pageSize;
+
+    const entries = docs.slice(0, pageSize).map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+
+    return {
+      entries,
+      lastDoc: docs.length > 0 ? docs[Math.min(docs.length - 1, pageSize - 1)] : null,
+      hasMore,
+    };
+  } catch (error) {
+    // Fallback: fetch without ordering (works without composite index)
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+
+    // Sort client-side by createdAt descending
+    const allEntries = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as JournalEntry[];
+
+    allEntries.sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+      return bTime - aTime;
+    });
+
+    const entries = allEntries.slice(0, pageSize);
+    const hasMore = allEntries.length > pageSize;
+
+    return {
+      entries,
+      lastDoc: null, // Pagination won't work with fallback
+      hasMore,
+    };
   }
-
-  const snapshot = await getDocs(q);
-  const docs = snapshot.docs;
-  const hasMore = docs.length > pageSize;
-
-  // Remove the extra doc if it exists
-  const entries = docs.slice(0, pageSize).map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as JournalEntry[];
-
-  return {
-    entries,
-    lastDoc: docs.length > 0 ? docs[Math.min(docs.length - 1, pageSize - 1)] : null,
-    hasMore,
-  };
 }
 
 /**
@@ -135,20 +169,54 @@ export async function getEntriesForMonth(
   const startDate = new Date(year, month, 1);
   const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    where('createdAt', '>=', Timestamp.fromDate(startDate)),
-    where('createdAt', '<=', Timestamp.fromDate(endDate)),
-    orderBy('createdAt', 'desc')
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      where('createdAt', '>=', Timestamp.fromDate(startDate)),
+      where('createdAt', '<=', Timestamp.fromDate(endDate)),
+      orderBy('createdAt', 'desc')
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as JournalEntry[];
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+  } catch (error) {
+    // Fallback: fetch all and filter client-side
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+
+    // Filter by month using date field or createdAt
+    return allEntries.filter((entry) => {
+      let entryDate: Date;
+      if (entry.date) {
+        const [y, m, d] = entry.date.split('-').map(Number);
+        entryDate = new Date(y, m - 1, d);
+      } else if (entry.createdAt?.toDate) {
+        entryDate = entry.createdAt.toDate();
+      } else {
+        return false;
+      }
+      return entryDate >= startDate && entryDate <= endDate;
+    }).sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+      return bTime - aTime;
+    });
+  }
 }
 
 /**
@@ -158,19 +226,43 @@ export async function getRecentEntries(
   userId: string,
   count: number = 5
 ): Promise<JournalEntry[]> {
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(count)
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(count)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as JournalEntry[];
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+  } catch (error) {
+    // Fallback: fetch all and sort client-side
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+
+    allEntries.sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+      return bTime - aTime;
+    });
+
+    return allEntries.slice(0, count);
+  }
 }
 
 /**
@@ -205,23 +297,51 @@ export async function getEntryCount(userId: string): Promise<number> {
  * Calculate streak (consecutive days with entries)
  */
 export async function calculateStreak(userId: string): Promise<number> {
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(100) // Check last 100 entries max
-  );
+  let entries: Timestamp[] = [];
 
-  const snapshot = await getDocs(q);
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    );
 
-  if (snapshot.empty) {
-    return 0;
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return 0;
+    }
+
+    entries = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return data.createdAt as Timestamp;
+    });
+  } catch (error) {
+    // Fallback: fetch all and sort client-side
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return 0;
+    }
+
+    entries = snapshot.docs
+      .map((doc) => doc.data().createdAt as Timestamp)
+      .filter(Boolean)
+      .sort((a, b) => b.toDate().getTime() - a.toDate().getTime())
+      .slice(0, 100);
   }
 
-  const entries = snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return data.createdAt as Timestamp;
-  });
+  if (entries.length === 0) {
+    return 0;
+  }
 
   // Get unique dates (YYYY-MM-DD format)
   const uniqueDates = [...new Set(
@@ -272,26 +392,51 @@ export async function getMoodTrend(
   userId: string,
   count: number = 5
 ): Promise<{ date: Date; mood: number }[]> {
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    where('mood', '!=', null),
-    orderBy('mood'),
-    orderBy('createdAt', 'desc'),
-    limit(count)
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      where('mood', '!=', null),
+      orderBy('mood'),
+      orderBy('createdAt', 'desc'),
+      limit(count)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  return snapshot.docs
-    .map((doc) => {
-      const data = doc.data();
-      return {
-        date: (data.createdAt as Timestamp).toDate(),
-        mood: data.mood as number,
-      };
-    })
-    .reverse(); // Chronological order
+    return snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          date: (data.createdAt as Timestamp).toDate(),
+          mood: data.mood as number,
+        };
+      })
+      .reverse();
+  } catch (error) {
+    // Fallback: fetch all and filter/sort client-side
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+    const entriesWithMood = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          date: (data.createdAt as Timestamp)?.toDate?.() || new Date(),
+          mood: data.mood as number | null,
+        };
+      })
+      .filter((e) => e.mood !== null && e.mood !== undefined)
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, count) as { date: Date; mood: number }[];
+
+    return entriesWithMood.reverse();
+  }
 }
 
 /**
@@ -328,22 +473,43 @@ export async function getPillarProgress(
   userId: string,
   pillar: string
 ): Promise<number> {
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    where('pillar', '==', pillar),
-    orderBy('dayInTrack', 'desc'),
-    limit(1)
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      where('pillar', '==', pillar),
+      orderBy('dayInTrack', 'desc'),
+      limit(1)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
-    return 0;
+    if (snapshot.empty) {
+      return 0;
+    }
+
+    const data = snapshot.docs[0].data();
+    return data.dayInTrack as number;
+  } catch (error) {
+    // Fallback: fetch all entries for this pillar and find max dayInTrack
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+    const pillarEntries = snapshot.docs
+      .map((doc) => doc.data())
+      .filter((data) => data.pillar === pillar);
+
+    if (pillarEntries.length === 0) {
+      return 0;
+    }
+
+    return Math.max(...pillarEntries.map((e) => (e.dayInTrack as number) || 0));
   }
-
-  const data = snapshot.docs[0].data();
-  return data.dayInTrack as number;
 }
 
 /**
@@ -357,19 +523,47 @@ export async function getEntriesForLastNDays(
   startDate.setDate(startDate.getDate() - days);
   startDate.setHours(0, 0, 0, 0);
 
-  const q = query(
-    collection(db, ENTRIES_COLLECTION),
-    where('userId', '==', userId),
-    where('createdAt', '>=', Timestamp.fromDate(startDate)),
-    orderBy('createdAt', 'desc')
-  );
+  try {
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId),
+      where('createdAt', '>=', Timestamp.fromDate(startDate)),
+      orderBy('createdAt', 'desc')
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as JournalEntry[];
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+  } catch (error) {
+    // Fallback: fetch all and filter client-side
+    console.warn('Composite index may be missing, using fallback query:', error);
+
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as JournalEntry[];
+
+    // Filter by date range
+    return allEntries
+      .filter((entry) => {
+        const entryDate = entry.createdAt?.toDate?.();
+        return entryDate && entryDate >= startDate;
+      })
+      .sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+        const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+        return bTime - aTime;
+      });
+  }
 }
 
 /**
