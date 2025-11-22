@@ -9,35 +9,39 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Brain, Flame, Scale, Gavel, Loader2 } from 'lucide-react';
+import { DollarSign, User, Heart, Target, Loader2 } from 'lucide-react';
 
-type VirtueFocus = 'wisdom' | 'courage' | 'temperance' | 'justice';
+type PillarFocus = 'money' | 'ego' | 'relationships' | 'discipline';
 type ChadTone = 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
 
-const virtues = [
+const pillars = [
   {
-    id: 'wisdom' as VirtueFocus,
-    label: 'Wisdom',
-    description: 'Understanding and sound judgments',
-    icon: Brain,
+    id: 'money' as PillarFocus,
+    label: 'Money',
+    description: 'Financial wisdom and abundance mindset',
+    icon: DollarSign,
+    color: 'text-emerald-500',
   },
   {
-    id: 'courage' as VirtueFocus,
-    label: 'Courage',
-    description: 'Facing challenges with bravery',
-    icon: Flame,
+    id: 'ego' as PillarFocus,
+    label: 'Ego',
+    description: 'Self-awareness and humility',
+    icon: User,
+    color: 'text-purple-500',
   },
   {
-    id: 'temperance' as VirtueFocus,
-    label: 'Temperance',
-    description: 'Moderation and self-control',
-    icon: Scale,
+    id: 'relationships' as PillarFocus,
+    label: 'Relationships',
+    description: 'Connection and meaningful bonds',
+    icon: Heart,
+    color: 'text-pink-500',
   },
   {
-    id: 'justice' as VirtueFocus,
-    label: 'Justice',
-    description: 'Fairness and doing what is right',
-    icon: Gavel,
+    id: 'discipline' as PillarFocus,
+    label: 'Discipline',
+    description: 'Consistency and self-control',
+    icon: Target,
+    color: 'text-amber-500',
   },
 ];
 
@@ -72,7 +76,7 @@ const reminderTimes = [
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
-  const [virtueFocus, setVirtueFocus] = useState<VirtueFocus | null>(null);
+  const [pillarFocus, setPillarFocus] = useState<PillarFocus | null>(null);
   const [chadTone, setChadTone] = useState<ChadTone>('reality-check');
   const [currentStruggle, setCurrentStruggle] = useState('');
   const [reminderTime, setReminderTime] = useState('evening');
@@ -118,7 +122,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       await updateUserProfile({
-        virtueFocus: virtueFocus || undefined,
+        pillarFocus: pillarFocus || undefined,
         chadTone,
         currentStruggle: currentStruggle || undefined,
         reminderTime: reminderTimes.find((r) => r.id === reminderTime)?.time,
@@ -137,7 +141,7 @@ export default function OnboardingPage() {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return virtueFocus !== null;
+        return pillarFocus !== null;
       case 2:
         return true; // chadTone always has a default
       case 3:
@@ -172,27 +176,27 @@ export default function OnboardingPage() {
           <div className="flex-1">
             {step === 1 && (
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose Your Virtue Focus</h2>
-                <p className="text-slate-500 mb-8">What do you want to cultivate this month?</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose Your Pillar Focus</h2>
+                <p className="text-slate-500 mb-8">What area do you want to work on this month?</p>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {virtues.map((virtue) => {
-                    const Icon = virtue.icon;
+                  {pillars.map((pillar) => {
+                    const Icon = pillar.icon;
                     return (
                       <button
-                        key={virtue.id}
-                        onClick={() => setVirtueFocus(virtue.id)}
+                        key={pillar.id}
+                        onClick={() => setPillarFocus(pillar.id)}
                         className={`p-6 border-2 rounded-xl text-left transition-all group hover:border-stoic-blue hover:bg-sky-50 ${
-                          virtueFocus === virtue.id
+                          pillarFocus === pillar.id
                             ? 'border-stoic-blue bg-sky-50'
                             : 'border-slate-100'
                         }`}
                       >
                         <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                          <Icon className="w-5 h-5 text-stoic-blue" />
+                          <Icon className={`w-5 h-5 ${pillar.color}`} />
                         </div>
-                        <span className="font-bold text-slate-900 block">{virtue.label}</span>
-                        <span className="text-xs text-slate-500">{virtue.description}</span>
+                        <span className="font-bold text-slate-900 block">{pillar.label}</span>
+                        <span className="text-xs text-slate-500">{pillar.description}</span>
                       </button>
                     );
                   })}
@@ -202,8 +206,8 @@ export default function OnboardingPage() {
 
             {step === 2 && (
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose CHAD&apos;s Tone</h2>
-                <p className="text-slate-500 mb-8">How should CHAD coach you?</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose Your Coaching Style</h2>
+                <p className="text-slate-500 mb-8">How do you want your prompts and insights delivered?</p>
 
                 <RadioGroup value={chadTone} onValueChange={(v) => setChadTone(v as ChadTone)}>
                   <div className="space-y-3">

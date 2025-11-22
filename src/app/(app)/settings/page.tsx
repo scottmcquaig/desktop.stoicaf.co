@@ -15,13 +15,13 @@ const settingsNav = [
 ];
 
 type ChadTone = 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
-type VirtueFocus = 'wisdom' | 'courage' | 'temperance' | 'justice';
+type PillarFocus = 'money' | 'ego' | 'relationships' | 'discipline';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Preferences');
   const [saving, setSaving] = useState(false);
   const [chadTone, setChadTone] = useState<ChadTone>('reality-check');
-  const [virtueFocus, setVirtueFocus] = useState<VirtueFocus>('wisdom');
+  const [pillarFocus, setPillarFocus] = useState<PillarFocus>('money');
   const [dailyPrompt, setDailyPrompt] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const isMobile = useIsMobile();
@@ -32,7 +32,7 @@ const SettingsPage: React.FC = () => {
   useEffect(() => {
     if (userProfile) {
       setChadTone(userProfile.chadTone || 'reality-check');
-      setVirtueFocus(userProfile.virtueFocus || 'wisdom');
+      setPillarFocus(userProfile.pillarFocus || 'money');
     }
   }, [userProfile]);
 
@@ -50,7 +50,7 @@ const SettingsPage: React.FC = () => {
     try {
       await updateUserProfile({
         chadTone,
-        virtueFocus,
+        pillarFocus,
       });
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -110,10 +110,10 @@ const SettingsPage: React.FC = () => {
   };
 
   const tones: { id: ChadTone; label: string; description: string }[] = [
-    { id: 'gentle', label: 'Gentle (Compassionate)', description: 'Focuses on empathy and encouragement.' },
-    { id: 'reality-check', label: 'Reality Check (Balanced)', description: 'Direct, honest, but supportive. Recommended.' },
-    { id: 'drill-sergeant', label: 'Drill Sergeant (Tough Love)', description: 'No excuses. Pure discipline.' },
-    { id: 'roast-me', label: 'Roast Me (Humorous & Sarcastic)', description: 'For when you need a dose of humbling humor.' },
+    { id: 'gentle', label: 'Gentle', description: 'Focuses on empathy and encouragement.' },
+    { id: 'reality-check', label: 'Reality Check', description: 'Direct, honest, but supportive.' },
+    { id: 'drill-sergeant', label: 'Drill Sergeant', description: 'No excuses. Pure discipline.' },
+    { id: 'roast-me', label: 'Roast Me', description: 'Make me laugh while improving.' },
   ];
 
   return (
@@ -152,8 +152,8 @@ const SettingsPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                    <span className="font-medium text-slate-700">Virtue focus</span>
-                    <span className="text-slate-900 capitalize">{userProfile?.virtueFocus || 'Not set'}</span>
+                    <span className="font-medium text-slate-700">Pillar focus</span>
+                    <span className="text-slate-900 capitalize">{userProfile?.pillarFocus || 'Not set'}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100">
                     <span className="font-medium text-slate-700">Onboarding</span>
@@ -197,21 +197,21 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Virtue Focus */}
+                {/* Pillar Focus */}
                 <div>
                   <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
-                    Monthly Focus
+                    Monthly Pillar Focus
                   </label>
                   <div className="relative">
                     <select
-                      value={virtueFocus}
-                      onChange={(e) => setVirtueFocus(e.target.value as VirtueFocus)}
+                      value={pillarFocus}
+                      onChange={(e) => setPillarFocus(e.target.value as PillarFocus)}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white appearance-none font-bold text-slate-700 focus:ring-2 focus:ring-stoic-blue outline-none"
                     >
-                      <option value="wisdom">Wisdom</option>
-                      <option value="courage">Courage</option>
-                      <option value="justice">Justice</option>
-                      <option value="temperance">Temperance</option>
+                      <option value="money">Money</option>
+                      <option value="ego">Ego</option>
+                      <option value="relationships">Relationships</option>
+                      <option value="discipline">Discipline</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                       ▼
