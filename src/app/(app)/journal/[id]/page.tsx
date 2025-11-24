@@ -57,6 +57,12 @@ const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; co
   discipline: { icon: Target, label: 'Discipline', color: 'bg-amber-100 text-amber-700 border-amber-200' },
 };
 
+const BLOCK_TYPES: { type: BlockType; icon: React.ElementType; label: string }[] = [
+  { type: 'morning-intent', icon: Sun, label: 'Morning' },
+  { type: 'evening-audit', icon: Moon, label: 'Evening' },
+  { type: 'dichotomy', icon: Columns, label: 'Dichotomy' },
+];
+
 const JournalEntryPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -346,7 +352,7 @@ const JournalEntryPage: React.FC = () => {
       </header>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <div className={`flex-1 overflow-y-auto p-4 md:p-8 ${isEditing ? 'pb-24 md:pb-8' : ''}`}>
         <div className="max-w-3xl mx-auto bg-white md:min-h-[600px] md:p-8 md:shadow-sm md:rounded-xl md:border md:border-slate-200">
           {/* Date/Time */}
           <div className="flex items-center gap-4 text-sm text-slate-500 mb-6">
@@ -384,9 +390,9 @@ const JournalEntryPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Add block buttons (edit mode) */}
+          {/* Add block buttons (edit mode) - Desktop only */}
           {isEditing && (
-            <div className="mt-6 flex items-center gap-2">
+            <div className="mt-6 hidden md:flex items-center gap-2">
               <span className="text-xs text-slate-400">Add:</span>
               <button
                 onClick={() => addBlock('freeform')}
@@ -417,9 +423,65 @@ const JournalEntryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer (edit mode only) */}
+      {/* ===== MOBILE BOTTOM BAR (edit mode) ===== */}
       {isEditing && (
-        <footer className="bg-white border-t border-slate-200 p-3 md:p-4 sticky bottom-0 z-10">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-20 safe-area-bottom">
+          <div className="flex items-center justify-between gap-1">
+            {/* Block type buttons */}
+            <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
+              <button
+                onClick={() => addBlock('freeform')}
+                className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label="Add text block"
+              >
+                <Plus size={20} />
+              </button>
+              {BLOCK_TYPES.map(({ type, icon: Icon, label }) => (
+                <button
+                  key={type}
+                  onClick={() => addBlock(type)}
+                  className="min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label={`Add ${label}`}
+                >
+                  <Icon size={20} />
+                </button>
+              ))}
+            </div>
+
+            {/* Mood selector */}
+            <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
+              {[
+                { score: 1 as MoodScore, icon: Frown, color: 'text-red-400', activeColor: 'text-red-600 bg-red-50' },
+                { score: 3 as MoodScore, icon: Meh, color: 'text-amber-400', activeColor: 'text-amber-600 bg-amber-50' },
+                { score: 5 as MoodScore, icon: Smile, color: 'text-emerald-400', activeColor: 'text-emerald-600 bg-emerald-50' },
+              ].map(({ score, icon: Icon, color, activeColor }) => (
+                <button
+                  key={score}
+                  onClick={() => setMood(mood === score ? null : score)}
+                  className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg transition-all ${
+                    mood === score ? activeColor : `${color} hover:bg-slate-100`
+                  }`}
+                >
+                  <Icon size={18} />
+                </button>
+              ))}
+            </div>
+
+            {/* Delete button */}
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              className="min-h-11 min-w-11 flex items-center justify-center hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+              aria-label="Delete entry"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Footer (edit mode only) */}
+      {isEditing && (
+        <footer className="hidden md:block bg-white border-t border-slate-200 p-3 md:p-4 sticky bottom-0 z-10">
           <div className="max-w-3xl mx-auto">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
@@ -444,7 +506,7 @@ const JournalEntryPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4 text-slate-400 text-xs font-mono">
-                <span className="hidden md:inline">{getWordCount()} words</span>
+                <span>{getWordCount()} words</span>
               </div>
             </div>
           </div>
