@@ -186,8 +186,8 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4">Governing Law</h2>
             <p className="text-lg text-slate-600 leading-relaxed">
-              These Terms are governed by the laws of the State of [Your State], United States, without regard
-              to conflict of law provisions. Any disputes shall be resolved in the courts of [Your State].
+              These Terms are governed by the laws of the State of Texas, United States, without regard
+              to conflict of law provisions. Any disputes shall be resolved in the courts of Texas.
             </p>
           </section>
 
