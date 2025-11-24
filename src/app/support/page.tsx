@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { StoicLogo } from '@/components/StoicLogo';
-import { ArrowLeft, Mail, MessageCircle, Book, Bug } from 'lucide-react';
+import { ArrowLeft, Mail, Book, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -50,19 +50,6 @@ export default function SupportPage() {
             >
               support@stoicaf.co →
             </a>
-          </Card>
-
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 rounded-full bg-stoic-dark/10 flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-stoic-dark" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900">In-App Chat</h3>
-            <p className="text-slate-600">
-              Pro members can access priority chat support directly from the app.
-            </p>
-            <Link href="/dashboard" className="inline-flex items-center text-stoic-dark font-medium hover:underline">
-              Go to Dashboard →
-            </Link>
           </Card>
 
           <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
@@ -187,9 +174,9 @@ export default function SupportPage() {
         <section className="mt-16 p-8 bg-stoic-dark/5 rounded-2xl border border-stoic-dark/10">
           <h2 className="text-2xl font-bold text-slate-900 mb-3">Need Priority Support?</h2>
           <p className="text-slate-600 mb-6">
-            Upgrade to Pro for faster response times, in-app chat, and direct access to our team.
+            Upgrade to Pro for faster response times and direct access to our team.
           </p>
-          <Link href="/">
+          <Link href="/pro">
             <Button className="bg-stoic-dark hover:bg-stoic-dark/90">Learn About Pro</Button>
           </Link>
         </section>
