@@ -464,7 +464,7 @@ const DashboardPage: React.FC = () => {
                   size="sm"
                   onClick={generateWeeklyReflection}
                   disabled={isLoadingReflection}
-                  className="text-xs min-h-10"
+                  className="text-xs min-h-11"
                 >
                   {isLoadingReflection ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -485,7 +485,7 @@ const DashboardPage: React.FC = () => {
               ) : reflectionError ? (
                 <div className="text-center py-6">
                   <p className="text-sm text-slate-500 mb-3">{reflectionError}</p>
-                  <Button asChild variant="outline" size="sm" className="min-h-10">
+                  <Button asChild variant="outline" size="sm" className="min-h-11">
                     <Link href="/journal/new">
                       Write an Entry
                       <ChevronRight size={16} className="ml-1" />
@@ -556,7 +556,7 @@ const DashboardPage: React.FC = () => {
                     onClick={generateWeeklyReflection}
                     disabled={isLoadingReflection || !userProfile?.pillarFocus}
                     size="sm"
-                    className="min-h-10 bg-purple-600 hover:bg-purple-700"
+                    className="min-h-11 bg-purple-600 hover:bg-purple-700"
                   >
                     <Sparkles size={16} className="mr-2" />
                     Generate Reflection

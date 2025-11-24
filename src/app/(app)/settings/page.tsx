@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, Sliders, Bell, CreditCard, LogOut, Loader2, Download, Trash2, Upload, Edit2, Camera } from 'lucide-react';
+import { User, Sliders, Bell, CreditCard, LogOut, Loader2, Download, Trash2, Upload, Edit2, Camera, Clock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { getRecentEntries } from '@/lib/firebase/journal';
 import { updateProfile } from 'firebase/auth';
@@ -528,33 +536,115 @@ const SettingsPage: React.FC = () => {
             )}
 
             {activeTab === 'Notifications' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-4 border-b border-slate-100">
-                  <div>
-                    <div className="font-bold text-slate-900">Email Reminders</div>
-                    <div className="text-sm text-slate-500">Daily journaling prompts via email</div>
+              <div className="space-y-6">
+                {/* Toggle switches */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-4 border-b border-slate-100">
+                    <div>
+                      <div className="font-bold text-slate-900">Email Reminders</div>
+                      <div className="text-sm text-slate-500">Daily journaling prompts via email</div>
+                    </div>
+                    <Switch
+                      checked={userProfile?.emailReminders ?? true}
+                      onCheckedChange={(checked) => updateUserProfile({ emailReminders: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={userProfile?.emailReminders ?? true}
-                    onCheckedChange={(checked) => updateUserProfile({ emailReminders: checked })}
-                  />
+                  <div className="flex items-center justify-between py-4 border-b border-slate-100">
+                    <div>
+                      <div className="font-bold text-slate-900">Browser Notifications</div>
+                      <div className="text-sm text-slate-500">Desktop push notifications</div>
+                    </div>
+                    <Switch
+                      checked={userProfile?.browserNotifications ?? false}
+                      onCheckedChange={async (checked) => {
+                        if (checked && 'Notification' in window) {
+                          const permission = await Notification.requestPermission();
+                          if (permission !== 'granted') {
+                            toast.error('Please enable notifications in your browser settings');
+                            return;
+                          }
+                        }
+                        updateUserProfile({ browserNotifications: checked });
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between py-4 border-b border-slate-100">
-                  <div>
-                    <div className="font-bold text-slate-900">Browser Notifications</div>
-                    <div className="text-sm text-slate-500">Desktop push notifications</div>
-                  </div>
-                  <Switch
-                    checked={userProfile?.browserNotifications ?? false}
-                    onCheckedChange={(checked) => updateUserProfile({ browserNotifications: checked })}
-                  />
+
+                {/* Reminder Time Selection */}
+                <div className="pt-4 border-t border-slate-100">
+                  <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
+                    <Clock size={16} className="inline mr-2" />
+                    Reminder Time
+                  </label>
+                  <Select
+                    value={userProfile?.reminderTime || '18:00'}
+                    onValueChange={(value) => updateUserProfile({ reminderTime: value })}
+                  >
+                    <SelectTrigger className="w-full min-h-11">
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="06:00">6:00 AM - Early bird</SelectItem>
+                      <SelectItem value="08:00">8:00 AM - Morning</SelectItem>
+                      <SelectItem value="12:00">12:00 PM - Noon</SelectItem>
+                      <SelectItem value="17:00">5:00 PM - After work</SelectItem>
+                      <SelectItem value="18:00">6:00 PM - Evening</SelectItem>
+                      <SelectItem value="20:00">8:00 PM - Night owl</SelectItem>
+                      <SelectItem value="21:00">9:00 PM - Before bed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center justify-between py-4">
-                  <div>
-                    <div className="font-bold text-slate-900">Reminder Time</div>
-                    <div className="text-sm text-slate-500">When to send daily reminders</div>
+
+                {/* Reminder Days Selection */}
+                <div className="pt-4 border-t border-slate-100">
+                  <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
+                    Reminder Days
+                  </label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {[
+                      { id: 'sun', label: 'S' },
+                      { id: 'mon', label: 'M' },
+                      { id: 'tue', label: 'T' },
+                      { id: 'wed', label: 'W' },
+                      { id: 'thu', label: 'T' },
+                      { id: 'fri', label: 'F' },
+                      { id: 'sat', label: 'S' },
+                    ].map((day) => {
+                      const reminderDays = userProfile?.reminderDays || ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                      const isSelected = reminderDays.includes(day.id);
+                      return (
+                        <button
+                          key={day.id}
+                          onClick={() => {
+                            const newDays = isSelected
+                              ? reminderDays.filter((d) => d !== day.id)
+                              : [...reminderDays, day.id];
+                            updateUserProfile({ reminderDays: newDays });
+                          }}
+                          className={`min-h-11 min-w-11 rounded-full font-bold text-sm transition-all ${
+                            isSelected
+                              ? 'bg-primary text-white'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <span className="font-medium text-slate-900">{userProfile?.reminderTime || '6:00 PM'}</span>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {(userProfile?.reminderDays || ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).length === 7
+                      ? 'Every day'
+                      : `${(userProfile?.reminderDays || []).length} days selected`}
+                  </p>
+                </div>
+
+                {/* Info box */}
+                <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 mt-6">
+                  <p className="text-sm text-sky-800">
+                    <strong>Note:</strong> Email reminders require a verified email address.
+                    Browser notifications require permission from your browser.
+                  </p>
                 </div>
               </div>
             )}
