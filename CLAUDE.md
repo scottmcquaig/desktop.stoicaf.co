@@ -1,7 +1,7 @@
 # Stoic.af Development Status - Claude Reference
 
-**Last Updated**: 2025-11-24 (Sprint 7 Complete)
-**Current Phase**: MVP Development - Sprint 8 Ready
+**Last Updated**: 2025-11-24 (Sprint 9 Complete)
+**Current Phase**: MVP Development - Sprint 8 Ready (Stripe Integration)
 **Active Branch**: `main`
 
 ---
@@ -230,15 +230,55 @@
 **New Files:**
 - `src/components/skeletons/DashboardSkeleton.tsx` - Dashboard loading skeleton
 
+### ✅ Sprint 9: Landing Page & Marketing (COMPLETE)
+
+**Completed**: 2025-11-24
+
+**What Was Built:**
+
+**Marketing Landing Page:**
+- ✅ **Hero Section**: Full-bleed gradient hero with Stoic AF branding, CTA buttons, phone mockup, ChadGPT badge
+- ✅ **Why Stoic AF**: 4 feature cards highlighting key benefits
+- ✅ **Four Pillars**: Showcase of Money, Ego, Relationships, Discipline tracks with icons
+- ✅ **Daily Templates**: Visual display of Morning Intent, Dichotomy, Evening Balance, The Audit
+- ✅ **AI/ChadGPT Section**: Sample insights with chat UI mockup showing AI coaching
+- ✅ **Testimonials**: 3 testimonial cards with 5-star ratings
+- ✅ **Pricing Section**: Free vs Pro tier comparison with clear CTAs
+- ✅ **Footer**: Professional footer with links and branding
+
+**Auth Modal System:**
+- ✅ `AuthModal` component with popup functionality
+- ✅ Google OAuth and email/password authentication
+- ✅ Toggle between signin/signup modes
+- ✅ Proper error handling with toast notifications
+- ✅ Seamless integration with Firebase Auth
+
+**Smart Routing:**
+- ✅ Landing page shown to logged-out users at `/`
+- ✅ Auto-redirect authenticated users to `/dashboard`
+- ✅ Loading state with animated logo during auth check
+
+**New Files:**
+- `src/components/AuthModal.tsx` - Reusable auth modal component
+- `src/app/page.tsx` - Complete marketing landing page (replaced component showcase)
+
+**Design Highlights:**
+- Stoic Blue gradient hero (#4B90C8)
+- Clean section alternation (white/slate-50 backgrounds)
+- Hover effects and transitions on cards
+- Responsive grid layouts for all screen sizes
+- Professional typography with bold headings
+- Proper spacing and visual hierarchy
+
 ---
 
 ## Current App Routes
 
 | Route | Description | Auth Required |
 |-------|-------------|---------------|
-| `/` | Component showcase (landing page placeholder) | No |
-| `/auth/signin` | Login page | No |
-| `/auth/signup` | Registration page | No |
+| `/` | Marketing landing page (auto-redirects to `/dashboard` if logged in) | No |
+| `/auth/signin` | Login page (legacy - replaced by AuthModal) | No |
+| `/auth/signup` | Registration page (legacy - replaced by AuthModal) | No |
 | `/auth/reset-password` | Password reset | No |
 | `/onboarding` | 4-step onboarding flow | Yes |
 | `/dashboard` | Main dashboard with daily quote | Yes |
@@ -254,6 +294,7 @@
 
 ### Authentication & User
 - `src/contexts/AuthContext.tsx` - Auth provider with Firebase
+- `src/components/AuthModal.tsx` - Reusable auth modal (signin/signup popup)
 - `src/lib/firebase/config.ts` - Firebase configuration
 - `src/lib/firebase/auth.ts` - Firebase auth instance
 - `src/lib/firebase/firestore.ts` - Firestore instance
@@ -269,6 +310,7 @@
 - `src/components/skeletons/DashboardSkeleton.tsx` - Loading skeletons
 
 ### Pages
+- `src/app/page.tsx` - Marketing landing page with auth modal integration
 - `src/app/(app)/layout.tsx` - Protected app layout with sidebar + error boundary
 - `src/app/(app)/dashboard/page.tsx` - Dashboard with daily quote, mood trend, recent entries
 - `src/app/(app)/journal/page.tsx` - Journal list/grid/calendar with mood & pillar filters
@@ -414,41 +456,57 @@ firebase deploy --only firestore:rules
 
 ---
 
-## Next To-Do's (Sprint 8: Payments & Polish)
+## Next To-Do's (Sprint 8: Stripe Integration)
 
-### High Priority - Sprint 8
+### High Priority - Sprint 8 (CURRENT)
 
-1. **Stripe Integration**
-   - [ ] Set up Stripe account and API keys
-   - [ ] Create subscription products (Free/Pro tiers)
-   - [ ] Implement checkout flow
-   - [ ] Handle webhooks for subscription status
+1. **Firebase Stripe Extension Setup**
+   - [ ] Resolve GCP organization policy (allow allUsers for Cloud Functions)
+   - [ ] Grant Storage Object Viewer permissions to compute service account
+   - [ ] Install Firebase Stripe extension (`firestore-stripe-payments`)
+   - [ ] Configure extension with Stripe API keys
+   - [ ] Set up webhook endpoints
+   - [ ] Test extension deployment
 
-2. **Pro Features Gating**
+2. **Stripe Account Configuration**
+   - [ ] Create Stripe account and get API keys
+   - [ ] Create subscription products in Stripe dashboard:
+     - Free tier (placeholder product)
+     - Pro tier ($5/month)
+   - [ ] Configure webhook secret
+   - [ ] Set up customer portal settings
+
+3. **Checkout & Subscription Flow**
+   - [ ] Build checkout page/modal
+   - [ ] Implement subscription management UI in settings
+   - [ ] Handle subscription status updates from webhooks
+   - [ ] Add upgrade prompts for free users
+   - [ ] Test payment flow end-to-end
+
+4. **Pro Features Gating**
    - [ ] Define free vs pro feature limits
    - [ ] Add usage tracking (entries per month, AI calls)
    - [ ] Show upgrade prompts when limits reached
-   - [ ] Payment settings page
+   - [ ] Protect pro features behind subscription check
 
-3. **Performance Optimization**
+5. **Performance Optimization**
    - [ ] Implement React Query for data fetching
    - [ ] Optimize bundle size
    - [ ] Lazy load components
    - [ ] Image optimization
 
-### Medium Priority - Sprint 9
+### Medium Priority - Sprint 10
 
-4. **Landing Page & Marketing**
-   - [ ] Marketing landing page at `/`
-   - [ ] Feature highlights
-   - [ ] Pricing section
-   - [ ] Testimonials
-   - [ ] SEO optimization
-
-5. **Email Notification Backend**
+6. **Email Notification Backend**
    - [ ] Firebase Functions for scheduled emails
    - [ ] Daily reminder emails
    - [ ] Weekly summary emails
+
+7. **SEO & Analytics**
+   - [ ] Add meta tags to landing page
+   - [ ] Set up Google Analytics
+   - [ ] Add structured data for rich snippets
+   - [ ] Create sitemap
 
 ### Future Sprints (Backlog)
 
@@ -467,9 +525,11 @@ firebase deploy --only firestore:rules
 
 ## Known Issues
 
-1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules` (requires Firebase auth)
-2. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
-3. **Email Notifications**: UI ready but backend not implemented yet
+1. **Firebase Stripe Extension**: Blocked by GCP organization policy and storage permissions (see Sprint 8 tasks)
+2. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules` (requires Firebase auth)
+3. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
+4. **Email Notifications**: UI ready but backend not implemented yet
+5. **Legacy Auth Pages**: `/auth/signin` and `/auth/signup` still exist but AuthModal is now preferred
 
 ---
 
@@ -478,9 +538,10 @@ firebase deploy --only firestore:rules
 **Main Branch**: `main`
 
 **Recent Commits**:
+- Sprint 9: Build landing page with hero, features, pricing, testimonials, and AuthModal
+- Replace favicon with app logo (icon.svg, apple-icon.svg)
 - Sprint 7: Editor UX and loading improvements (keyboard shortcuts, auto-save, drag-drop)
 - Add notification preferences and fix touch targets
-- Hide global mobile nav on journal entry pages
 - Sprint 6: Mobile & AI activation
 
 ---
@@ -561,4 +622,4 @@ npm run dev
 
 ---
 
-**Status**: Sprint 7 Complete - Ready for Sprint 8 (Payments & Polish)
+**Status**: Sprint 9 Complete - Ready for Sprint 8 (Stripe Integration)

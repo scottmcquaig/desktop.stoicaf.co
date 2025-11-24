@@ -4,9 +4,9 @@ Build habits across **Money • Ego • Relationships • Discipline**
 
 ## 🎯 Project Status
 
-**Current Phase**: ✅ Design Complete — Ready for Development
-**Target Launch**: Q3 2025
-**Platform**: Desktop Web (Next.js 14)
+**Current Phase**: ✅ Sprint 9 Complete — Sprint 8 Ready (Stripe Integration)
+**Target Launch**: Q1 2025
+**Platform**: Desktop Web (Next.js 15.3.3)
 
 ### Design Completion Summary
 - ✅ 24 screen mockups (desktop & tablet layouts)
@@ -138,9 +138,11 @@ Stoic.af is a desktop web journaling platform that combines ancient Stoic philos
 - [x] Prepare developer handoff (API contracts, dependencies, specs)
 
 ### Phase 2: MVP Development (CURRENT)
-- [ ] Next.js app core features
-- [ ] Firebase backend setup
-- [ ] Basic AI integration
+- [x] Next.js app core features ✅
+- [x] Firebase backend setup ✅
+- [x] Basic AI integration ✅
+- [x] Landing page ✅
+- [ ] Stripe payment integration (Sprint 8)
 - [ ] Offline functionality with service workers
 - [ ] Beta testing
 
@@ -156,6 +158,191 @@ Stoic.af is a desktop web journaling platform that combines ancient Stoic philos
 - [ ] Community features
 - [ ] B2B offerings
 - [ ] International expansion
+
+---
+
+## 💳 Firebase Stripe Extension Setup
+
+### Prerequisites
+
+Before installing the Firebase Stripe extension, you need:
+1. **Stripe Account**: Sign up at [stripe.com](https://stripe.com)
+2. **Google Cloud Organization Admin Access**: Required to modify organization policies
+3. **Firebase Billing**: Blaze plan (pay-as-you-go) must be enabled
+
+### Step 1: Fix Google Cloud Permissions
+
+The Stripe extension requires specific GCP permissions that may be blocked by organization policies.
+
+#### Fix Storage Permissions
+
+1. Go to [Google Cloud IAM Console](https://console.cloud.google.com/iam-admin/iam)
+2. Select your project: `stoicaf`
+3. Find or add the service account: `768283128490-compute@developer.gserviceaccount.com`
+4. Grant these roles:
+   - **Storage Object Viewer** (`roles/storage.objectViewer`)
+   - **Storage Object Creator** (`roles/storage.objectCreator`)
+
+**Using gcloud CLI:**
+```bash
+# Set project
+gcloud config set project stoicaf
+
+# Grant permissions
+gcloud projects add-iam-policy-binding stoicaf \
+  --member="serviceAccount:768283128490-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+
+gcloud projects add-iam-policy-binding stoicaf \
+  --member="serviceAccount:768283128490-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectCreator"
+```
+
+#### Fix Organization Policy (Cloud Functions Public Access)
+
+The extension needs to make some Cloud Functions publicly accessible. This requires modifying the organization policy.
+
+**Option A: Modify Organization Policy (Requires Org Admin)**
+
+1. Go to [Organization Policies](https://console.cloud.google.com/iam-admin/orgpolicies)
+2. Find policy: **"Cloud Functions Allowed Ingress Settings"** or **"Domain restricted sharing"**
+3. Edit the policy to allow `allUsers` for your project
+4. Or use gcloud:
+
+```bash
+# Check current policy
+gcloud resource-manager org-policies describe \
+  iam.allowedPolicyMemberDomains --project=stoicaf
+
+# Reset constraint (if you have org-level access)
+gcloud org-policies reset iam.allowedPolicyMemberDomains --project=stoicaf
+```
+
+**Option B: Use Authenticated Cloud Functions (Recommended if no org access)**
+
+If you don't have org admin access, configure the extension to use authenticated calls instead of public endpoints. During extension installation, choose settings that don't require `allUsers` access.
+
+### Step 2: Install Firebase Stripe Extension
+
+1. Go to [Firebase Console Extensions](https://console.firebase.google.com/project/stoicaf/extensions)
+2. Click **"Install Extension"**
+3. Search for **"Run Subscription Payments with Stripe"** (extension ID: `firestore-stripe-payments`)
+4. Click **"Install in Console"**
+
+### Step 3: Configure Extension Settings
+
+During installation, you'll be asked to configure these parameters:
+
+#### Required Parameters:
+- **Stripe API Key**: Your Stripe secret key (starts with `sk_test_` or `sk_live_`)
+  - Get from [Stripe Dashboard API Keys](https://dashboard.stripe.com/apikeys)
+- **Products and Pricing Plans Collection**: `products` (default)
+- **Customer Details Collection**: `customers` (default)
+- **Sync New Users**: `Yes` (creates Stripe customer when Firebase user is created)
+
+#### Optional Parameters:
+- **Automatically Delete Stripe Customers**: `No` (keep customer data for analytics)
+- **Stripe Webhook Secret**: Leave empty for now, we'll add this after deployment
+- **Cloud Functions Location**: `us-central1` (must match your Firebase project region)
+
+### Step 4: Set Up Stripe Products
+
+After extension installation, create your subscription products in Stripe:
+
+1. Go to [Stripe Products](https://dashboard.stripe.com/products)
+2. Create two products:
+
+**Free Tier (for reference only)**
+- Name: `Stoic AF Free`
+- Price: $0
+- Not needed as a Stripe product, but good for documentation
+
+**Pro Tier**
+- Name: `Stoic AF Pro`
+- Billing: `Recurring`
+- Price: `$5.00 USD`
+- Billing Period: `Monthly`
+- Product ID: Copy this - you'll need it (e.g., `prod_ABC123`)
+- Price ID: Copy this - you'll need it (e.g., `price_ABC123`)
+
+### Step 5: Configure Webhooks
+
+1. Go to [Stripe Webhooks](https://dashboard.stripe.com/webhooks)
+2. Click **"Add endpoint"**
+3. Endpoint URL: `https://us-central1-stoicaf.cloudfunctions.net/ext-firestore-stripe-payments-handleWebhookEvents`
+   - Replace `us-central1` with your Cloud Functions region if different
+4. Select events to listen for:
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_succeeded`
+   - `invoice.payment_failed`
+5. Click **"Add endpoint"**
+6. Copy the **"Signing secret"** (starts with `whsec_`)
+7. Add it to Firebase extension configuration:
+   ```bash
+   firebase ext:configure firestore-stripe-payments
+   # When prompted, paste your webhook secret
+   ```
+
+### Step 6: Test the Extension
+
+1. Create a test user in your Firebase app
+2. Check Firestore - you should see a new document in `customers/{userId}`
+3. The document should have a Stripe customer ID
+
+### Step 7: Add Environment Variables
+
+Add these to your `.env.local`:
+
+```bash
+# Stripe Keys
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+
+# Stripe Product IDs
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_ABC123
+```
+
+### Common Issues & Troubleshooting
+
+#### Issue: "Access to bucket denied"
+**Solution**: Grant Storage Object Viewer permissions (see Step 1)
+
+#### Issue: "Organization policy prevented Cloud Functions from being public"
+**Solution**:
+- Modify org policy (requires admin access)
+- OR configure extension to use authenticated functions
+- OR contact your GCP org admin
+
+#### Issue: Extension functions failing to deploy
+**Solution**:
+- Ensure Firebase project is on Blaze (pay-as-you-go) plan
+- Check Cloud Functions quota hasn't been exceeded
+- Verify all IAM permissions are correctly set
+
+#### Issue: Webhooks not triggering
+**Solution**:
+- Verify webhook URL matches your Cloud Functions region
+- Check webhook secret is correctly configured in extension
+- Look at Stripe webhook logs for error messages
+
+### Verification Checklist
+
+Before moving to production:
+- [ ] Extension installed without errors
+- [ ] Stripe customer created when Firebase user signs up
+- [ ] Webhook endpoint responding (check Stripe webhook logs)
+- [ ] Test subscription flow works end-to-end
+- [ ] Subscription status syncs to Firestore (`customers/{userId}/subscriptions`)
+- [ ] Cancelled subscriptions properly update in Firestore
+
+### Resources
+
+- [Firebase Stripe Extension Docs](https://github.com/stripe/stripe-firebase-extensions)
+- [Stripe API Documentation](https://stripe.com/docs/api)
+- [Firebase Extensions Console](https://console.firebase.google.com/project/stoicaf/extensions)
+- [Stripe Dashboard](https://dashboard.stripe.com)
 
 ---
 
