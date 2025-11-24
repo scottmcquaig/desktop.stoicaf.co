@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
@@ -58,6 +58,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
 import { createEntry, updateEntry, getEntryByDate, getPillarProgress } from '@/lib/firebase/journal';
@@ -115,6 +132,112 @@ export default function JournalNewPage() {
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [chadInsight, setChadInsight] = useState<ChadInsightResult | null>(null);
   const [showInsightDialog, setShowInsightDialog] = useState(false);
+
+  // Auto-save state
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const AUTOSAVE_DELAY = 30000; // 30 seconds
+  const DRAFT_KEY = `stoicaf-draft-${todayDate}`;
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    if (existingEntryId || isLoadingEntry) return;
+
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_KEY);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        // Only load draft if it has content and no existing entry
+        if (draft.blocks && draft.blocks.length > 0) {
+          const hasContent = draft.blocks.some(
+            (b: EntryBlock) => b.content?.trim() || b.inControl?.trim() || b.notInControl?.trim()
+          );
+          if (hasContent) {
+            setBlocks(draft.blocks);
+            if (draft.pillar) setPillar(draft.pillar);
+            if (draft.mood) setMood(draft.mood);
+            toast.info('Draft restored from your last session');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+    }
+  }, [DRAFT_KEY, existingEntryId, isLoadingEntry]);
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    if (isLoadingEntry || existingEntryId) return;
+
+    const hasContent = blocks.some(
+      (b) => b.content?.trim() || b.inControl?.trim() || b.notInControl?.trim()
+    );
+
+    if (!hasContent) return;
+
+    setHasUnsavedChanges(true);
+
+    // Clear previous timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      try {
+        const draft = { blocks, pillar, mood, savedAt: new Date().toISOString() };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setLastSavedAt(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Error saving draft:', error);
+      }
+    }, AUTOSAVE_DELAY);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [blocks, pillar, mood, DRAFT_KEY, isLoadingEntry, existingEntryId]);
+
+  // Clear draft after successful save
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Error clearing draft:', error);
+    }
+  }, [DRAFT_KEY]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (!isSaving && !isGeneratingInsight) {
+          handleSave(false);
+        }
+      }
+      // Cmd/Ctrl + Enter to save with AI insight
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isSaving && !isGeneratingInsight) {
+          handleSave(true);
+        }
+      }
+      // Escape to discard/go back
+      if (e.key === 'Escape' && !showPillarWarning && !showInsightDialog) {
+        router.push('/journal');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSaving, isGeneratingInsight, showPillarWarning, showInsightDialog, router]);
 
   // Check for existing entry and load pillar progress on mount
   useEffect(() => {
@@ -233,6 +356,31 @@ export default function JournalNewPage() {
     }
   };
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for block reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   // Helper to get entry content as string for AI
   const getEntryContentString = () => {
     return blocks
@@ -314,6 +462,7 @@ export default function JournalNewPage() {
       }
 
       toast.success('Entry saved successfully!');
+      clearDraft(); // Clear draft on successful save
 
       if (getInsightAfterSave) {
         // Generate insight before redirecting
@@ -379,17 +528,23 @@ export default function JournalNewPage() {
 
           {/* Center: Pillar selector */}
           <div className="flex items-center gap-2">
-            {/* Date - desktop only */}
-            <span className="hidden lg:block text-xs font-medium text-slate-400 mr-2">
-              {new Date(todayDate + 'T00:00:00').toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric'
-              })}
-              {existingEntryId && (
-                <span className="ml-2 text-primary">(editing)</span>
-              )}
-            </span>
+            {/* Date and status - desktop only */}
+            <div className="hidden lg:flex items-center gap-2 mr-2">
+              <span className="text-xs font-medium text-slate-400">
+                {new Date(todayDate + 'T00:00:00').toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </span>
+              {existingEntryId ? (
+                <span className="text-xs text-primary font-medium">(editing)</span>
+              ) : hasUnsavedChanges ? (
+                <span className="text-xs text-amber-500 font-medium">• unsaved</span>
+              ) : lastSavedAt ? (
+                <span className="text-xs text-emerald-500 font-medium">• draft saved</span>
+              ) : null}
+            </div>
             <div className="flex items-center bg-slate-50 rounded-lg p-0.5">
               {(Object.keys(PILLAR_CONFIG) as Pillar[]).map((p) => {
                 const { icon: Icon, color, activeColor } = PILLAR_CONFIG[p];
@@ -497,15 +652,23 @@ export default function JournalNewPage() {
             </div>
 
             {/* Save button - all screens */}
-            <Button
-              onClick={() => handleSave(false)}
-              disabled={isSaving || isGeneratingInsight}
-              size="sm"
-              className="min-h-11 px-3 md:px-4 ml-1"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
-              <span className="ml-1.5 hidden sm:inline">Save</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleSave(false)}
+                  disabled={isSaving || isGeneratingInsight}
+                  size="sm"
+                  className="min-h-11 px-3 md:px-4 ml-1"
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={18} />}
+                  <span className="ml-1.5 hidden sm:inline">Save</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Save</span>
+                <kbd className="ml-2 px-1.5 py-0.5 bg-slate-700 rounded text-[10px]">⌘S</kbd>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Desktop-only: Save + AI button */}
             <Tooltip>
@@ -521,7 +684,10 @@ export default function JournalNewPage() {
                   <span className="ml-1.5">+ AI</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Save & Get Chad&apos;s Insight</TooltipContent>
+              <TooltipContent>
+                <span>Save & Get Chad&apos;s Insight</span>
+                <kbd className="ml-2 px-1.5 py-0.5 bg-slate-700 rounded text-[10px]">⌘↵</kbd>
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -647,18 +813,29 @@ export default function JournalNewPage() {
             </CardContent>
           </Card>
 
-          {/* Blocks */}
-          <div className="space-y-4">
-            {blocks.map((block) => (
-              <BlockEditor
-                key={block.id}
-                block={block}
-                onUpdate={(updates) => updateBlock(block.id, updates)}
-                onDelete={() => deleteBlock(block.id)}
-                canDelete={blocks.length > 1}
-              />
-            ))}
-          </div>
+          {/* Blocks with Drag and Drop */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-4">
+                {blocks.map((block) => (
+                  <SortableBlockEditor
+                    key={block.id}
+                    block={block}
+                    onUpdate={(updates) => updateBlock(block.id, updates)}
+                    onDelete={() => deleteBlock(block.id)}
+                    canDelete={blocks.length > 1}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Add Block Button */}
           <button
@@ -770,8 +947,8 @@ export default function JournalNewPage() {
   );
 }
 
-// Block Editor Component
-function BlockEditor({
+// Sortable Block Editor Wrapper with drag handle
+function SortableBlockEditor({
   block,
   onUpdate,
   onDelete,
@@ -782,11 +959,57 @@ function BlockEditor({
   onDelete: () => void;
   canDelete: boolean;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1 : 0,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <BlockEditor
+        block={block}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        canDelete={canDelete}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
+// Block Editor Component
+function BlockEditor({
+  block,
+  onUpdate,
+  onDelete,
+  canDelete,
+  dragHandleProps,
+}: {
+  block: EntryBlock;
+  onUpdate: (updates: Partial<EntryBlock>) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+  dragHandleProps?: Record<string, unknown>;
+}) {
   if (block.type === 'dichotomy') {
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -830,7 +1053,10 @@ function BlockEditor({
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -859,7 +1085,10 @@ function BlockEditor({
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -888,7 +1117,10 @@ function BlockEditor({
   return (
     <div className="group relative">
       <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-        <button className="p-1 text-slate-300 hover:text-slate-500">
+        <button
+          className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+          {...dragHandleProps}
+        >
           <GripVertical size={16} />
         </button>
         {canDelete && (

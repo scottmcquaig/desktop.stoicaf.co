@@ -95,26 +95,41 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </main>
         </div>
 
-        {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex justify-around items-center z-20 px-2 pb-safe">
-          <MobileNavItem href="/dashboard" icon={<Home size={24} />} label="Home" />
-          <MobileNavItem href="/journal" icon={<BookOpen size={24} />} label="Journal" />
-          <div className="relative -top-5">
-            <Link
-              href="/journal/new"
-              className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-50"
-            >
-              <Edit size={24} />
-            </Link>
-          </div>
-          <MobileNavItem href="/insights" icon={<BarChart3 size={24} />} label="Insights" />
-          <MobileNavItem href="/settings" icon={<CircleUser size={24} />} label="Profile" />
-        </nav>
+        {/* Mobile Bottom Nav - hidden on journal entry edit page which has its own toolbar */}
+        <MobileBottomNav />
 
         {/* QuickCapture Modal */}
         <QuickCapture open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} />
       </div>
     </TooltipProvider>
+  );
+};
+
+const MobileBottomNav = () => {
+  const pathname = usePathname();
+
+  // Hide on journal entry edit pages which have their own toolbar
+  const isJournalEntryPage = pathname === '/journal/new' || pathname.match(/^\/journal\/[^/]+$/);
+
+  if (isJournalEntryPage) {
+    return null;
+  }
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex justify-around items-center z-20 px-2 pb-safe">
+      <MobileNavItem href="/dashboard" icon={<Home size={24} />} label="Home" />
+      <MobileNavItem href="/journal" icon={<BookOpen size={24} />} label="Journal" />
+      <div className="relative -top-5">
+        <Link
+          href="/journal/new"
+          className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-50"
+        >
+          <Edit size={24} />
+        </Link>
+      </div>
+      <MobileNavItem href="/insights" icon={<BarChart3 size={24} />} label="Insights" />
+      <MobileNavItem href="/settings" icon={<CircleUser size={24} />} label="Profile" />
+    </nav>
   );
 };
 

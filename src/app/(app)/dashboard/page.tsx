@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   calculateStreak,
@@ -290,6 +291,11 @@ const DashboardPage: React.FC = () => {
     return '';
   };
 
+  // Show skeleton while initial data is loading
+  if (isLoading && !dailyQuote) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="bg-slate-50 p-4 md:p-8 min-h-full font-sans">
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -464,7 +470,7 @@ const DashboardPage: React.FC = () => {
                   size="sm"
                   onClick={generateWeeklyReflection}
                   disabled={isLoadingReflection}
-                  className="text-xs min-h-10"
+                  className="text-xs min-h-11"
                 >
                   {isLoadingReflection ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -485,7 +491,7 @@ const DashboardPage: React.FC = () => {
               ) : reflectionError ? (
                 <div className="text-center py-6">
                   <p className="text-sm text-slate-500 mb-3">{reflectionError}</p>
-                  <Button asChild variant="outline" size="sm" className="min-h-10">
+                  <Button asChild variant="outline" size="sm" className="min-h-11">
                     <Link href="/journal/new">
                       Write an Entry
                       <ChevronRight size={16} className="ml-1" />
@@ -556,7 +562,7 @@ const DashboardPage: React.FC = () => {
                     onClick={generateWeeklyReflection}
                     disabled={isLoadingReflection || !userProfile?.pillarFocus}
                     size="sm"
-                    className="min-h-10 bg-purple-600 hover:bg-purple-700"
+                    className="min-h-11 bg-purple-600 hover:bg-purple-700"
                   >
                     <Sparkles size={16} className="mr-2" />
                     Generate Reflection

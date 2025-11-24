@@ -1,7 +1,7 @@
 # Stoic.af Development Status - Claude Reference
 
-**Last Updated**: 2025-11-22 (Sprint 5 Complete)
-**Current Phase**: MVP Development - Sprint 6 Ready
+**Last Updated**: 2025-11-24 (Sprint 7 Complete)
+**Current Phase**: MVP Development - Sprint 8 Ready
 **Active Branch**: `main`
 
 ---
@@ -15,7 +15,8 @@
 - **Language**: TypeScript 5.x
 - **Styling**: Tailwind CSS 3.4.0 + shadcn/ui components (30+ components)
 - **Backend**: Firebase (Auth, Firestore)
-- **AI**: Genkit (installed, flows created but not active)
+- **AI**: Genkit with Gemini 1.5 Flash
+- **Drag & Drop**: @dnd-kit/core + @dnd-kit/sortable
 - **State**: Zustand (installed, not yet configured)
 - **Data Fetching**: React Query (installed, not yet configured)
 - **Toasts**: Sonner (installed)
@@ -171,6 +172,64 @@
 - ✅ Environment variables properly configured
 - ✅ Created `.env.local` template
 
+### ✅ Sprint 6: Mobile & AI Activation (COMPLETE)
+
+**Completed**: 2025-11-24
+
+**What Was Built:**
+
+**Mobile Responsiveness:**
+- ✅ Fixed mobile bottom nav conflict with journal editor toolbar
+- ✅ Global mobile nav hides on `/journal/new` and `/journal/[id]` pages
+- ✅ All touch targets meet 44x44px accessibility standard
+- ✅ Mobile toolbar shows block types, mood selector, and AI options
+
+**AI Feature Activation:**
+- ✅ Weekly reflection on dashboard with "Generate Reflection" button
+- ✅ Chad's Insight button in journal editor toolbar
+- ✅ "Save + AI" button to save and get insight in one action
+- ✅ AI insight dialog with tone badge and action items
+- ✅ Graceful degradation when API key not configured
+
+**Notification Preferences (Settings):**
+- ✅ Email reminders toggle
+- ✅ Browser notifications toggle with permission request
+- ✅ Reminder time picker (7 preset times)
+- ✅ Reminder days selector (circular day buttons)
+- ✅ Info box explaining requirements
+
+### ✅ Sprint 7: Editor UX & Performance (COMPLETE)
+
+**Completed**: 2025-11-24
+
+**What Was Built:**
+
+**Keyboard Shortcuts:**
+- ✅ `Cmd/Ctrl + S` - Save entry
+- ✅ `Cmd/Ctrl + Enter` - Save with AI insight
+- ✅ `Escape` - Go back to journal list
+- ✅ Keyboard hints in button tooltips
+
+**Auto-Save Drafts:**
+- ✅ Drafts auto-save to localStorage every 30 seconds
+- ✅ Draft restored on page reload with toast notification
+- ✅ Status indicator shows "• unsaved" or "• draft saved"
+- ✅ Draft cleared on successful save
+- ✅ Only applies to new entries (not editing existing)
+
+**Block Reordering:**
+- ✅ Drag and drop to reorder blocks using @dnd-kit
+- ✅ Drag handle (grip icon) on each block
+- ✅ Visual feedback during drag (opacity change)
+- ✅ Works with all block types
+
+**Loading Skeletons:**
+- ✅ Dashboard skeleton while data loads
+- ✅ Reusable skeleton components in `src/components/skeletons/`
+
+**New Files:**
+- `src/components/skeletons/DashboardSkeleton.tsx` - Dashboard loading skeleton
+
 ---
 
 ## Current App Routes
@@ -207,6 +266,7 @@
 ### Utilities
 - `src/lib/dailyQuote.ts` - Daily quote system (deterministic by day of year)
 - `src/components/ErrorBoundary.tsx` - Error boundary component
+- `src/components/skeletons/DashboardSkeleton.tsx` - Loading skeletons
 
 ### Pages
 - `src/app/(app)/layout.tsx` - Protected app layout with sidebar + error boundary
@@ -215,7 +275,7 @@
 - `src/app/(app)/journal/new/page.tsx` - Block-based editor with sticky toolbar
 - `src/app/(app)/journal/[id]/page.tsx` - View/edit single entry
 - `src/app/(app)/insights/page.tsx` - Analytics with real Firestore data
-- `src/app/(app)/settings/page.tsx` - Settings
+- `src/app/(app)/settings/page.tsx` - Settings with notification preferences
 - `src/app/onboarding/page.tsx` - 4-step onboarding
 
 ### Data Files
@@ -288,6 +348,11 @@ interface UserProfile {
   defaultEntryLayout?: { blocks: Array<{ id: string; type: string }> };
   onboardingComplete?: boolean;
   createdAt?: Date;
+  // Notification preferences
+  emailReminders?: boolean;
+  browserNotifications?: boolean;
+  reminderTime?: string;     // e.g., "18:00"
+  reminderDays?: string[];   // e.g., ["mon", "tue", "wed", ...]
 }
 ```
 
@@ -324,7 +389,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
-GOOGLE_GENAI_API_KEY=  # For future AI features
+GOOGLE_GENAI_API_KEY=  # Required for AI features
 ```
 
 ---
@@ -349,70 +414,50 @@ firebase deploy --only firestore:rules
 
 ---
 
-## Next To-Do's (Sprint 6: Production Ready)
+## Next To-Do's (Sprint 8: Payments & Polish)
 
-### 🔥 Immediate Actions Required
+### High Priority - Sprint 8
 
-1. **Firebase Setup (Manual)**
-   - [ ] Run `firebase login` to authenticate
-   - [ ] Deploy rules: `firebase deploy --only firestore:rules`
-   - [ ] Add real Firebase API key to `.env.local`
-   - [ ] Add Gemini API key to `.env.local` for AI features
+1. **Stripe Integration**
+   - [ ] Set up Stripe account and API keys
+   - [ ] Create subscription products (Free/Pro tiers)
+   - [ ] Implement checkout flow
+   - [ ] Handle webhooks for subscription status
 
-### High Priority - Sprint 6
+2. **Pro Features Gating**
+   - [ ] Define free vs pro feature limits
+   - [ ] Add usage tracking (entries per month, AI calls)
+   - [ ] Show upgrade prompts when limits reached
+   - [ ] Payment settings page
 
-1. **Mobile Responsiveness**
-   - [ ] Test all views on mobile devices
-   - [ ] Fix sticky toolbar behavior on mobile
-   - [ ] Ensure 44x44px minimum touch targets
-   - [ ] Test QuickCapture modal (Cmd+K) on mobile
-   - [ ] Verify bottom navigation works correctly
-
-2. **AI Feature Activation**
-   - [ ] Connect AI flows to journal editor UI
-   - [ ] Add "Generate with AI" button to journal page
-   - [ ] Display Chad insights after saving entries
-   - [ ] Show weekly reflection on dashboard
-   - [ ] Test AI features with real Gemini API key
-
-3. **Notifications System**
-   - [ ] Email reminders via Firebase Functions
-   - [ ] Browser push notifications setup
-   - [ ] Notification preferences in settings
-   - [ ] Daily prompt delivery system
-
-### Medium Priority - Sprint 7
-
-4. **Editor UX Improvements**
-   - [ ] Keyboard shortcuts (Cmd+S to save, etc.)
-   - [ ] Auto-focus on first empty block
-   - [ ] Auto-save draft functionality
-   - [ ] Rich text editing (bold, italic, lists)
-   - [ ] Block reordering (drag and drop)
-
-5. **Performance Optimization**
+3. **Performance Optimization**
    - [ ] Implement React Query for data fetching
-   - [ ] Add loading skeletons
    - [ ] Optimize bundle size
    - [ ] Lazy load components
    - [ ] Image optimization
 
-### Future Sprints (Backlog)
+### Medium Priority - Sprint 9
 
-6. **Payments & Monetization (Sprint 8)**
-   - [ ] Stripe integration
-   - [ ] Pro subscription features
-   - [ ] Usage limits for free tier
-   - [ ] Payment settings page
-
-7. **Landing Page & Marketing (Sprint 9)**
+4. **Landing Page & Marketing**
    - [ ] Marketing landing page at `/`
    - [ ] Feature highlights
    - [ ] Pricing section
    - [ ] Testimonials
    - [ ] SEO optimization
 
-8. **Community Features (Sprint 10)**
+5. **Email Notification Backend**
+   - [ ] Firebase Functions for scheduled emails
+   - [ ] Daily reminder emails
+   - [ ] Weekly summary emails
+
+### Future Sprints (Backlog)
+
+6. **Rich Text Editing (Sprint 10)**
+   - [ ] Bold, italic, lists in blocks
+   - [ ] Markdown support
+   - [ ] Block templates
+
+7. **Community Features (Sprint 11)**
    - [ ] Public profiles
    - [ ] Share journal entries
    - [ ] Community challenges
@@ -423,20 +468,20 @@ firebase deploy --only firestore:rules
 ## Known Issues
 
 1. **Firestore Rules**: Need to deploy via `firebase deploy --only firestore:rules` (requires Firebase auth)
-2. **Firebase API Key**: Default placeholder "your-api-key" needs to be replaced with actual key
-3. **Gemini API Key**: Needs to be added to `.env.local` for AI features to work
-4. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
+2. **Track Data Not Seeded to Firestore**: Using local JSON fallback (works fine)
+3. **Email Notifications**: UI ready but backend not implemented yet
 
 ---
 
 ## Git Workflow
 
-**Current Branch**: `claude/hit-i-01DrZwbz9ztxFjv35nDiFBD7`
+**Main Branch**: `main`
 
 **Recent Commits**:
-- UI fixes and polish
-- Sprint 4: Insights & Polish
-- Implement block-based journal editor with pillar track integration
+- Sprint 7: Editor UX and loading improvements (keyboard shortcuts, auto-save, drag-drop)
+- Add notification preferences and fix touch targets
+- Hide global mobile nav on journal entry pages
+- Sprint 6: Mobile & AI activation
 
 ---
 
@@ -492,14 +537,17 @@ npm run dev
 2. Select a pillar (Money/Ego/Relationships/Discipline)
 3. View daily prompt with Stoic quote
 4. Add blocks using toolbar (Sun/Moon/Columns)
-5. Write content, select mood
-6. Save - redirects to `/journal`
-7. Return to `/journal/new` same day - loads existing entry for editing
+5. Drag blocks to reorder using grip handle
+6. Write content, select mood
+7. Press `Cmd+S` to save or `Cmd+Enter` for save+AI
+8. View Chad's insight in dialog
+9. Return to `/journal/new` same day - loads existing entry for editing
 
-**Test Insights Flow**:
-1. Create a few journal entries with different pillars/moods
-2. Go to `/insights`
-3. See mood heatmap, pillar distribution, and stats
+**Test AI Features**:
+1. Ensure `GOOGLE_GENAI_API_KEY` is set in `.env.local`
+2. Write a journal entry and click "Save + AI" or the sparkles button
+3. Go to Dashboard and click "Generate Reflection"
+4. View AI-powered weekly insights
 
 ---
 
@@ -509,7 +557,8 @@ npm run dev
 - **Coolify Dashboard**: (deployment platform)
 - **shadcn/ui**: https://ui.shadcn.com/docs
 - **Lucide Icons**: https://lucide.dev/icons
+- **dnd-kit**: https://dndkit.com/docs
 
 ---
 
-**Status**: Sprint 4 Complete - Ready for Sprint 5 (AI & Settings)
+**Status**: Sprint 7 Complete - Ready for Sprint 8 (Payments & Polish)
