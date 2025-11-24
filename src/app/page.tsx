@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
@@ -451,18 +452,18 @@ export default function LandingPage() {
               </div>
 
               <div className="flex gap-8 text-sm">
-                <button className="text-slate-400 hover:text-white transition-colors">
+                <Link href="/about" className="text-slate-400 hover:text-white transition-colors">
                   About
-                </button>
-                <button className="text-slate-400 hover:text-white transition-colors">
+                </Link>
+                <Link href="/privacy" className="text-slate-400 hover:text-white transition-colors">
                   Privacy
-                </button>
-                <button className="text-slate-400 hover:text-white transition-colors">
+                </Link>
+                <Link href="/terms" className="text-slate-400 hover:text-white transition-colors">
                   Terms
-                </button>
-                <button className="text-slate-400 hover:text-white transition-colors">
+                </Link>
+                <Link href="/support" className="text-slate-400 hover:text-white transition-colors">
                   Support
-                </button>
+                </Link>
               </div>
             </div>
 
