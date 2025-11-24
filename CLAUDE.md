@@ -286,7 +286,14 @@
 | `/journal/new` | Block-based journal editor | Yes |
 | `/journal/[id]` | View/edit single entry | Yes |
 | `/insights` | Analytics & insights (real data) | Yes |
+| `/explore` | Browse and select programs (Sprint 10 - planned) | Yes |
 | `/settings` | User settings | Yes |
+| `/about` | About page | No |
+| `/privacy` | Privacy Policy | No |
+| `/terms` | Terms of Service | No |
+| `/support` | Support & FAQ | No |
+| `/docs` | Documentation (placeholder) | No |
+| `/pro` | Pro features marketing page | No |
 
 ---
 
@@ -390,12 +397,32 @@ interface UserProfile {
   defaultEntryLayout?: { blocks: Array<{ id: string; type: string }> };
   onboardingComplete?: boolean;
   createdAt?: Date;
+
+  // Program tracking (Sprint 10)
+  currentProgram?: ProgramType;  // 'money' | 'ego' | 'relationships' | 'discipline' | 'freestyle' | 'workbook' | null
+  programStartDate?: Date;       // when current program started
+  programDayIndex?: number;      // current day (0-29) in program
+  completedPrograms?: ProgramType[]; // list of completed programs
+  programHistory?: Array<{
+    programType: ProgramType;
+    startedAt: Date;
+    completedAt?: Date;
+    daysCompleted: number;
+  }>;
+
+  // Workbook access (Sprint 10)
+  hasWorkbookAccess?: boolean;
+  workbookRedemptionCode?: string;
+  workbookSubscriptionActive?: boolean;
+
   // Notification preferences
   emailReminders?: boolean;
   browserNotifications?: boolean;
   reminderTime?: string;     // e.g., "18:00"
   reminderDays?: string[];   // e.g., ["mon", "tue", "wed", ...]
 }
+
+type ProgramType = 'money' | 'ego' | 'relationships' | 'discipline' | 'freestyle' | 'workbook';
 ```
 
 ---
@@ -495,14 +522,68 @@ firebase deploy --only firestore:rules
    - [ ] Lazy load components
    - [ ] Image optimization
 
-### Medium Priority - Sprint 10
+### Medium Priority - Sprint 10: Explore & Programs
 
-6. **Email Notification Backend**
+8. **Explore Page & Navigation**
+   - [ ] Add "Explore" to main navigation (sidebar + mobile bottom nav)
+   - [ ] Create `/explore` page listing all available programs
+   - [ ] Show user's current program at top (if selected)
+   - [ ] Display 4 core pillar programs (Money, Ego, Relationships, Discipline)
+   - [ ] Add program cards with:
+     - Program icon/image
+     - Title and theme
+     - Description (30 days, what you'll learn)
+     - "Select Program" or "Current Program" button
+     - Progress indicator if started
+
+9. **New Program Options**
+   - [ ] **No Program (Free Flow)**:
+     - Option for users who want to journal without structured guidance
+     - AI suggests prompts based on previous entries and patterns
+     - Or randomized daily prompts from all pillars
+     - Label: "Freestyle" or "Self-Guided"
+   - [ ] **Stoic AF Workbook Program**:
+     - Mirrors the print workbook exercises
+     - 30-day structured program with worksheets/exercises
+     - Tied to book purchase or $2/month trial
+     - Special badge/indicator for workbook users
+     - Exclusive content tied to physical book
+
+10. **Program Selection & Switching**
+   - [ ] Allow users to switch programs from Explore page
+   - [ ] Confirm dialog before switching (warn about progress)
+   - [ ] Track program history in user profile
+   - [ ] Show completion badges for finished programs
+   - [ ] Option to restart a completed program
+
+11. **Mobile Navigation Improvements**
+   - [ ] Move user profile icon to mobile header (top right)
+   - [ ] Create mobile header dropdown menu with:
+     - Profile/Settings
+     - Logout option
+     - Quick stats (streak, etc.)
+   - [ ] Fix missing logout option on mobile
+   - [ ] Ensure mobile nav works on all app pages
+
+12. **Workbook Integration & Monetization**
+   - [ ] Create workbook program content (30 days of exercises)
+   - [ ] Add purchase flow for workbook access:
+     - Option 1: Book purchase code redemption
+     - Option 2: $2/month "Workbook Edition" subscription
+   - [ ] Add workbook-exclusive features:
+     - PDF worksheet downloads
+     - Print-friendly entry format
+     - Progress tracker matching book chapters
+   - [ ] Marketing copy for workbook on Explore page
+
+### Medium Priority - Sprint 11
+
+13. **Email Notification Backend**
    - [ ] Firebase Functions for scheduled emails
    - [ ] Daily reminder emails
    - [ ] Weekly summary emails
 
-7. **SEO & Analytics**
+14. **SEO & Analytics**
    - [ ] Add meta tags to landing page
    - [ ] Set up Google Analytics
    - [ ] Add structured data for rich snippets
@@ -520,6 +601,174 @@ firebase deploy --only firestore:rules
    - [ ] Share journal entries
    - [ ] Community challenges
    - [ ] Leaderboards
+
+---
+
+## Sprint 10 Implementation Plan: Explore & Programs
+
+### Overview
+Add program discovery and selection with two new program types (Freestyle and Workbook), plus mobile navigation improvements.
+
+### Phase 1: Mobile Navigation Fix (Quick Win)
+**Goal**: Add user menu to mobile header with logout option
+
+**Changes Needed:**
+1. **Mobile Header Component** (`src/components/MobileHeader.tsx` - new file)
+   - Profile icon/avatar in top-right corner
+   - Dropdown menu with:
+     - User name and email
+     - Settings link
+     - Logout button
+     - Optional: Current streak display
+   - Show on all authenticated pages
+
+2. **Update App Layout** (`src/app/(app)/layout.tsx`)
+   - Import and render MobileHeader on mobile
+   - Hide current mobile bottom nav user icon
+   - Ensure works on all pages (dashboard, journal, insights, explore, settings)
+
+**Files to Create:**
+- `src/components/MobileHeader.tsx`
+
+**Files to Update:**
+- `src/app/(app)/layout.tsx`
+
+### Phase 2: Explore Page Foundation
+**Goal**: Create basic Explore page showing current 4 programs
+
+**Changes Needed:**
+1. **Create Explore Page** (`src/app/(app)/explore/page.tsx`)
+   - Header: "Explore Programs"
+   - Current program card at top (if user has one selected)
+   - Grid of 4 program cards (Money, Ego, Relationships, Discipline)
+   - Each card shows:
+     - Pillar icon
+     - Theme/title
+     - 30-day duration
+     - Brief description
+     - "Select Program" button (or "Current" badge)
+     - Progress bar if started
+
+2. **Add to Navigation**
+   - Sidebar: Add "Explore" link with Compass icon
+   - Mobile bottom nav: Add "Explore" icon
+
+**Files to Create:**
+- `src/app/(app)/explore/page.tsx`
+
+**Files to Update:**
+- `src/components/app-sidebar.tsx`
+- `src/components/MobileNav.tsx` (if exists) or bottom nav component
+- `src/lib/types.ts` (add ProgramType type)
+
+### Phase 3: Program Data & New Programs
+**Goal**: Add Freestyle and Workbook programs with supporting data
+
+**New Data Files:**
+1. **Freestyle Program** (`public/data/freestyle-track.json`)
+   - Mixed prompts from all pillars
+   - Rotates through different themes daily
+   - Less structured, more exploratory
+
+2. **Workbook Program** (`public/data/workbook-track.json`)
+   - Mirrors print workbook exercises
+   - Structured worksheets/activities
+   - Special formatting for print-friendly output
+
+**Data Model Updates:**
+1. Update `src/lib/types.ts`:
+   - Add `ProgramType` type
+   - Update `UserProfile` interface with program fields
+   - Add `Program` interface for program metadata
+
+2. Update `src/lib/firebase/journal.ts`:
+   - Add `updateUserProgram()` function
+   - Add `getProgramProgress()` function
+   - Add `switchProgram()` function with confirmation
+
+**Files to Create:**
+- `public/data/freestyle-track.json`
+- `public/data/workbook-track.json`
+
+**Files to Update:**
+- `src/lib/types.ts`
+- `src/lib/firebase/journal.ts`
+
+### Phase 4: Program Selection & Switching
+**Goal**: Allow users to select and switch between programs
+
+**Changes Needed:**
+1. **Program Selection Modal** (`src/components/ProgramSelectionModal.tsx`)
+   - Confirm before switching programs
+   - Warn about losing progress
+   - Show what they'll gain from new program
+
+2. **Update Explore Page**
+   - Wire up "Select Program" buttons
+   - Handle program switching
+   - Show completion badges for finished programs
+   - Track program history
+
+3. **Update Journal Editor** (`src/app/(app)/journal/new/page.tsx`)
+   - Load prompts based on current program
+   - Handle Freestyle program (random/AI prompts)
+   - Handle Workbook program special formatting
+
+**Files to Create:**
+- `src/components/ProgramSelectionModal.tsx`
+
+**Files to Update:**
+- `src/app/(app)/explore/page.tsx`
+- `src/app/(app)/journal/new/page.tsx`
+- `src/lib/firebase/pillarTracks.ts`
+
+### Phase 5: Workbook Monetization
+**Goal**: Add purchase/subscription flow for Workbook program
+
+**Changes Needed:**
+1. **Workbook Access Check**
+   - Create `src/lib/workbookAccess.ts` utility
+   - Check for book redemption code OR active subscription
+   - Gate Workbook program behind access check
+
+2. **Purchase Flow**
+   - Add "Unlock Workbook" modal/page
+   - Option 1: Enter book redemption code
+   - Option 2: Subscribe for $2/month
+   - Integrate with Stripe (if Sprint 8 complete)
+
+3. **Workbook Features**
+   - PDF export for workbook entries
+   - Print-friendly formatting
+   - Chapter progress tracker
+   - Special badges/indicators
+
+**Files to Create:**
+- `src/lib/workbookAccess.ts`
+- `src/components/WorkbookUnlockModal.tsx`
+- `src/app/(app)/workbook/page.tsx` (optional dedicated page)
+
+**Files to Update:**
+- `src/app/(app)/explore/page.tsx` (add workbook CTA)
+- `src/app/(app)/settings/page.tsx` (workbook subscription management)
+
+### Testing Checklist
+- [ ] Mobile header shows on all auth pages
+- [ ] Logout works from mobile header
+- [ ] Explore page loads all 6 programs (4 pillars + Freestyle + Workbook)
+- [ ] Can select and switch programs
+- [ ] Program progress tracks correctly
+- [ ] Freestyle program shows varied prompts
+- [ ] Workbook program requires access
+- [ ] Book redemption code works
+- [ ] Program completion badges appear
+- [ ] Navigation works on desktop and mobile
+
+### Success Metrics
+- Users can easily discover and switch programs
+- Mobile navigation is clearer (logout accessible)
+- Workbook program drives book sales or subscriptions
+- Freestyle program attracts users who want flexibility
 
 ---
 
