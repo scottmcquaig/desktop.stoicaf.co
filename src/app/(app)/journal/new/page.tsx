@@ -58,6 +58,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
 import { createEntry, updateEntry, getEntryByDate, getPillarProgress } from '@/lib/firebase/journal';
@@ -336,6 +353,31 @@ export default function JournalNewPage() {
   const deleteBlock = (id: string) => {
     if (blocks.length > 1) {
       setBlocks(blocks.filter((b) => b.id !== id));
+    }
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for block reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
     }
   };
 
@@ -771,18 +813,29 @@ export default function JournalNewPage() {
             </CardContent>
           </Card>
 
-          {/* Blocks */}
-          <div className="space-y-4">
-            {blocks.map((block) => (
-              <BlockEditor
-                key={block.id}
-                block={block}
-                onUpdate={(updates) => updateBlock(block.id, updates)}
-                onDelete={() => deleteBlock(block.id)}
-                canDelete={blocks.length > 1}
-              />
-            ))}
-          </div>
+          {/* Blocks with Drag and Drop */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-4">
+                {blocks.map((block) => (
+                  <SortableBlockEditor
+                    key={block.id}
+                    block={block}
+                    onUpdate={(updates) => updateBlock(block.id, updates)}
+                    onDelete={() => deleteBlock(block.id)}
+                    canDelete={blocks.length > 1}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Add Block Button */}
           <button
@@ -894,8 +947,8 @@ export default function JournalNewPage() {
   );
 }
 
-// Block Editor Component
-function BlockEditor({
+// Sortable Block Editor Wrapper with drag handle
+function SortableBlockEditor({
   block,
   onUpdate,
   onDelete,
@@ -906,11 +959,57 @@ function BlockEditor({
   onDelete: () => void;
   canDelete: boolean;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1 : 0,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <BlockEditor
+        block={block}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        canDelete={canDelete}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
+// Block Editor Component
+function BlockEditor({
+  block,
+  onUpdate,
+  onDelete,
+  canDelete,
+  dragHandleProps,
+}: {
+  block: EntryBlock;
+  onUpdate: (updates: Partial<EntryBlock>) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+  dragHandleProps?: Record<string, unknown>;
+}) {
   if (block.type === 'dichotomy') {
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -954,7 +1053,10 @@ function BlockEditor({
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -983,7 +1085,10 @@ function BlockEditor({
     return (
       <div className="group relative">
         <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-          <button className="p-1 text-slate-300 hover:text-slate-500">
+          <button
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            {...dragHandleProps}
+          >
             <GripVertical size={16} />
           </button>
           {canDelete && (
@@ -1012,7 +1117,10 @@ function BlockEditor({
   return (
     <div className="group relative">
       <div className="absolute -left-8 md:-left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-        <button className="p-1 text-slate-300 hover:text-slate-500">
+        <button
+          className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+          {...dragHandleProps}
+        >
           <GripVertical size={16} />
         </button>
         {canDelete && (
