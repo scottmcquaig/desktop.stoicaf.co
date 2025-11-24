@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChadGPTSvg } from '@/components/ChadGPTSvg';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   calculateStreak,
@@ -289,6 +290,11 @@ const DashboardPage: React.FC = () => {
     }
     return '';
   };
+
+  // Show skeleton while initial data is loading
+  if (isLoading && !dailyQuote) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="bg-slate-50 p-4 md:p-8 min-h-full font-sans">
