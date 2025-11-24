@@ -11,6 +11,10 @@ import {
   CircleUser,
   Home,
   BarChart3,
+  Compass,
+  Settings,
+  LogOut,
+  Flame,
 } from 'lucide-react';
 import { StoicLogo } from '@/components/StoicLogo';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -18,11 +22,21 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuickCapture } from '@/components/QuickCapture';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { calculateStreak } from '@/lib/firebase/journal';
 
 const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
-  const { user, userProfile, loading } = useAuth();
+  const [streak, setStreak] = useState(0);
+  const { user, userProfile, loading, signOut } = useAuth();
   const router = useRouter();
 
   // Protected route check
@@ -33,6 +47,13 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       router.push('/onboarding');
     }
   }, [user, userProfile, loading, router]);
+
+  // Fetch streak for mobile header
+  useEffect(() => {
+    if (user) {
+      calculateStreak(user.uid).then(setStreak).catch(console.error);
+    }
+  }, [user]);
 
   // Keyboard shortcut for QuickCapture
   useEffect(() => {
@@ -46,6 +67,18 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const displayName = userProfile?.displayName || user?.displayName || 'User';
+  const userEmail = user?.email || '';
 
   // Show loading state while checking auth
   if (loading) {
@@ -86,6 +119,42 @@ const PrototypeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">
                 <Bell className="text-slate-600" size={22} />
               </button>
+              {/* User dropdown menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">
+                    <CircleUser className="text-slate-600" size={22} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{displayName}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2">
+                    <Flame size={16} className="text-orange-500" />
+                    <span>{streak} day streak</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-500 focus:text-red-500 cursor-pointer gap-2"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut size={16} />
+                    <span>Log Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
@@ -128,7 +197,7 @@ const MobileBottomNav = () => {
         </Link>
       </div>
       <MobileNavItem href="/insights" icon={<BarChart3 size={24} />} label="Insights" />
-      <MobileNavItem href="/settings" icon={<CircleUser size={24} />} label="Profile" />
+      <MobileNavItem href="/explore" icon={<Compass size={24} />} label="Explore" />
     </nav>
   );
 };
