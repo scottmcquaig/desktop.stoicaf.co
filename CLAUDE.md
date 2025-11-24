@@ -485,7 +485,7 @@ firebase deploy --only firestore:rules
 
 ## Sprint 10: Mobile UX + Stripe Integration (CURRENT)
 
-### Phase 1: Mobile Quick Wins ✅ IN PROGRESS
+### Phase 1: Mobile Quick Wins ✅ COMPLETE
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -493,8 +493,9 @@ firebase deploy --only firestore:rules
 | Include: name, email, streak, settings, logout | ✅ Done | Uses shadcn DropdownMenu |
 | Add "Explore" to sidebar navigation | ✅ Done | Compass icon |
 | Add "Explore" to mobile bottom nav | ✅ Done | Prep for Phase 2 |
+| Create Explore page with program cards | ✅ Done | 4 pillars + Freestyle + Workbook (locked) |
 
-### Phase 2: Stripe Setup via CLI
+### Phase 2: Stripe Setup via CLI (NEXT)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -538,11 +539,12 @@ firebase deploy --only firestore:rules
 ## Sprint 11: Explore & Programs (NEXT)
 
 ### Explore Page & Navigation
-- [ ] Create `/explore` page listing all programs
-- [ ] Show user's current program at top
-- [ ] Display 4 pillar programs + Freestyle + Workbook
+- [x] Create `/explore` page listing all programs
+- [x] Show user's current program at top (if selected)
+- [x] Display 4 pillar programs + Freestyle + Workbook
+- [ ] Wire up program selection to Firestore
 - [ ] Program cards with progress indicators
-- [ ] "Select Program" / "Current" badges
+- [ ] "Select Program" / "Current" badges functionality
 
 ### Program Selection & Switching
 - [ ] Allow program switching from Explore
