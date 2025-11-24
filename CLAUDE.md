@@ -1,7 +1,7 @@
 # Stoic.af Development Status - Claude Reference
 
-**Last Updated**: 2025-11-24 (Sprint 9 Complete)
-**Current Phase**: MVP Development - Sprint 8 Ready (Stripe Integration)
+**Last Updated**: 2025-11-24 (Sprint 10 In Progress)
+**Current Phase**: MVP Development - Sprint 10 (Mobile UX + Stripe Integration)
 **Active Branch**: `main`
 
 ---
@@ -286,7 +286,7 @@
 | `/journal/new` | Block-based journal editor | Yes |
 | `/journal/[id]` | View/edit single entry | Yes |
 | `/insights` | Analytics & insights (real data) | Yes |
-| `/explore` | Browse and select programs (Sprint 10 - planned) | Yes |
+| `/explore` | Browse and select programs | Yes |
 | `/settings` | User settings | Yes |
 | `/about` | About page | No |
 | `/privacy` | Privacy Policy | No |
@@ -483,292 +483,110 @@ firebase deploy --only firestore:rules
 
 ---
 
-## Next To-Do's (Sprint 8: Stripe Integration)
+## Sprint 10: Mobile UX + Stripe Integration (CURRENT)
 
-### High Priority - Sprint 8 (CURRENT)
+### Phase 1: Mobile Quick Wins ✅ IN PROGRESS
 
-1. **Firebase Stripe Extension Setup**
-   - [ ] Resolve GCP organization policy (allow allUsers for Cloud Functions)
-   - [ ] Grant Storage Object Viewer permissions to compute service account
-   - [ ] Install Firebase Stripe extension (`firestore-stripe-payments`)
-   - [ ] Configure extension with Stripe API keys
-   - [ ] Set up webhook endpoints
-   - [ ] Test extension deployment
+| Task | Status | Notes |
+|------|--------|-------|
+| Add user dropdown to mobile header | ✅ Done | Logout was missing on mobile |
+| Include: name, email, streak, settings, logout | ✅ Done | Uses shadcn DropdownMenu |
+| Add "Explore" to sidebar navigation | ✅ Done | Compass icon |
+| Add "Explore" to mobile bottom nav | ✅ Done | Prep for Phase 2 |
 
-2. **Stripe Account Configuration**
-   - [ ] Create Stripe account and get API keys
-   - [ ] Create subscription products in Stripe dashboard:
-     - Free tier (placeholder product)
-     - Pro tier ($5/month)
-   - [ ] Configure webhook secret
-   - [ ] Set up customer portal settings
+### Phase 2: Stripe Setup via CLI
 
-3. **Checkout & Subscription Flow**
-   - [ ] Build checkout page/modal
-   - [ ] Implement subscription management UI in settings
-   - [ ] Handle subscription status updates from webhooks
-   - [ ] Add upgrade prompts for free users
-   - [ ] Test payment flow end-to-end
+| Task | Status | Notes |
+|------|--------|-------|
+| Create Stripe account + get API keys | ⬜ Pending | Dashboard setup |
+| Create products: Free tier, Pro ($5/mo) | ⬜ Pending | In Stripe dashboard |
+| Install Firebase Stripe extension via CLI | ⬜ Pending | `firebase ext:install stripe/firestore-stripe-payments` |
+| Configure extension with Stripe keys | ⬜ Pending | Extension config |
+| Set up webhook endpoints | ⬜ Pending | `stripe listen --forward-to` |
+| Test extension deployment | ⬜ Pending | End-to-end verification |
 
-4. **Pro Features Gating**
-   - [ ] Define free vs pro feature limits
-   - [ ] Add usage tracking (entries per month, AI calls)
-   - [ ] Show upgrade prompts when limits reached
-   - [ ] Protect pro features behind subscription check
+### Phase 3: Checkout Flow
 
-5. **Performance Optimization**
-   - [ ] Implement React Query for data fetching
-   - [ ] Optimize bundle size
-   - [ ] Lazy load components
-   - [ ] Image optimization
+| Task | Status | Notes |
+|------|--------|-------|
+| Build checkout page/modal | ⬜ Pending | Show Free vs Pro comparison |
+| Implement `createCheckoutSession()` | ⬜ Pending | Uses Stripe extension |
+| Add subscription status to UserProfile | ⬜ Pending | Track tier in Firestore |
+| Build subscription management in Settings | ⬜ Pending | Cancel/upgrade options |
+| Add upgrade prompts for free users | ⬜ Pending | When hitting limits |
 
-### Medium Priority - Sprint 10: Explore & Programs
+### Phase 4: Pro Features Gating
 
-8. **Explore Page & Navigation**
-   - [ ] Add "Explore" to main navigation (sidebar + mobile bottom nav)
-   - [ ] Create `/explore` page listing all available programs
-   - [ ] Show user's current program at top (if selected)
-   - [ ] Display 4 core pillar programs (Money, Ego, Relationships, Discipline)
-   - [ ] Add program cards with:
-     - Program icon/image
-     - Title and theme
-     - Description (30 days, what you'll learn)
-     - "Select Program" or "Current Program" button
-     - Progress indicator if started
+| Task | Status | Notes |
+|------|--------|-------|
+| Define free vs pro feature limits | ⬜ Pending | e.g., 10 entries/mo free |
+| Add usage tracking (entries, AI calls) | ⬜ Pending | Firestore counters |
+| Show upgrade prompts at limits | ⬜ Pending | Modal/toast |
+| Protect pro features behind sub check | ⬜ Pending | Server-side validation |
 
-9. **New Program Options**
-   - [ ] **No Program (Free Flow)**:
-     - Option for users who want to journal without structured guidance
-     - AI suggests prompts based on previous entries and patterns
-     - Or randomized daily prompts from all pillars
-     - Label: "Freestyle" or "Self-Guided"
-   - [ ] **Stoic AF Workbook Program**:
-     - Mirrors the print workbook exercises
-     - 30-day structured program with worksheets/exercises
-     - Tied to book purchase or $2/month trial
-     - Special badge/indicator for workbook users
-     - Exclusive content tied to physical book
+### Phase 5: Performance & Polish (If Time)
 
-10. **Program Selection & Switching**
-   - [ ] Allow users to switch programs from Explore page
-   - [ ] Confirm dialog before switching (warn about progress)
-   - [ ] Track program history in user profile
-   - [ ] Show completion badges for finished programs
-   - [ ] Option to restart a completed program
-
-11. **Mobile Navigation Improvements**
-   - [ ] Move user profile icon to mobile header (top right)
-   - [ ] Create mobile header dropdown menu with:
-     - Profile/Settings
-     - Logout option
-     - Quick stats (streak, etc.)
-   - [ ] Fix missing logout option on mobile
-   - [ ] Ensure mobile nav works on all app pages
-
-12. **Workbook Integration & Monetization**
-   - [ ] Create workbook program content (30 days of exercises)
-   - [ ] Add purchase flow for workbook access:
-     - Option 1: Book purchase code redemption
-     - Option 2: $2/month "Workbook Edition" subscription
-   - [ ] Add workbook-exclusive features:
-     - PDF worksheet downloads
-     - Print-friendly entry format
-     - Progress tracker matching book chapters
-   - [ ] Marketing copy for workbook on Explore page
-
-### Medium Priority - Sprint 11
-
-13. **Email Notification Backend**
-   - [ ] Firebase Functions for scheduled emails
-   - [ ] Daily reminder emails
-   - [ ] Weekly summary emails
-
-14. **SEO & Analytics**
-   - [ ] Add meta tags to landing page
-   - [ ] Set up Google Analytics
-   - [ ] Add structured data for rich snippets
-   - [ ] Create sitemap
-
-### Future Sprints (Backlog)
-
-6. **Rich Text Editing (Sprint 10)**
-   - [ ] Bold, italic, lists in blocks
-   - [ ] Markdown support
-   - [ ] Block templates
-
-7. **Community Features (Sprint 11)**
-   - [ ] Public profiles
-   - [ ] Share journal entries
-   - [ ] Community challenges
-   - [ ] Leaderboards
+| Task | Status | Notes |
+|------|--------|-------|
+| Set up React Query provider | ⬜ Pending | Already installed |
+| Create query hooks for entries/insights | ⬜ Pending | Replace direct Firestore |
+| Bundle size analysis | ⬜ Pending | @next/bundle-analyzer |
+| Dynamic imports for Recharts/Calendar | ⬜ Pending | Lazy loading |
 
 ---
 
-## Sprint 10 Implementation Plan: Explore & Programs
+## Sprint 11: Explore & Programs (NEXT)
 
-### Overview
-Add program discovery and selection with two new program types (Freestyle and Workbook), plus mobile navigation improvements.
+### Explore Page & Navigation
+- [ ] Create `/explore` page listing all programs
+- [ ] Show user's current program at top
+- [ ] Display 4 pillar programs + Freestyle + Workbook
+- [ ] Program cards with progress indicators
+- [ ] "Select Program" / "Current" badges
 
-### Phase 1: Mobile Navigation Fix (Quick Win)
-**Goal**: Add user menu to mobile header with logout option
+### Program Selection & Switching
+- [ ] Allow program switching from Explore
+- [ ] Confirm dialog before switching
+- [ ] Track program history in user profile
+- [ ] Completion badges for finished programs
 
-**Changes Needed:**
-1. **Mobile Header Component** (`src/components/MobileHeader.tsx` - new file)
-   - Profile icon/avatar in top-right corner
-   - Dropdown menu with:
-     - User name and email
-     - Settings link
-     - Logout button
-     - Optional: Current streak display
-   - Show on all authenticated pages
+### New Program Options
+- [ ] **Freestyle**: No structured prompts, AI-suggested or random
+- [ ] **Workbook Program**: Mirrors print book, gated content
 
-2. **Update App Layout** (`src/app/(app)/layout.tsx`)
-   - Import and render MobileHeader on mobile
-   - Hide current mobile bottom nav user icon
-   - Ensure works on all pages (dashboard, journal, insights, explore, settings)
+### Workbook Monetization
+- [ ] Book redemption code flow
+- [ ] $2/month workbook subscription option
+- [ ] PDF export for workbook entries
 
-**Files to Create:**
-- `src/components/MobileHeader.tsx`
+---
 
-**Files to Update:**
-- `src/app/(app)/layout.tsx`
+## Sprint 12: Backend & Notifications (FUTURE)
 
-### Phase 2: Explore Page Foundation
-**Goal**: Create basic Explore page showing current 4 programs
+### Email Notification Backend
+- [ ] Firebase Functions for scheduled emails
+- [ ] Daily reminder emails
+- [ ] Weekly summary emails
 
-**Changes Needed:**
-1. **Create Explore Page** (`src/app/(app)/explore/page.tsx`)
-   - Header: "Explore Programs"
-   - Current program card at top (if user has one selected)
-   - Grid of 4 program cards (Money, Ego, Relationships, Discipline)
-   - Each card shows:
-     - Pillar icon
-     - Theme/title
-     - 30-day duration
-     - Brief description
-     - "Select Program" button (or "Current" badge)
-     - Progress bar if started
+### SEO & Analytics
+- [ ] Meta tags on landing page
+- [ ] Google Analytics setup
+- [ ] Sitemap generation
 
-2. **Add to Navigation**
-   - Sidebar: Add "Explore" link with Compass icon
-   - Mobile bottom nav: Add "Explore" icon
+---
 
-**Files to Create:**
-- `src/app/(app)/explore/page.tsx`
+## Backlog (Future Sprints)
 
-**Files to Update:**
-- `src/components/app-sidebar.tsx`
-- `src/components/MobileNav.tsx` (if exists) or bottom nav component
-- `src/lib/types.ts` (add ProgramType type)
+### Rich Text Editing
+- [ ] Bold, italic, lists in blocks
+- [ ] Markdown support
+- [ ] Block templates
 
-### Phase 3: Program Data & New Programs
-**Goal**: Add Freestyle and Workbook programs with supporting data
-
-**New Data Files:**
-1. **Freestyle Program** (`public/data/freestyle-track.json`)
-   - Mixed prompts from all pillars
-   - Rotates through different themes daily
-   - Less structured, more exploratory
-
-2. **Workbook Program** (`public/data/workbook-track.json`)
-   - Mirrors print workbook exercises
-   - Structured worksheets/activities
-   - Special formatting for print-friendly output
-
-**Data Model Updates:**
-1. Update `src/lib/types.ts`:
-   - Add `ProgramType` type
-   - Update `UserProfile` interface with program fields
-   - Add `Program` interface for program metadata
-
-2. Update `src/lib/firebase/journal.ts`:
-   - Add `updateUserProgram()` function
-   - Add `getProgramProgress()` function
-   - Add `switchProgram()` function with confirmation
-
-**Files to Create:**
-- `public/data/freestyle-track.json`
-- `public/data/workbook-track.json`
-
-**Files to Update:**
-- `src/lib/types.ts`
-- `src/lib/firebase/journal.ts`
-
-### Phase 4: Program Selection & Switching
-**Goal**: Allow users to select and switch between programs
-
-**Changes Needed:**
-1. **Program Selection Modal** (`src/components/ProgramSelectionModal.tsx`)
-   - Confirm before switching programs
-   - Warn about losing progress
-   - Show what they'll gain from new program
-
-2. **Update Explore Page**
-   - Wire up "Select Program" buttons
-   - Handle program switching
-   - Show completion badges for finished programs
-   - Track program history
-
-3. **Update Journal Editor** (`src/app/(app)/journal/new/page.tsx`)
-   - Load prompts based on current program
-   - Handle Freestyle program (random/AI prompts)
-   - Handle Workbook program special formatting
-
-**Files to Create:**
-- `src/components/ProgramSelectionModal.tsx`
-
-**Files to Update:**
-- `src/app/(app)/explore/page.tsx`
-- `src/app/(app)/journal/new/page.tsx`
-- `src/lib/firebase/pillarTracks.ts`
-
-### Phase 5: Workbook Monetization
-**Goal**: Add purchase/subscription flow for Workbook program
-
-**Changes Needed:**
-1. **Workbook Access Check**
-   - Create `src/lib/workbookAccess.ts` utility
-   - Check for book redemption code OR active subscription
-   - Gate Workbook program behind access check
-
-2. **Purchase Flow**
-   - Add "Unlock Workbook" modal/page
-   - Option 1: Enter book redemption code
-   - Option 2: Subscribe for $2/month
-   - Integrate with Stripe (if Sprint 8 complete)
-
-3. **Workbook Features**
-   - PDF export for workbook entries
-   - Print-friendly formatting
-   - Chapter progress tracker
-   - Special badges/indicators
-
-**Files to Create:**
-- `src/lib/workbookAccess.ts`
-- `src/components/WorkbookUnlockModal.tsx`
-- `src/app/(app)/workbook/page.tsx` (optional dedicated page)
-
-**Files to Update:**
-- `src/app/(app)/explore/page.tsx` (add workbook CTA)
-- `src/app/(app)/settings/page.tsx` (workbook subscription management)
-
-### Testing Checklist
-- [ ] Mobile header shows on all auth pages
-- [ ] Logout works from mobile header
-- [ ] Explore page loads all 6 programs (4 pillars + Freestyle + Workbook)
-- [ ] Can select and switch programs
-- [ ] Program progress tracks correctly
-- [ ] Freestyle program shows varied prompts
-- [ ] Workbook program requires access
-- [ ] Book redemption code works
-- [ ] Program completion badges appear
-- [ ] Navigation works on desktop and mobile
-
-### Success Metrics
-- Users can easily discover and switch programs
-- Mobile navigation is clearer (logout accessible)
-- Workbook program drives book sales or subscriptions
-- Freestyle program attracts users who want flexibility
+### Community Features
+- [ ] Public profiles
+- [ ] Share journal entries
+- [ ] Community challenges
+- [ ] Leaderboards
 
 ---
 
@@ -871,4 +689,4 @@ npm run dev
 
 ---
 
-**Status**: Sprint 9 Complete - Ready for Sprint 8 (Stripe Integration)
+**Status**: Sprint 10 In Progress - Mobile UX + Stripe Integration
