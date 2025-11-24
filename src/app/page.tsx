@@ -21,13 +21,57 @@ import {
   Columns,
   Moon,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+type ChadTone = 'gentle' | 'reality-check' | 'drill-sergeant' | 'roast-me';
+
+const CHAD_TONES: { id: ChadTone; label: string; description: string; messages: string[] }[] = [
+  {
+    id: 'gentle',
+    label: 'Gentle',
+    description: 'Supportive and encouraging',
+    messages: [
+      "You're making progress, even if it doesn't feel like it. The fact that you're here journaling shows you care about growth.",
+      "I see you're working through some challenges. Remember, every small step counts toward building the life you want.",
+    ],
+  },
+  {
+    id: 'reality-check',
+    label: 'Reality Check',
+    description: 'Honest and direct',
+    messages: [
+      "Your last 3 entries show you're avoiding the hard convo. Stop delaying. One message. Today.",
+      "Discipline looks good this week. Keep the streak alive. Small wins compound.",
+    ],
+  },
+  {
+    id: 'drill-sergeant',
+    label: 'Drill Sergeant',
+    description: 'Tough and demanding',
+    messages: [
+      "Zero excuses. You said you'd handle it Monday. It's Thursday. What's the hold-up?",
+      "Three days of missed workouts. Three days of choosing comfort over commitment. Do better.",
+    ],
+  },
+  {
+    id: 'roast-me',
+    label: 'Roast Mode',
+    description: 'Brutally honest (you asked for it)',
+    messages: [
+      "Oh look, another entry about 'starting Monday.' Your Mondays have Mondays at this point. Just start today, coward.",
+      "You're spending more time journaling about discipline than actually being disciplined. The irony is almost impressive.",
+    ],
+  },
+];
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
+  const [selectedTone, setSelectedTone] = useState<ChadTone>('reality-check');
 
   // Redirect if authenticated
   useEffect(() => {
@@ -40,6 +84,19 @@ export default function LandingPage() {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
   };
+
+  const navigateTone = (direction: 'prev' | 'next') => {
+    const currentIndex = CHAD_TONES.findIndex((t) => t.id === selectedTone);
+    if (direction === 'prev') {
+      const newIndex = currentIndex > 0 ? currentIndex - 1 : CHAD_TONES.length - 1;
+      setSelectedTone(CHAD_TONES[newIndex].id);
+    } else {
+      const newIndex = currentIndex < CHAD_TONES.length - 1 ? currentIndex + 1 : 0;
+      setSelectedTone(CHAD_TONES[newIndex].id);
+    }
+  };
+
+  const currentTone = CHAD_TONES.find((t) => t.id === selectedTone) || CHAD_TONES[1];
 
   // Show nothing while checking auth
   if (loading) {
@@ -262,25 +319,51 @@ export default function LandingPage() {
                 </div>
 
                 <h2 className="text-4xl lg:text-5xl font-black text-slate-900">
-                  Meet ChadGPT—your brutally honest, stoic-leaning AI mentor.
+                  Meet ChadGPT—your AI mentor with adjustable personality.
                 </h2>
 
                 <p className="text-xl text-slate-600 leading-relaxed">
-                  He reads your past entries and roasts you into self-improvement.
-                  <br />
-                  Expect clarity. Expect accountability. Expect fewer excuses.
+                  Choose your coaching style. From gentle encouragement to brutal honesty, ChadGPT adapts to
+                  what you need.
                 </p>
 
-                <div className="space-y-4 bg-slate-50 rounded-xl p-6">
-                  <p className="text-slate-700 italic">
-                    "Focus on what you can control today. Not your coworker's nonsense."
-                  </p>
-                  <p className="text-slate-700 italic">
-                    "Your discipline dipped this week. Why? Start with one controllable action."
-                  </p>
-                  <p className="text-slate-700 italic">
-                    "Money stress again—what's the plan you avoided?"
-                  </p>
+                {/* Tone Selector */}
+                <div className="bg-slate-50 rounded-xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => navigateTone('prev')}
+                      className="p-2 rounded-full hover:bg-white transition-colors"
+                      aria-label="Previous tone"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-slate-600" />
+                    </button>
+
+                    <div className="text-center flex-1">
+                      <div className="text-lg font-bold text-slate-900">{currentTone.label}</div>
+                      <div className="text-sm text-slate-500">{currentTone.description}</div>
+                    </div>
+
+                    <button
+                      onClick={() => navigateTone('next')}
+                      className="p-2 rounded-full hover:bg-white transition-colors"
+                      aria-label="Next tone"
+                    >
+                      <ChevronRight className="w-5 h-5 text-slate-600" />
+                    </button>
+                  </div>
+
+                  <div className="flex justify-center gap-2">
+                    {CHAD_TONES.map((tone) => (
+                      <button
+                        key={tone.id}
+                        onClick={() => setSelectedTone(tone.id)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          tone.id === selectedTone ? 'bg-[#4B90C8] w-8' : 'bg-slate-300 hover:bg-slate-400'
+                        }`}
+                        aria-label={`Select ${tone.label} tone`}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <p className="text-sm text-slate-500">
@@ -294,23 +377,18 @@ export default function LandingPage() {
                     <div className="w-12 h-12 rounded-full bg-[#4B90C8] flex items-center justify-center text-white font-bold text-xl">
                       C
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="font-bold text-slate-900">ChadGPT</p>
-                      <p className="text-xs text-slate-500">Your Stoic AI</p>
+                      <p className="text-xs text-slate-500">{currentTone.label} Mode</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-[#4B90C8]/5 rounded-lg p-4">
-                      <p className="text-slate-700">
-                        Your last 3 entries show you're avoiding the hard convo. Stop delaying. One message. Today.
-                      </p>
-                    </div>
-                    <div className="bg-[#4B90C8]/5 rounded-lg p-4">
-                      <p className="text-slate-700">
-                        Discipline looks good this week. Keep the streak alive. Small wins compound.
-                      </p>
-                    </div>
+                    {currentTone.messages.map((message, index) => (
+                      <div key={index} className="bg-[#4B90C8]/5 rounded-lg p-4 animate-fadeIn">
+                        <p className="text-slate-700">{message}</p>
+                      </div>
+                    ))}
                   </div>
                 </Card>
               </div>
