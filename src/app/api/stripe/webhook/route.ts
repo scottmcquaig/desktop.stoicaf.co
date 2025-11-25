@@ -1,18 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { isAdminInitialized, getAdminDb, getAdminInitError } from '@/lib/firebase/admin';
+import { isAdminInitialized, getAdminDb, getAdminAuth, getAdminInitError } from '@/lib/firebase/admin';
 import type { Firestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
 import Stripe from 'stripe';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
 
+async function ensureUserDocument(adminDb: Firestore, adminAuth: Auth, firebaseUID: string) {
+  const userRef = adminDb.collection('users').doc(firebaseUID);
+  const userSnap = await userRef.get();
+
+  if (userSnap.exists) {
+    return userRef;
+  }
+
+  console.warn('Missing user document during webhook handling. Creating placeholder.', { firebaseUID });
+
+  try {
+    const authUser = await adminAuth.getUser(firebaseUID);
+    const baseData = {
+      email: authUser.email || null,
+      displayName: authUser.displayName || null,
+      createdAt: new Date(),
+      subscriptionTier: 'free' as const,
+      subscriptionStatus: 'inactive' as const,
+      subscriptionId: null,
+      subscriptionPriceId: null,
+      subscriptionCurrentPeriodEnd: null,
+      subscriptionCancelAtPeriodEnd: null,
+      updatedAt: new Date(),
+    };
+
+    await userRef.set(baseData, { merge: true });
+    console.info('Created placeholder user document during webhook handling', { firebaseUID });
+  } catch (error) {
+    console.error('Failed to create user document during webhook handling', { firebaseUID, error });
+    throw error;
+  }
+
+  return userRef;
+}
+
 async function updateUserSubscription(
   adminDb: Firestore,
+  adminAuth: Auth,
   firebaseUID: string,
   subscription: Stripe.Subscription
 ) {
-  const userRef = adminDb.collection('users').doc(firebaseUID);
+  const userRef = await ensureUserDocument(adminDb, adminAuth, firebaseUID);
 
   // Determine tier based on price ID
   const priceId = subscription.items.data[0]?.price.id;
@@ -44,8 +81,8 @@ async function updateUserSubscription(
   console.log(`Updated subscription for user ${firebaseUID}:`, subscriptionData);
 }
 
-async function handleSubscriptionDeleted(adminDb: Firestore, firebaseUID: string) {
-  const userRef = adminDb.collection('users').doc(firebaseUID);
+async function handleSubscriptionDeleted(adminDb: Firestore, adminAuth: Auth, firebaseUID: string) {
+  const userRef = await ensureUserDocument(adminDb, adminAuth, firebaseUID);
 
   await userRef.update({
     subscriptionTier: 'free',
@@ -88,6 +125,7 @@ export async function POST(request: NextRequest) {
   }
 
   const adminDb = getAdminDb();
+  const adminAuth = getAdminAuth();
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
@@ -121,7 +159,7 @@ export async function POST(request: NextRequest) {
           const subscription = await getStripe().subscriptions.retrieve(
             session.subscription as string
           );
-          await updateUserSubscription(adminDb, firebaseUID, subscription);
+          await updateUserSubscription(adminDb, adminAuth, firebaseUID, subscription);
         }
         break;
       }
@@ -132,7 +170,7 @@ export async function POST(request: NextRequest) {
         const firebaseUID = subscription.metadata?.firebaseUID;
 
         if (firebaseUID) {
-          await updateUserSubscription(adminDb, firebaseUID, subscription);
+          await updateUserSubscription(adminDb, adminAuth, firebaseUID, subscription);
         }
         break;
       }
@@ -142,7 +180,7 @@ export async function POST(request: NextRequest) {
         const firebaseUID = subscription.metadata?.firebaseUID;
 
         if (firebaseUID) {
-          await handleSubscriptionDeleted(adminDb, firebaseUID);
+          await handleSubscriptionDeleted(adminDb, adminAuth, firebaseUID);
         }
         break;
       }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, STRIPE_PRICES } from '@/lib/stripe';
-import { isAdminInitialized, getAdminDb, getAdminInitError } from '@/lib/firebase/admin';
+import { isAdminInitialized, getAdminDb, getAdminAuth, getAdminInitError } from '@/lib/firebase/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
 
     const { userId, priceId, successUrl, cancelUrl } = await request.json();
 
@@ -48,9 +49,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 });
     }
 
-    // Get or create Stripe customer
-    const userDoc = await adminDb.collection('users').doc(userId).get();
-    const userData = userDoc.data();
+    // Ensure user document exists to attach Stripe data
+    const userRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    let userData = userDoc.data();
+
+    if (!userDoc.exists) {
+      console.warn('Missing user document before checkout. Creating placeholder.', { userId });
+
+      try {
+        const authUser = await adminAuth.getUser(userId);
+        await userRef.set(
+          {
+            email: authUser.email || null,
+            displayName: authUser.displayName || null,
+            createdAt: new Date(),
+            subscriptionTier: 'free',
+            subscriptionStatus: 'inactive',
+            subscriptionId: null,
+            subscriptionPriceId: null,
+            subscriptionCurrentPeriodEnd: null,
+            subscriptionCancelAtPeriodEnd: null,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+        userData = (await userRef.get()).data();
+        console.info('Created user document placeholder for checkout', { userId });
+      } catch (creationError) {
+        console.error('Failed to create user document before checkout', { userId, error: creationError });
+        return NextResponse.json(
+          { error: 'Unable to prepare user profile for checkout. Please contact support.' },
+          { status: 500 }
+        );
+      }
+    }
 
     let customerId = userData?.stripeCustomerId;
 
