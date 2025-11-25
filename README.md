@@ -293,15 +293,18 @@ After extension installation, create your subscription products in Stripe:
 
 ### Step 7: Add Environment Variables
 
-Add these to your `.env.local`:
+Add these to your `.env.local` (or hosting environment config). Make sure **all** keys and price IDs are from the same Stripe mode—use either **all test** values or **all live** values so the frontend and backend stay aligned.
 
 ```bash
-# Stripe Keys
+# Stripe Keys (frontend + backend must use the same mode)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Stripe Product IDs
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_ABC123
+# Stripe Product IDs (match the mode above)
+STRIPE_PRICE_PRO_MONTHLY=price_...
+STRIPE_PRICE_PRO_ANNUAL=price_...
+STRIPE_WORKBOOK_MONTHLY_PRICE_ID=price_...
 ```
 
 ### Common Issues & Troubleshooting
