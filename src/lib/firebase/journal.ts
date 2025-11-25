@@ -15,9 +15,10 @@ import {
   serverTimestamp,
   Timestamp,
   QueryDocumentSnapshot,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db } from './firestore';
-import type { JournalEntry, JournalEntryInput } from '@/lib/types';
+import type { JournalEntry, JournalEntryInput, SavedInsight } from '@/lib/types';
 
 const ENTRIES_COLLECTION = 'entries';
 
@@ -78,6 +79,26 @@ export async function updateEntry(
 export async function deleteEntry(entryId: string): Promise<void> {
   const docRef = doc(db, ENTRIES_COLLECTION, entryId);
   await deleteDoc(docRef);
+}
+
+/**
+ * Add an AI insight to an entry
+ */
+export async function addInsightToEntry(
+  entryId: string,
+  insight: Omit<SavedInsight, 'generatedAt'>
+): Promise<void> {
+  const docRef = doc(db, ENTRIES_COLLECTION, entryId);
+
+  const insightWithTimestamp: SavedInsight = {
+    ...insight,
+    generatedAt: Timestamp.now(),
+  };
+
+  await updateDoc(docRef, {
+    insights: arrayUnion(insightWithTimestamp),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /**

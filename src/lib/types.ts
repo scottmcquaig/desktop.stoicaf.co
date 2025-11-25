@@ -17,6 +17,23 @@ export interface EntryBlock {
   notInControl?: string;
 }
 
+// Saved prompt data (for displaying when editing)
+export interface SavedPrompt {
+  stoicQuote: string;
+  quoteAuthor: string;
+  broTranslation: string;
+  todaysChallenge: string;
+  challengeType: 'reflection' | 'action' | 'meditation';
+}
+
+// Saved AI insight (Chad's feedback)
+export interface SavedInsight {
+  insight: string;
+  tone: 'supportive' | 'challenging' | 'humorous' | 'philosophical';
+  actionItems: string[];
+  generatedAt: Timestamp;
+}
+
 // New block-based journal entry (v2)
 export interface JournalEntry {
   id: string;
@@ -26,6 +43,10 @@ export interface JournalEntry {
   dayInTrack: number; // which day (1-30) in the pillar track
   blocks: EntryBlock[];
   mood: MoodScore | null;
+  // Prompt that was shown when entry was created
+  prompt?: SavedPrompt;
+  // AI insights generated for this entry
+  insights?: SavedInsight[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

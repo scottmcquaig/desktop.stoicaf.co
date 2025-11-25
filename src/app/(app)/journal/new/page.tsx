@@ -77,9 +77,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
-import { createEntry, updateEntry, getEntryByDate, getPillarProgress } from '@/lib/firebase/journal';
+import { createEntry, updateEntry, getEntryByDate, getPillarProgress, addInsightToEntry } from '@/lib/firebase/journal';
 import { toast } from 'sonner';
-import type { Pillar, MoodScore, EntryBlock, DayPrompt, BlockType, JournalEntryInput } from '@/lib/types';
+import type { Pillar, MoodScore, EntryBlock, DayPrompt, BlockType, JournalEntryInput, SavedPrompt, SavedInsight } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 import { useSubscription } from '@/hooks/use-subscription';
 import { UpgradePrompt, UpgradeBanner } from '@/components/UpgradePrompt';
 
@@ -134,6 +135,10 @@ export default function JournalNewPage() {
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [chadInsight, setChadInsight] = useState<ChadInsightResult | null>(null);
   const [showInsightDialog, setShowInsightDialog] = useState(false);
+
+  // Saved prompt from existing entry (for display when editing)
+  const [savedPrompt, setSavedPrompt] = useState<SavedPrompt | null>(null);
+  const [savedInsights, setSavedInsights] = useState<SavedInsight[]>([]);
 
   // Subscription state
   const { access, usage } = useSubscription();
@@ -262,6 +267,13 @@ export default function JournalNewPage() {
           setDayInTrack(existingEntry.dayInTrack);
           setBlocks(existingEntry.blocks);
           setMood(existingEntry.mood);
+          // Load saved prompt and insights if available
+          if (existingEntry.prompt) {
+            setSavedPrompt(existingEntry.prompt);
+          }
+          if (existingEntry.insights) {
+            setSavedInsights(existingEntry.insights);
+          }
         } else {
           // Load pillar progress to determine next day
           const progress = await getPillarProgress(user.uid, defaultPillar);
@@ -437,6 +449,25 @@ export default function JournalNewPage() {
       setChadInsight(result);
       setShowInsightDialog(true);
 
+      // Save insight to entry if we have an existing entry ID
+      if (existingEntryId) {
+        try {
+          await addInsightToEntry(existingEntryId, {
+            insight: result.insight,
+            tone: result.tone,
+            actionItems: result.actionItems,
+          });
+          // Update local state
+          setSavedInsights(prev => [...prev, {
+            ...result,
+            generatedAt: Timestamp.now(),
+          }]);
+        } catch (saveError) {
+          console.error('Error saving insight to entry:', saveError);
+          // Don't fail the whole operation if save fails
+        }
+      }
+
       // Increment AI insights usage counter
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -476,12 +507,23 @@ export default function JournalNewPage() {
 
     setIsSaving(true);
     try {
+      // Build prompt data to save with entry
+      const promptToSave: SavedPrompt | undefined = todaysPrompt ? {
+        stoicQuote: todaysPrompt.stoicQuote,
+        quoteAuthor: todaysPrompt.quoteAuthor,
+        broTranslation: todaysPrompt.broTranslation,
+        todaysChallenge: todaysPrompt.todaysChallenge,
+        challengeType: todaysPrompt.challengeType,
+      } : undefined;
+
       const entryData: JournalEntryInput = {
         date: todayDate,
         pillar,
         dayInTrack,
         blocks,
         mood,
+        // Only include prompt for new entries (don't overwrite on edit)
+        ...(existingEntryId ? {} : { prompt: promptToSave }),
       };
 
       if (existingEntryId) {
@@ -823,50 +865,110 @@ export default function JournalNewPage() {
             className="mb-4"
           />
 
-          {/* Daily Prompt Card */}
-          <Card className="mb-6 border-l-4 border-l-primary bg-gradient-to-r from-sky-50 to-white">
-            <CardContent className="p-5 md:p-6">
-              {isLoadingPrompt ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : todaysPrompt ? (
-                <>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                      Day {dayInTrack} • {PILLAR_THEMES[pillar]}
-                    </span>
-                  </div>
+          {/* Daily Prompt Card - show saved prompt when editing, otherwise today's prompt */}
+          {(() => {
+            // Use saved prompt for editing, or today's prompt for new entries
+            const displayPrompt = savedPrompt || todaysPrompt;
+            const isEditing = !!existingEntryId;
 
-                  <blockquote className="text-lg font-serif text-slate-800 italic mb-2 leading-relaxed">
-                    &ldquo;{todaysPrompt.stoicQuote}&rdquo;
-                  </blockquote>
-                  <p className="text-sm font-bold text-slate-600 mb-4">
-                    — {todaysPrompt.quoteAuthor}
-                  </p>
-
-                  <div className="flex items-start gap-3 mt-4 pt-4 border-t border-slate-100">
-                    <ChadGPTSvg className="w-8 h-8 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        <span className="font-bold text-slate-900">Chad says:</span>{' '}
-                        {todaysPrompt.broTranslation}
-                      </p>
+            return (
+              <Card className="mb-6 border-l-4 border-l-primary bg-gradient-to-r from-sky-50 to-white">
+                <CardContent className="p-5 md:p-6">
+                  {isLoadingPrompt && !savedPrompt ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                  </div>
+                  ) : displayPrompt ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                          Day {dayInTrack} • {PILLAR_THEMES[pillar]}
+                        </span>
+                        {isEditing && savedPrompt && (
+                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                            Original Prompt
+                          </span>
+                        )}
+                      </div>
 
-                  <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200">
-                    <p className="text-xs font-bold text-slate-500 uppercase mb-1">Today&apos;s Challenge</p>
-                    <p className="text-sm text-slate-700">{todaysPrompt.todaysChallenge}</p>
-                  </div>
-                </>
-              ) : (
-                <p className="text-slate-500 text-center py-4">
-                  No prompt loaded yet. Start writing freely below!
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                      <blockquote className="text-lg font-serif text-slate-800 italic mb-2 leading-relaxed">
+                        &ldquo;{displayPrompt.stoicQuote}&rdquo;
+                      </blockquote>
+                      <p className="text-sm font-bold text-slate-600 mb-4">
+                        — {displayPrompt.quoteAuthor}
+                      </p>
+
+                      <div className="flex items-start gap-3 mt-4 pt-4 border-t border-slate-100">
+                        <ChadGPTSvg className="w-8 h-8 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm text-slate-700 leading-relaxed">
+                            <span className="font-bold text-slate-900">Chad says:</span>{' '}
+                            {displayPrompt.broTranslation}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200">
+                        <p className="text-xs font-bold text-slate-500 uppercase mb-1">
+                          {isEditing ? 'Challenge' : 'Today\'s Challenge'}
+                        </p>
+                        <p className="text-sm text-slate-700">{displayPrompt.todaysChallenge}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-slate-500 text-center py-4">
+                      No prompt loaded yet. Start writing freely below!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Previous AI Insights (shown when editing) */}
+          {savedInsights.length > 0 && (
+            <Card className="mb-6 border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-white">
+              <CardContent className="p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="text-purple-500" size={18} />
+                  <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                    Previous Insights ({savedInsights.length})
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  {savedInsights.map((insight, index) => (
+                    <div key={index} className="bg-white rounded-lg p-4 border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ChadGPTSvg className="w-6 h-6" />
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded-full ${
+                          insight.tone === 'supportive' ? 'bg-green-100 text-green-700' :
+                          insight.tone === 'challenging' ? 'bg-orange-100 text-orange-700' :
+                          insight.tone === 'humorous' ? 'bg-purple-100 text-purple-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {insight.tone}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed mb-3">{insight.insight}</p>
+                      {insight.actionItems && insight.actionItems.length > 0 && (
+                        <div className="border-t border-slate-100 pt-2">
+                          <p className="text-xs font-bold text-slate-500 mb-1">Action Items:</p>
+                          <ul className="text-xs text-slate-600 space-y-1">
+                            {insight.actionItems.map((item, i) => (
+                              <li key={i} className="flex items-start gap-1">
+                                <CheckCircle2 size={12} className="text-purple-500 mt-0.5 flex-shrink-0" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Blocks with Drag and Drop */}
           <DndContext
