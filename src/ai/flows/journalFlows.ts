@@ -70,7 +70,7 @@ export async function generateDailyPrompt(input: DailyPromptInput) {
   `;
 
   const { text } = await ai.generate({
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-2.0-flash',
     prompt,
     config: {
       temperature: 0.7,
@@ -118,7 +118,7 @@ export async function generateWeeklyReflection(input: WeeklyReflectionInput) {
   `;
 
   const { text } = await ai.generate({
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-2.0-flash',
     prompt,
     config: {
       temperature: 0.6,
@@ -165,7 +165,7 @@ export async function generateChadInsight(input: ChadInsightInput) {
   `;
 
   const { text } = await ai.generate({
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-2.0-flash',
     prompt,
     config: {
       temperature: 0.8,
@@ -207,7 +207,7 @@ export async function generateJournalSuggestions(input: JournalSuggestionsInput)
   `;
 
   const { text } = await ai.generate({
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-2.0-flash',
     prompt,
     config: {
       temperature: 0.7,
