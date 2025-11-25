@@ -16,8 +16,12 @@ export async function POST(request: NextRequest) {
     if (!isAdminInitialized()) {
       const initError = getAdminInitError();
       console.error('Firebase Admin not initialized:', initError?.message);
+      console.error('Ensure FIREBASE_SERVICE_ACCOUNT_KEY environment variable is set with valid service account JSON');
       return NextResponse.json(
-        { error: 'Server configuration error. Please contact support.' },
+        {
+          error: 'Payment system is being configured. Please try again later or contact support.',
+          code: 'FIREBASE_ADMIN_NOT_INITIALIZED'
+        },
         { status: 503 }
       );
     }
