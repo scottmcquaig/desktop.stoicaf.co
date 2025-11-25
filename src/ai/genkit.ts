@@ -18,12 +18,18 @@ export function getAI(): Genkit {
   return aiInstance;
 }
 
-// For backwards compatibility
-export const ai = {
-  generate: async (options: Parameters<Genkit['generate']>[0]) => {
-    return getAI().generate(options);
+// Proxy object that lazily initializes AI and forwards all method calls
+// This allows the old `ai.generate()`, `ai.defineFlow()`, etc. patterns to work
+export const ai: Genkit = new Proxy({} as Genkit, {
+  get(_, prop: keyof Genkit) {
+    const instance = getAI();
+    const value = instance[prop];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
   }
-};
+});
 
 export function isAIConfigured(): boolean {
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
