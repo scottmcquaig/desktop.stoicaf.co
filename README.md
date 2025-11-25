@@ -269,9 +269,9 @@ After extension installation, create your subscription products in Stripe:
 
 1. Go to [Stripe Webhooks](https://dashboard.stripe.com/webhooks)
 2. Click **"Add endpoint"**
-3. Endpoint URL: `https://us-central1-stoicaf.cloudfunctions.net/ext-firestore-stripe-payments-handleWebhookEvents`
-   - Replace `us-central1` with your Cloud Functions region if different
+3. Endpoint URL: `${NEXT_PUBLIC_APP_URL}/api/stripe/webhook` (for local dev, use `https://localhost:3000/api/stripe/webhook` with the [Stripe CLI](https://docs.stripe.com/stripe-cli/webhooks) forwarding events)
 4. Select events to listen for:
+   - `checkout.session.completed`
    - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
@@ -279,11 +279,9 @@ After extension installation, create your subscription products in Stripe:
    - `invoice.payment_failed`
 5. Click **"Add endpoint"**
 6. Copy the **"Signing secret"** (starts with `whsec_`)
-7. Add it to Firebase extension configuration:
-   ```bash
-   firebase ext:configure firestore-stripe-payments
-   # When prompted, paste your webhook secret
-   ```
+7. Add it to your environment as `STRIPE_WEBHOOK_SECRET` so `/api/stripe/webhook` can verify signatures.
+
+> Note: If you rely on the Firebase Stripe extension (for automatic product/customer syncing), confirm it remains installed and configured with the same Stripe keys. The Next.js webhook above is required for in-app subscription handling, while the extension can continue to manage catalog/user sync.
 
 ### Step 6: Test the Extension
 
