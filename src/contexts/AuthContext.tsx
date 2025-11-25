@@ -39,6 +39,10 @@ export interface UserProfile {
   subscriptionPriceId?: string | null;
   subscriptionCurrentPeriodEnd?: { seconds: number } | null;
   subscriptionCancelAtPeriodEnd?: boolean;
+  // Usage tracking for feature gating
+  usageMonth?: string; // Format: "YYYY-MM" - resets usage when month changes
+  entriesThisMonth?: number;
+  aiInsightsThisMonth?: number;
 }
 
 interface AuthContextType {

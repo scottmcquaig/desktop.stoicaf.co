@@ -32,6 +32,8 @@ import {
 import { getDailyQuote } from '@/lib/dailyQuote';
 import { toast } from 'sonner';
 import type { JournalEntry, MoodScore, Pillar } from '@/lib/types';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 interface DailyQuoteData {
   quote: string;
@@ -49,7 +51,8 @@ interface WeeklyReflectionData {
 }
 
 const DashboardPage: React.FC = () => {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, updateUserProfile } = useAuth();
+  const { access, usage, isSubscribed } = useSubscription();
   const [streak, setStreak] = useState<number>(0);
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
   const [entryCount, setEntryCount] = useState<number>(0);
@@ -66,6 +69,9 @@ const DashboardPage: React.FC = () => {
   const [weeklyReflection, setWeeklyReflection] = useState<WeeklyReflectionData | null>(null);
   const [isLoadingReflection, setIsLoadingReflection] = useState(false);
   const [reflectionError, setReflectionError] = useState<string | null>(null);
+
+  // Upgrade prompt state
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const PROGRESS_WINDOW = 30;
 
@@ -127,6 +133,12 @@ const DashboardPage: React.FC = () => {
   // Generate weekly reflection
   const generateWeeklyReflection = useCallback(async () => {
     if (!user || !userProfile?.pillarFocus) return;
+
+    // Check subscription access for weekly reflections
+    if (!access.canUseWeeklyReflection) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
     setIsLoadingReflection(true);
     setReflectionError(null);
@@ -196,7 +208,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoadingReflection(false);
     }
-  }, [user, userProfile?.pillarFocus, recentEntries]);
+  }, [user, userProfile?.pillarFocus, recentEntries, access.canUseWeeklyReflection]);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -623,12 +635,21 @@ const DashboardPage: React.FC = () => {
 
         {/* Sidebar Widgets */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Trial Banner */}
-          <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-center">
-            <p className="text-xs font-bold text-primary uppercase mb-1">Pro Trial Active</p>
-            <p className="text-sm text-slate-700 mb-3">5 days left to explore all features.</p>
-            <Button className="w-full py-1.5 text-xs">Upgrade Now</Button>
-          </div>
+          {/* Subscription Banner */}
+          {!isSubscribed && (
+            <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-center">
+              <p className="text-xs font-bold text-primary uppercase mb-1">Free Plan</p>
+              <p className="text-sm text-slate-700 mb-1">
+                {access.entriesRemaining === 'unlimited' ? 'Unlimited' : access.entriesRemaining} entries remaining
+              </p>
+              <p className="text-xs text-slate-500 mb-3">
+                {access.aiInsightsRemaining === 'unlimited' ? 'Unlimited' : access.aiInsightsRemaining} AI insights remaining
+              </p>
+              <Button className="w-full py-1.5 text-xs" asChild>
+                <Link href="/settings?tab=Subscription">Upgrade to Pro</Link>
+              </Button>
+            </div>
+          )}
           {/* Pillar Progress */}
           <Card>
             <CardContent className="p-6">
@@ -663,6 +684,13 @@ const DashboardPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Upgrade Prompt */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        feature="weekly-reflection"
+      />
     </div>
   );
 };

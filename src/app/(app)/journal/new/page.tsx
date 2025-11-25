@@ -80,6 +80,8 @@ import { getTodaysPrompt, PILLAR_THEMES } from '@/lib/firebase/pillarTracks';
 import { createEntry, updateEntry, getEntryByDate, getPillarProgress } from '@/lib/firebase/journal';
 import { toast } from 'sonner';
 import type { Pillar, MoodScore, EntryBlock, DayPrompt, BlockType, JournalEntryInput } from '@/lib/types';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt, UpgradeBanner } from '@/components/UpgradePrompt';
 
 interface ChadInsightResult {
   insight: string;
@@ -132,6 +134,11 @@ export default function JournalNewPage() {
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [chadInsight, setChadInsight] = useState<ChadInsightResult | null>(null);
   const [showInsightDialog, setShowInsightDialog] = useState(false);
+
+  // Subscription state
+  const { access, usage } = useSubscription();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<'entries' | 'ai-insights'>('ai-insights');
 
   // Auto-save state
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -396,6 +403,13 @@ export default function JournalNewPage() {
 
   // Generate Chad insight from AI
   const handleGenerateInsight = async () => {
+    // Check subscription access
+    if (!access.canUseAiInsight) {
+      setUpgradeFeature('ai-insights');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     const content = getEntryContentString();
     if (!content.trim()) {
       toast.error('Write something first to get Chad\'s insight!');
@@ -422,6 +436,16 @@ export default function JournalNewPage() {
       const result = await response.json();
       setChadInsight(result);
       setShowInsightDialog(true);
+
+      // Increment AI insights usage counter
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const isCurrentMonth = userProfile?.usageMonth === currentMonth;
+
+      await updateUserProfile({
+        usageMonth: currentMonth,
+        aiInsightsThisMonth: isCurrentMonth ? (userProfile?.aiInsightsThisMonth || 0) + 1 : 1,
+      });
     } catch (error) {
       console.error('Error generating insight:', error);
       toast.error('Failed to generate insight. Please try again.');
@@ -443,6 +467,13 @@ export default function JournalNewPage() {
       return;
     }
 
+    // Check entry limit for new entries (not edits)
+    if (!existingEntryId && !access.canCreateEntry) {
+      setUpgradeFeature('entries');
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const entryData: JournalEntryInput = {
@@ -459,6 +490,16 @@ export default function JournalNewPage() {
       } else {
         // Create new entry
         await createEntry(user.uid, entryData);
+
+        // Increment entries usage counter for new entries
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const isCurrentMonth = userProfile?.usageMonth === currentMonth;
+
+        await updateUserProfile({
+          usageMonth: currentMonth,
+          entriesThisMonth: isCurrentMonth ? (userProfile?.entriesThisMonth || 0) + 1 : 1,
+        });
       }
 
       toast.success('Entry saved successfully!');
@@ -768,6 +809,20 @@ export default function JournalNewPage() {
       {/* Scrollable Content - add padding for mobile bottom bar */}
       <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
         <div className="max-w-3xl mx-auto p-4 md:p-8">
+          {/* Usage Warning Banners */}
+          {!existingEntryId && (
+            <UpgradeBanner
+              feature="entries"
+              remaining={access.entriesRemaining}
+              className="mb-4"
+            />
+          )}
+          <UpgradeBanner
+            feature="ai-insights"
+            remaining={access.aiInsightsRemaining}
+            className="mb-4"
+          />
+
           {/* Daily Prompt Card */}
           <Card className="mb-6 border-l-4 border-l-primary bg-gradient-to-r from-sky-50 to-white">
             <CardContent className="p-5 md:p-6">
@@ -869,6 +924,14 @@ export default function JournalNewPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upgrade Prompt Dialog */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        feature={upgradeFeature}
+        currentUsage={upgradeFeature === 'ai-insights' ? usage.aiInsightsThisMonth : usage.entriesThisMonth}
+      />
 
       {/* Chad Insight Dialog */}
       <Dialog open={showInsightDialog} onOpenChange={setShowInsightDialog}>

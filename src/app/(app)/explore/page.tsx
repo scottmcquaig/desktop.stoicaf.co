@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DollarSign,
   Trophy,
@@ -15,6 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 const programs = [
   {
@@ -89,8 +92,25 @@ const additionalPrograms = [
 ];
 
 export default function ExplorePage() {
+  const router = useRouter();
   const { userProfile } = useAuth();
+  const { access, isPro } = useSubscription();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const currentProgram = userProfile?.pillarFocus || null;
+
+  const handleProgramSelect = (programId: string) => {
+    // Check if user can access all programs (Pro only after they've used their free one)
+    if (!access.canAccessAllPrograms && currentProgram && currentProgram !== programId) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    // TODO: Actually select program - for now just navigate to settings
+    router.push(`/settings?tab=Preferences`);
+  };
+
+  const handleWorkbookUnlock = () => {
+    setShowUpgradePrompt(true);
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -159,6 +179,7 @@ export default function ExplorePage() {
                       variant={isActive ? "secondary" : "default"}
                       size="sm"
                       disabled={isActive}
+                      onClick={() => handleProgramSelect(program.id)}
                     >
                       {isActive ? 'Current' : 'Select Program'}
                     </Button>
@@ -208,6 +229,7 @@ export default function ExplorePage() {
                     <Button
                       variant={program.locked ? "outline" : "default"}
                       size="sm"
+                      onClick={() => program.locked ? handleWorkbookUnlock() : handleProgramSelect(program.id)}
                     >
                       {program.locked ? 'Unlock' : 'Select'}
                     </Button>
@@ -226,6 +248,13 @@ export default function ExplorePage() {
           <a href="/support" className="text-primary hover:underline">Let us know</a>
         </p>
       </div>
+
+      {/* Upgrade Prompt */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        feature="programs"
+      />
     </div>
   );
 }

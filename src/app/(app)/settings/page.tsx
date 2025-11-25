@@ -31,7 +31,8 @@ import { toast } from 'sonner';
 import { getRecentEntries } from '@/lib/firebase/journal';
 import { updateProfile } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getStripe } from '@/lib/stripe-client';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 const settingsNav = [
   { id: 'Profile', icon: <User size={20} /> },
@@ -58,18 +59,27 @@ const SettingsPage: React.FC = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const isMobile = useIsMobile();
   const { user, userProfile, signOut, updateUserProfile } = useAuth();
+  const { access } = useSubscription();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Check for successful checkout redirect
+  // Check for successful checkout redirect or tab deep link
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
+    const tab = searchParams.get('tab');
+
     if (sessionId) {
       toast.success('Subscription activated! Welcome to Stoic AF Pro.');
       // Clean up URL
       router.replace('/settings');
+    }
+
+    // Handle tab deep linking (e.g., /settings?tab=Subscription)
+    if (tab && ['Profile', 'Preferences', 'Notifications', 'Subscription'].includes(tab)) {
+      setActiveTab(tab);
     }
   }, [searchParams, router]);
 
@@ -157,6 +167,12 @@ const SettingsPage: React.FC = () => {
 
   const handleExportData = async () => {
     if (!user) return;
+
+    // Check if user can export data (Pro feature)
+    if (!access.canExportData) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
     setExporting(true);
     try {
@@ -892,6 +908,13 @@ const SettingsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Prompt */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        feature="export"
+      />
     </div>
   );
 };
