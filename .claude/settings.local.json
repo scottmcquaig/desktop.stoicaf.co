@@ -37,7 +37,9 @@
       "Bash(gcloud artifacts repositories list:*)",
       "Bash(firebase ext:uninstall:*)",
       "Bash(npx tsc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []

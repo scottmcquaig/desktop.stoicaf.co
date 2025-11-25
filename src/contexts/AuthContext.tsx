@@ -31,6 +31,14 @@ export interface UserProfile {
   onboardingComplete?: boolean;
   defaultEntryLayout?: { blocks: Array<{ id: string; type: string }> };
   createdAt?: Date;
+  // Stripe subscription fields
+  stripeCustomerId?: string;
+  subscriptionTier?: 'free' | 'pro' | 'workbook';
+  subscriptionStatus?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'none';
+  subscriptionId?: string | null;
+  subscriptionPriceId?: string | null;
+  subscriptionCurrentPeriodEnd?: { seconds: number } | null;
+  subscriptionCancelAtPeriodEnd?: boolean;
 }
 
 interface AuthContextType {

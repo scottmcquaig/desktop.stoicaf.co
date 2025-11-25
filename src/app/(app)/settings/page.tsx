@@ -1,10 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, Sliders, Bell, CreditCard, LogOut, Loader2, Download, Trash2, Upload, Edit2, Camera, Clock } from 'lucide-react';
+import { User, Sliders, Bell, CreditCard, LogOut, Loader2, Download, Trash2, Upload, Edit2, Camera, Clock, Check, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { getRecentEntries } from '@/lib/firebase/journal';
 import { updateProfile } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStripe } from '@/lib/stripe-client';
 
 const settingsNav = [
   { id: 'Profile', icon: <User size={20} /> },
@@ -54,9 +55,23 @@ const SettingsPage: React.FC = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
   const isMobile = useIsMobile();
   const { user, userProfile, signOut, updateUserProfile } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for successful checkout redirect
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+      toast.success('Subscription activated! Welcome to Stoic AF Pro.');
+      // Clean up URL
+      router.replace('/settings');
+    }
+  }, [searchParams, router]);
 
   // Load user preferences
   useEffect(() => {
@@ -197,9 +212,10 @@ const SettingsPage: React.FC = () => {
       await user.delete();
       toast.success('Account deleted successfully');
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting account:', error);
-      if (error.code === 'auth/requires-recent-login') {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code === 'auth/requires-recent-login') {
         toast.error('Please sign in again before deleting your account');
         await signOut();
         router.push('/auth/signin');
@@ -210,6 +226,77 @@ const SettingsPage: React.FC = () => {
       setDeleting(false);
     }
   };
+
+  const handleCheckout = async () => {
+    if (!user) {
+      toast.error('Please sign in to subscribe');
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const priceId = selectedPlan === 'monthly'
+        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
+        : process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL;
+
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          priceId,
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!user) return;
+
+    setPortalLoading(true);
+    try {
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Portal error:', error);
+      toast.error('Failed to open subscription portal.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  // Check if user has active subscription
+  const isSubscribed = userProfile?.subscriptionStatus === 'active' ||
+    userProfile?.subscriptionStatus === 'trialing';
+  const subscriptionTier = userProfile?.subscriptionTier || 'free';
 
   const renderNav = () => {
     if (isMobile) {
@@ -651,42 +738,155 @@ const SettingsPage: React.FC = () => {
 
             {activeTab === 'Subscription' && (
               <div>
-                <div className="bg-sky-50 border border-sky-100 rounded-xl p-6 mb-8 flex justify-between items-center">
+                {/* Current Plan Status */}
+                <div className={`rounded-xl p-6 mb-8 flex justify-between items-center ${
+                  isSubscribed ? 'bg-emerald-50 border border-emerald-100' : 'bg-sky-50 border border-sky-100'
+                }`}>
                   <div>
-                    <p className="text-xs font-bold text-stoic-blue uppercase mb-1">Current Plan</p>
+                    <p className={`text-xs font-bold uppercase mb-1 ${isSubscribed ? 'text-emerald-600' : 'text-stoic-blue'}`}>
+                      Current Plan
+                    </p>
                     <h3 className="text-2xl font-black text-slate-900">
-                      {userProfile?.onboardingComplete ? 'Stoic Pro' : 'Free Trial'}
+                      {isSubscribed ? 'Stoic AF Pro' : 'Free'}
                     </h3>
                     <p className="text-slate-600 font-medium">
-                      {userProfile?.onboardingComplete ? '$9.99 / month' : 'Upgrade to unlock all features'}
+                      {isSubscribed
+                        ? userProfile?.subscriptionPriceId?.includes('annual') ? '$49.99 / year' : '$4.99 / month'
+                        : 'Upgrade to unlock all features'}
                     </p>
                   </div>
                   <div
                     className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
-                      userProfile?.onboardingComplete
+                      isSubscribed
                         ? 'bg-white text-emerald-600 border-emerald-100'
                         : 'bg-amber-50 text-amber-600 border-amber-100'
                     }`}
                   >
-                    {userProfile?.onboardingComplete ? 'Active' : 'Trial'}
+                    {isSubscribed ? (userProfile?.subscriptionStatus === 'trialing' ? 'Trial' : 'Active') : 'Free'}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                    <span className="font-medium text-slate-700">Next billing date</span>
-                    <span className="font-bold text-slate-900">Dec 18, 2025</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                    <span className="font-medium text-slate-700">Payment Method</span>
-                    <span className="font-bold text-slate-900 flex items-center gap-2">Visa •••• 4242</span>
-                  </div>
-                </div>
+                {isSubscribed ? (
+                  /* Subscriber View */
+                  <>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                        <span className="font-medium text-slate-700">Next billing date</span>
+                        <span className="font-bold text-slate-900">
+                          {userProfile?.subscriptionCurrentPeriodEnd
+                            ? new Date(userProfile.subscriptionCurrentPeriodEnd.seconds * 1000).toLocaleDateString()
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                        <span className="font-medium text-slate-700">Status</span>
+                        <span className={`font-bold ${
+                          userProfile?.subscriptionCancelAtPeriodEnd ? 'text-amber-600' : 'text-emerald-600'
+                        }`}>
+                          {userProfile?.subscriptionCancelAtPeriodEnd ? 'Cancels at period end' : 'Active'}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="mt-8 flex gap-4">
-                  <button className="text-stoic-blue font-bold hover:underline">Update Payment</button>
-                  <button className="text-red-500 font-bold hover:underline ml-auto">Cancel Subscription</button>
-                </div>
+                    <div className="mt-8">
+                      <Button
+                        onClick={handleManageSubscription}
+                        disabled={portalLoading}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {portalLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          'Manage Subscription'
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  /* Non-Subscriber Upgrade View */
+                  <>
+                    {/* Plan Selection */}
+                    <div className="grid md:grid-cols-2 gap-4 mb-6">
+                      <button
+                        onClick={() => setSelectedPlan('monthly')}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          selectedPlan === 'monthly'
+                            ? 'border-stoic-blue bg-sky-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="font-bold text-slate-900">Monthly</div>
+                        <div className="text-2xl font-black text-slate-900">$4.99<span className="text-sm font-normal text-slate-500">/mo</span></div>
+                        <div className="text-sm text-slate-500">Billed monthly</div>
+                      </button>
+                      <button
+                        onClick={() => setSelectedPlan('annual')}
+                        className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                          selectedPlan === 'annual'
+                            ? 'border-stoic-blue bg-sky-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="absolute -top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          Save 17%
+                        </div>
+                        <div className="font-bold text-slate-900">Annual</div>
+                        <div className="text-2xl font-black text-slate-900">$49.99<span className="text-sm font-normal text-slate-500">/yr</span></div>
+                        <div className="text-sm text-slate-500">Billed annually</div>
+                      </button>
+                    </div>
+
+                    {/* Pro Features */}
+                    <div className="bg-slate-50 rounded-xl p-6 mb-6">
+                      <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-amber-500" />
+                        Pro Features
+                      </h4>
+                      <ul className="space-y-3">
+                        {[
+                          'Unlimited journal entries',
+                          'AI-powered insights from ChadGPT',
+                          'All 4 pillar programs (30 days each)',
+                          'Weekly reflection summaries',
+                          'Priority support',
+                          'Export your data anytime',
+                        ].map((feature) => (
+                          <li key={feature} className="flex items-center gap-2 text-slate-700">
+                            <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Checkout Button */}
+                    <Button
+                      onClick={handleCheckout}
+                      disabled={checkoutLoading}
+                      className="w-full bg-stoic-blue hover:bg-stoic-blue/90 text-white font-bold py-6"
+                      size="lg"
+                    >
+                      {checkoutLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Upgrade to Pro - {selectedPlan === 'monthly' ? '$4.99/mo' : '$49.99/yr'}
+                        </>
+                      )}
+                    </Button>
+
+                    <p className="text-center text-xs text-slate-500 mt-4">
+                      Cancel anytime. Secure payment via Stripe.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
