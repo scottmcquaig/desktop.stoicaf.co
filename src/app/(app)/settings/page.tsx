@@ -264,18 +264,28 @@ const SettingsPage: React.FC = () => {
         }),
       });
 
-      const { url, error } = await response.json();
-
-      if (error) {
-        throw new Error(error);
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Non-JSON response from checkout API:', response.status);
+        throw new Error('Server error. Please try again later.');
       }
 
-      if (url) {
-        window.location.href = url;
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Failed to start checkout. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start checkout';
+      toast.error(errorMessage);
     } finally {
       setCheckoutLoading(false);
     }

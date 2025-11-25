@@ -1,18 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, STRIPE_PRICES } from '@/lib/stripe';
-import { adminDb } from '@/lib/firebase/admin';
+import { isAdminInitialized, getAdminDb, getAdminInitError } from '@/lib/firebase/admin';
 
 export async function POST(request: NextRequest) {
   try {
+    // Pre-flight configuration checks
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error('Stripe checkout failed: STRIPE_SECRET_KEY not configured');
+      return NextResponse.json(
+        { error: 'Stripe is not configured. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
+    // Check Firebase Admin is initialized
+    if (!isAdminInitialized()) {
+      const initError = getAdminInitError();
+      console.error('Firebase Admin not initialized:', initError?.message);
+      return NextResponse.json(
+        { error: 'Server configuration error. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
+    const adminDb = getAdminDb();
+
     const { userId, priceId, successUrl, cancelUrl } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Validate price ID
+    // Determine the price to use
+    const effectivePriceId = priceId || STRIPE_PRICES.PRO_MONTHLY;
+
+    if (!effectivePriceId) {
+      console.error('Stripe checkout failed: No price ID configured');
+      return NextResponse.json(
+        { error: 'Pricing is not configured. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
+    // Validate price ID if explicitly provided
     const validPriceIds = Object.values(STRIPE_PRICES).filter(Boolean);
-    if (priceId && !validPriceIds.includes(priceId)) {
+    if (priceId && validPriceIds.length > 0 && !validPriceIds.includes(priceId)) {
       return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 });
     }
 
@@ -22,9 +54,11 @@ export async function POST(request: NextRequest) {
 
     let customerId = userData?.stripeCustomerId;
 
+    const stripe = getStripe();
+
     if (!customerId) {
       // Create new Stripe customer
-      const customer = await getStripe().customers.create({
+      const customer = await stripe.customers.create({
         metadata: {
           firebaseUID: userId,
         },
@@ -40,19 +74,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Build URLs with fallbacks
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const finalSuccessUrl = successUrl || `${baseUrl}/settings?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = cancelUrl || `${baseUrl}/settings`;
+
     // Create checkout session
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId || STRIPE_PRICES.PRO_MONTHLY,
+          price: effectivePriceId,
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         firebaseUID: userId,
       },
@@ -65,9 +104,26 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error creating checkout session:', errorMessage, error);
+
+    // Return more specific error messages for common issues
+    if (errorMessage.includes('No such price')) {
+      return NextResponse.json(
+        { error: 'Invalid price configuration. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
+    if (errorMessage.includes('Invalid API Key')) {
+      return NextResponse.json(
+        { error: 'Stripe authentication failed. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'Failed to create checkout session. Please try again.' },
       { status: 500 }
     );
   }

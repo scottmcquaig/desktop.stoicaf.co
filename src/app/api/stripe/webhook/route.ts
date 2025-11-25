@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { adminDb } from '@/lib/firebase/admin';
+import { isAdminInitialized, getAdminDb, getAdminInitError } from '@/lib/firebase/admin';
+import type { Firestore } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 
 // Disable body parsing, need raw body for webhook signature verification
 export const runtime = 'nodejs';
 
 async function updateUserSubscription(
+  adminDb: Firestore,
   firebaseUID: string,
   subscription: Stripe.Subscription
 ) {
@@ -42,7 +44,7 @@ async function updateUserSubscription(
   console.log(`Updated subscription for user ${firebaseUID}:`, subscriptionData);
 }
 
-async function handleSubscriptionDeleted(firebaseUID: string) {
+async function handleSubscriptionDeleted(adminDb: Firestore, firebaseUID: string) {
   const userRef = adminDb.collection('users').doc(firebaseUID);
 
   await userRef.update({
@@ -59,6 +61,33 @@ async function handleSubscriptionDeleted(firebaseUID: string) {
 }
 
 export async function POST(request: NextRequest) {
+  // Pre-flight configuration checks
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error('Webhook failed: STRIPE_SECRET_KEY not configured');
+    return NextResponse.json(
+      { error: 'Stripe is not configured' },
+      { status: 503 }
+    );
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('Webhook failed: STRIPE_WEBHOOK_SECRET not configured');
+    return NextResponse.json(
+      { error: 'Webhook secret not configured' },
+      { status: 503 }
+    );
+  }
+
+  if (!isAdminInitialized()) {
+    const initError = getAdminInitError();
+    console.error('Firebase Admin not initialized:', initError?.message);
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 503 }
+    );
+  }
+
+  const adminDb = getAdminDb();
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
@@ -72,7 +101,7 @@ export async function POST(request: NextRequest) {
     event = getStripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
@@ -92,7 +121,7 @@ export async function POST(request: NextRequest) {
           const subscription = await getStripe().subscriptions.retrieve(
             session.subscription as string
           );
-          await updateUserSubscription(firebaseUID, subscription);
+          await updateUserSubscription(adminDb, firebaseUID, subscription);
         }
         break;
       }
@@ -103,7 +132,7 @@ export async function POST(request: NextRequest) {
         const firebaseUID = subscription.metadata?.firebaseUID;
 
         if (firebaseUID) {
-          await updateUserSubscription(firebaseUID, subscription);
+          await updateUserSubscription(adminDb, firebaseUID, subscription);
         }
         break;
       }
@@ -113,7 +142,7 @@ export async function POST(request: NextRequest) {
         const firebaseUID = subscription.metadata?.firebaseUID;
 
         if (firebaseUID) {
-          await handleSubscriptionDeleted(firebaseUID);
+          await handleSubscriptionDeleted(adminDb, firebaseUID);
         }
         break;
       }
@@ -137,7 +166,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error processing webhook:', errorMessage, error);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
