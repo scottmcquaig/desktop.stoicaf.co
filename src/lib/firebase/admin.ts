@@ -6,6 +6,7 @@ let app: App | null = null;
 let adminDb: Firestore | null = null;
 let adminAuth: Auth | null = null;
 let initError: Error | null = null;
+let initialized = false;
 
 function initializeFirebaseAdmin(): { app: App; adminDb: Firestore; adminAuth: Auth } | null {
   try {
@@ -48,6 +49,18 @@ function initializeFirebaseAdmin(): { app: App; adminDb: Firestore; adminAuth: A
 
     adminDb = getFirestore(app);
     adminAuth = getAuth(app);
+
+    if (!initialized) {
+      console.info(
+        'Firebase Admin initialized successfully',
+        JSON.stringify({
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          credentialSource: process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 'serviceAccount' : 'defaultCredentials',
+          appName: app.name,
+        })
+      );
+      initialized = true;
+    }
 
     return { app, adminDb, adminAuth };
   } catch (error) {
