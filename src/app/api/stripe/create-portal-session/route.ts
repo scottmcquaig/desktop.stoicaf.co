@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create portal session
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const requestOrigin = new URL(request.url).origin;
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
+    const baseUrl = configuredBaseUrl || request.headers.get('origin') || requestOrigin || 'http://localhost:3000';
     const session = await getStripe().billingPortal.sessions.create({
       customer: userData.stripeCustomerId,
       return_url: returnUrl || `${baseUrl}/settings`,

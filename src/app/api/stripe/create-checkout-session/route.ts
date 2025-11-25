@@ -108,7 +108,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Build URLs with fallbacks
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const requestOrigin = new URL(request.url).origin;
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
+    const baseUrl = configuredBaseUrl || request.headers.get('origin') || requestOrigin || 'http://localhost:3000';
+
     const finalSuccessUrl = successUrl || `${baseUrl}/settings?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${baseUrl}/settings`;
 
