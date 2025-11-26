@@ -39,7 +39,21 @@
       "Bash(npx tsc:*)",
       "Bash(curl:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx cross-env NODE_ENV=production next build)",
+      "Bash(git reset:*)",
+      "Bash(git fetch:*)",
+      "Bash(cat:*)",
+      "Bash(firebase ext:info:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(gcloud functions:*)",
+      "Bash(gcloud secrets create:*)",
+      "Bash(gcloud secrets add-iam-policy-binding:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(npx next dev:*)"
     ],
     "deny": [],
     "ask": []

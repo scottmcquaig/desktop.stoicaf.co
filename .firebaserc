@@ -1,10 +1,12 @@
 {
-  "projects": {},
+  "projects": {
+    "local": "stoicaf"
+  },
   "targets": {},
   "etags": {
     "stoicaf": {
       "extensionInstances": {
-        "firestore-stripe-payments": "1aebb3c69f592172df3c686469ac1d3a99db7448646fbb3bf11d132c48ec7c59"
+        "firestore-stripe-payments": "c11efb45440be0451834bb8715fe4c3ef300da0ba83bc239aa4a1427eb4cda47"
       }
     }
   }
