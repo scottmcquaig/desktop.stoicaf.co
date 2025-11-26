@@ -14,9 +14,22 @@ function initializeFirebaseAdmin(): { app: App; adminDb: Firestore; adminAuth: A
       // Use service account credentials from environment
       let serviceAccount: object | undefined;
 
-      if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      // Support both base64-encoded and raw JSON formats
+      const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+      const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+      if (base64Key) {
         try {
-          serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+          const decoded = Buffer.from(base64Key, 'base64').toString('utf-8');
+          serviceAccount = JSON.parse(decoded);
+        } catch (parseError) {
+          console.error('Failed to decode FIREBASE_SERVICE_ACCOUNT_KEY_BASE64:', parseError);
+          initError = new Error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 format');
+          return null;
+        }
+      } else if (rawKey) {
+        try {
+          serviceAccount = JSON.parse(rawKey);
         } catch (parseError) {
           console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError);
           initError = new Error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY format');
@@ -51,11 +64,16 @@ function initializeFirebaseAdmin(): { app: App; adminDb: Firestore; adminAuth: A
     adminAuth = getAuth(app);
 
     if (!initialized) {
+      const credentialSource = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64
+        ? 'serviceAccount (base64)'
+        : process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+          ? 'serviceAccount (raw)'
+          : 'defaultCredentials';
       console.info(
         'Firebase Admin initialized successfully',
         JSON.stringify({
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          credentialSource: process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 'serviceAccount' : 'defaultCredentials',
+          credentialSource,
           appName: app.name,
         })
       );

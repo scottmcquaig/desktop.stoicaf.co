@@ -35,3 +35,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+stoicaf-firebase-adminsdk-fbsvc-2143508e7f.json
