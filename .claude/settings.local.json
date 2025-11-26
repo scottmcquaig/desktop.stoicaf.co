@@ -53,7 +53,8 @@
       "Bash(gcloud secrets add-iam-policy-binding:*)",
       "Bash(npm run dev:*)",
       "Bash(netstat:*)",
-      "Bash(npx next dev:*)"
+      "Bash(npx next dev:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

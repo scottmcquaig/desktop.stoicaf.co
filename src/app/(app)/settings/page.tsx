@@ -33,6 +33,7 @@ import { updateProfile } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useSubscription } from '@/hooks/use-subscription';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { EmbeddedCheckoutModal } from '@/components/EmbeddedCheckout';
 
 const settingsNav = [
   { id: 'Profile', icon: <User size={20} /> },
@@ -56,10 +57,10 @@ const SettingsPage: React.FC = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const isMobile = useIsMobile();
   const { user, userProfile, signOut, updateUserProfile } = useAuth();
   const { access } = useSubscription();
@@ -243,52 +244,12 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!user) {
       toast.error('Please sign in to subscribe');
       return;
     }
-
-    setCheckoutLoading(true);
-    try {
-      const priceId = selectedPlan === 'monthly'
-        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
-        : process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL;
-
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          priceId,
-        }),
-      });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Non-JSON response from checkout API:', response.status);
-        throw new Error('Server error. Please try again later.');
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to start checkout';
-      toast.error(errorMessage);
-    } finally {
-      setCheckoutLoading(false);
-    }
+    setShowCheckoutModal(true);
   };
 
   const handleManageSubscription = async () => {
@@ -892,20 +853,10 @@ const SettingsPage: React.FC = () => {
                     {/* Checkout Button */}
                     <Button
                       onClick={handleCheckout}
-                      disabled={checkoutLoading}
                       className="w-full bg-stoic-blue hover:bg-stoic-blue/90 text-white font-bold py-6"
                       size="lg"
                     >
-                      {checkoutLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          Upgrade to Pro - {selectedPlan === 'monthly' ? '$4.99/mo' : '$49.99/yr'}
-                        </>
-                      )}
+                      Upgrade to Pro - {selectedPlan === 'monthly' ? '$4.99/mo' : '$49.99/yr'}
                     </Button>
 
                     <p className="text-center text-xs text-slate-500 mt-4">
@@ -925,6 +876,20 @@ const SettingsPage: React.FC = () => {
         onOpenChange={setShowUpgradePrompt}
         feature="export"
       />
+
+      {/* Embedded Checkout Modal */}
+      {user && (
+        <EmbeddedCheckoutModal
+          userId={user.uid}
+          priceId={
+            selectedPlan === 'monthly'
+              ? process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
+              : process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL
+          }
+          open={showCheckoutModal}
+          onOpenChange={setShowCheckoutModal}
+        />
+      )}
     </div>
   );
 };

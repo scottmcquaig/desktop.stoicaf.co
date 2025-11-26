@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const adminDb = getAdminDb();
     const adminAuth = getAdminAuth();
 
-    const { userId, priceId, successUrl, cancelUrl } = await request.json();
+    const { userId, priceId, successUrl, cancelUrl, embedded } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
@@ -116,10 +116,38 @@ export async function POST(request: NextRequest) {
     const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
     const baseUrl = configuredBaseUrl || request.headers.get('origin') || requestOrigin || 'http://localhost:3000';
 
+    // Create checkout session - embedded mode or redirect mode
+    if (embedded) {
+      // Embedded mode - returns client_secret for in-app checkout
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: effectivePriceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        ui_mode: 'embedded',
+        return_url: `${baseUrl}/settings?session_id={CHECKOUT_SESSION_ID}`,
+        metadata: {
+          firebaseUID: userId,
+        },
+        subscription_data: {
+          metadata: {
+            firebaseUID: userId,
+          },
+        },
+      });
+
+      return NextResponse.json({ clientSecret: session.client_secret });
+    }
+
+    // Redirect mode - returns URL for redirect
     const finalSuccessUrl = successUrl || `${baseUrl}/settings?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${baseUrl}/settings`;
 
-    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
