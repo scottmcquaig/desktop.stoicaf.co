@@ -54,7 +54,9 @@
       "Bash(npm run dev:*)",
       "Bash(netstat:*)",
       "Bash(npx next dev:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx create-expo-app:*)",
+      "Bash(git init:*)"
     ],
     "deny": [],
     "ask": []
