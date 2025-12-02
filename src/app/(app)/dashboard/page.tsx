@@ -7,8 +7,6 @@ import {
   Smile,
   Meh,
   Frown,
-  Search,
-  Bell,
   Loader2,
   Sparkles,
   RefreshCw,
@@ -16,6 +14,11 @@ import {
   Target,
   Lightbulb,
   ArrowUpRight,
+  Edit3,
+  Calendar,
+  Trophy,
+  Zap,
+  Star,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +43,7 @@ interface DailyQuoteData {
   author: string;
   pillar: Pillar;
   broTranslation: string;
+  todaysChallenge?: string;
 }
 
 interface WeeklyReflectionData {
@@ -49,6 +53,51 @@ interface WeeklyReflectionData {
   growthAreas: string[];
   recommendations: string[];
 }
+
+// Chad's personalized greetings based on streak
+const getChadGreeting = (streak: number, firstName: string, hour: number): string => {
+  const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+  if (streak === 0) {
+    const messages = [
+      `Hey ${firstName}! Ready to start your Stoic journey? One day at a time, bro.`,
+      `${firstName}! Today's the day. Let's build something powerful together.`,
+      `Welcome back, ${firstName}. The best time to start was yesterday. Second best? Right now.`,
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+  }
+
+  if (streak === 1) {
+    return `One day down, ${firstName}! That first entry is the hardest. Keep the momentum going! 💪`;
+  }
+
+  if (streak < 7) {
+    return `${streak} days strong, ${firstName}! You're building something real here. Don't stop now.`;
+  }
+
+  if (streak < 14) {
+    return `A week+ streak?! ${firstName}, you're becoming a Stoic machine. Marcus would be proud.`;
+  }
+
+  if (streak < 30) {
+    return `${streak} days! ${firstName}, you're not just journaling—you're transforming. This is the work.`;
+  }
+
+  if (streak < 60) {
+    return `${streak} days of consistent Stoic practice. ${firstName}, you're in the top 1% now. Absolute legend.`;
+  }
+
+  return `${streak} DAYS?! ${firstName}, you're not playing games. You ARE the game. Seneca would bow. 👑`;
+};
+
+// Get motivational subtext based on time of day
+const getTimeBasedSubtext = (hour: number): string => {
+  if (hour < 6) return "Early bird catches the wisdom. Let's go.";
+  if (hour < 12) return "Morning reflections hit different.";
+  if (hour < 17) return "Perfect time for a midday reset.";
+  if (hour < 21) return "Evening audit time. How'd you show up today?";
+  return "Night owl journaling. The quiet hours bring clarity.";
+};
 
 const DashboardPage: React.FC = () => {
   const { user, userProfile, updateUserProfile } = useAuth();
@@ -72,6 +121,9 @@ const DashboardPage: React.FC = () => {
 
   // Upgrade prompt state
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  // Time for personalized greeting
+  const [currentHour] = useState(new Date().getHours());
 
   const PROGRESS_WINDOW = 30;
 
@@ -212,27 +264,17 @@ const DashboardPage: React.FC = () => {
 
   // Get greeting based on time of day
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
+    if (currentHour < 12) return 'Good Morning';
+    if (currentHour < 17) return 'Good Afternoon';
     return 'Good Evening';
   };
 
   // Get first name from display name
   const firstName = userProfile?.displayName?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Stoic';
 
-  // Get last entry text
-  const getLastEntryText = () => {
-    if (recentEntries.length === 0) return 'No entries yet';
-    const lastEntry = recentEntries[0];
-    const date = lastEntry.createdAt.toDate();
-    const today = new Date();
-    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Last entry: Today';
-    if (diffDays === 1) return 'Last entry: Yesterday';
-    return `Last entry: ${diffDays} days ago`;
-  };
+  // Check if user wrote today
+  const hasWrittenToday = recentEntries.length > 0 &&
+    recentEntries[0].createdAt.toDate().toDateString() === new Date().toDateString();
 
   // Build mood data for chart from recent entries
   const moodData = recentEntries
@@ -243,7 +285,7 @@ const DashboardPage: React.FC = () => {
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
       return {
         day: dayName,
-        value: entry.mood || 3, // Default to 3 if no mood
+        value: entry.mood || 3,
       };
     });
 
@@ -266,15 +308,13 @@ const DashboardPage: React.FC = () => {
     return <Smile size={16} className="text-emerald-500" />;
   };
 
-  // Get display label for entry (based on pillar or block types)
+  // Get display label for entry
   const getEntryLabel = (entry: JournalEntry) => {
-    // Try to get a meaningful label from blocks
     const blockTypes = entry.blocks?.map(b => b.type) || [];
     if (blockTypes.includes('morning-intent')) return 'Morning Intent';
     if (blockTypes.includes('evening-audit')) return 'Evening Audit';
     if (blockTypes.includes('dichotomy')) return 'Dichotomy';
 
-    // Fall back to pillar name
     const pillarLabels: Record<Pillar, string> = {
       money: 'Money',
       ego: 'Ego',
@@ -288,7 +328,6 @@ const DashboardPage: React.FC = () => {
   const getEntryPreview = (entry: JournalEntry) => {
     if (!entry.blocks || entry.blocks.length === 0) return '';
 
-    // Find first block with content
     for (const block of entry.blocks) {
       if (block.content?.trim()) {
         return block.content.trim().slice(0, 100);
@@ -303,385 +342,509 @@ const DashboardPage: React.FC = () => {
     return '';
   };
 
+  // Get streak milestone info
+  const getStreakMilestone = (streak: number) => {
+    if (streak >= 100) return { label: 'Philosopher', icon: Trophy, color: 'text-yellow-500' };
+    if (streak >= 60) return { label: 'Master', icon: Star, color: 'text-purple-500' };
+    if (streak >= 30) return { label: 'Warrior', icon: Zap, color: 'text-blue-500' };
+    if (streak >= 14) return { label: 'Practitioner', icon: Target, color: 'text-emerald-500' };
+    if (streak >= 7) return { label: 'Apprentice', icon: Flame, color: 'text-orange-500' };
+    return null;
+  };
+
+  const milestone = getStreakMilestone(streak);
+
   // Show skeleton while initial data is loading
   if (isLoading && !dailyQuote) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="bg-slate-50 p-4 md:p-8 min-h-full font-sans">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Header */}
-        <div className="lg:col-span-12 mb-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{getGreeting()}, {firstName}</h1>
-            <p className="text-slate-500">Focus on what is within your control.</p>
-          </div>
-          <div className="hidden md:flex gap-2 items-center">
-            <Button variant="ghost" size="icon">
-              <Search className="text-slate-600" size={24} />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Bell className="text-slate-600" size={24} />
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-full bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800">
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          HERO SECTION - The First Impression
+      ═══════════════════════════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-stoic-blue/20 via-transparent to-transparent" />
 
-        {/* Main Widgets */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Current Streak</span>
-                  <Flame className={streak > 0 ? 'text-orange-500' : 'text-slate-600'} size={20} />
-                </div>
-                <div className="text-4xl font-extrabold mb-1">
-                  {isLoading ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  ) : (
-                    <>
-                      {streak} <span className="text-lg font-medium text-slate-400">{streak === 1 ? 'day' : 'days'}</span>
-                    </>
+        <div className="relative max-w-5xl mx-auto px-4 pt-8 pb-12 md:pt-12 md:pb-16">
+          {/* Greeting + Streak */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
+            {/* Left: Greeting */}
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-400 mb-1 flex items-center gap-2">
+                <Calendar size={14} />
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
+                {getGreeting()}, {firstName}
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base">
+                {getTimeBasedSubtext(currentHour)}
+              </p>
+            </div>
+
+            {/* Right: Streak Counter */}
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-4 md:p-6 text-center min-w-[140px] shadow-xl">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Flame className={streak > 0 ? 'text-orange-500 animate-pulse' : 'text-slate-600'} size={24} />
+                  {milestone && (
+                    <milestone.icon className={`${milestone.color}`} size={20} />
                   )}
                 </div>
-                <p className="text-xs text-slate-400">{getLastEntryText()}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">5-Day Mood Trend</span>
-                  <TrendingUp className="text-primary" size={20} />
+                <div className="text-5xl md:text-6xl font-black text-white leading-none mb-1">
+                  {isLoading ? (
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto" />
+                  ) : (
+                    streak
+                  )}
                 </div>
-                {recentEntries.length === 0 ? (
-                  <div className="h-[120px] flex flex-col items-center justify-center text-center">
-                    <Meh size={32} className="text-slate-300 mb-2" />
-                    <p className="text-sm text-slate-400">No mood data yet</p>
-                    <p className="text-xs text-slate-300">Start journaling to track your mood</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Line Chart */}
-                    <div className="relative h-20">
-                      <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
-                        {/* Grid lines */}
-                        <line x1="0" y1="20" x2="200" y2="20" stroke="#e2e8f0" strokeWidth="1" />
-                        <line x1="0" y1="40" x2="200" y2="40" stroke="#e2e8f0" strokeWidth="1" />
-                        <line x1="0" y1="60" x2="200" y2="60" stroke="#e2e8f0" strokeWidth="1" />
-
-                        {/* Area fill */}
-                        <path
-                          d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70} L200,80 L0,80 Z`}
-                          fill="url(#moodGradient)"
-                        />
-
-                        {/* Line */}
-                        <path
-                          d={`M0,${80 - (moodData[0].value / 5) * 70} L50,${80 - (moodData[1].value / 5) * 70} L100,${80 - (moodData[2].value / 5) * 70} L150,${80 - (moodData[3].value / 5) * 70} L200,${80 - (moodData[4].value / 5) * 70}`}
-                          fill="none"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-
-                        {/* Data points */}
-                        {moodData.map((point, i) => (
-                          <circle
-                            key={i}
-                            cx={i * 50}
-                            cy={80 - (point.value / 5) * 70}
-                            r="4"
-                            fill="white"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="2"
-                          />
-                        ))}
-
-                        {/* Gradient definition */}
-                        <defs>
-                          <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </div>
-                    {/* Day labels */}
-                    <div className="flex justify-between mt-2">
-                      {moodData.map((point, i) => (
-                        <span key={`${point.day}-${i}`} className="text-[10px] text-slate-400 font-medium">{point.day}</span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-400 mt-2 text-right">Avg: {(moodData.reduce((a, b) => a + b.value, 0) / moodData.length).toFixed(1)}/5</p>
-                  </>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {streak === 1 ? 'Day Streak' : 'Day Streak'}
+                </p>
+                {milestone && (
+                  <Badge variant="secondary" className="mt-2 bg-slate-700 text-slate-300 text-[10px]">
+                    {milestone.label}
+                  </Badge>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Quote of the Day */}
-          <Card className="border-l-4 border-l-primary">
-            <CardContent className="p-6">
-              <div className="mb-4">
-                <Badge variant="secondary" className="border-0">
-                  Daily Stoic Quote
-                </Badge>
+          {/* ChadGPT Message */}
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-4 md:p-5 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 relative">
+                <ChadGPTSvg className="w-12 h-12 md:w-14 md:h-14" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-800" />
               </div>
-              {dailyQuote ? (
-                <>
-                  <blockquote className="text-xl font-serif text-slate-800 italic mb-4 leading-relaxed">
-                    &ldquo;{dailyQuote.quote}&rdquo;
-                  </blockquote>
-                  <p className="text-sm font-bold text-slate-900 mb-6">&mdash; {dailyQuote.author}</p>
-
-                  {/* ChadGPT Speech Bubble */}
-                  <div className="relative -mx-2 -mb-2">
-                    <div className="flex items-start gap-3">
-                      {/* ChadGPT Avatar */}
-                      <div className="relative -mt-1 flex-shrink-0">
-                        <ChadGPTSvg className="w-11 h-11" />
-                      </div>
-
-                      {/* Speech Bubble */}
-                      <div className="relative flex-1 bg-slate-50 p-4 rounded-2xl" style={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: '#cbd5e1', borderSpacing: '8px' }}>
-                        {/* Speech bubble pointer */}
-                        <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-300"></div>
-                        <div className="absolute -left-[6px] top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-slate-50"></div>
-
-                        <p className="text-sm text-slate-700 leading-relaxed">
-                          <span className="font-bold text-stoic-dark">ChadGPT says:</span> {dailyQuote.broTranslation}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-white">ChadGPT</span>
+                  <Badge className="bg-stoic-blue/20 text-stoic-blue border-0 text-[10px]">AI Coach</Badge>
                 </div>
-              )}
+                <p className="text-slate-300 leading-relaxed">
+                  {getChadGreeting(streak, firstName, currentHour)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Today's Action Card */}
+          <Card className="bg-gradient-to-r from-stoic-blue/10 to-purple-500/10 border-stoic-blue/30 backdrop-blur-sm overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row">
+                {/* Left: Today's Challenge */}
+                <div className="flex-1 p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="text-stoic-blue" size={18} />
+                    <span className="text-xs font-bold text-stoic-blue uppercase tracking-wider">
+                      Today&apos;s Challenge
+                    </span>
+                  </div>
+                  {dailyQuote ? (
+                    <>
+                      <blockquote className="text-lg md:text-xl font-medium text-white mb-2 leading-relaxed">
+                        &ldquo;{dailyQuote.quote}&rdquo;
+                      </blockquote>
+                      <p className="text-sm text-slate-400">— {dailyQuote.author}</p>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading today&apos;s wisdom...
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: CTA */}
+                <div className="flex items-center justify-center p-5 md:p-6 border-t md:border-t-0 md:border-l border-slate-700/50 bg-slate-800/30">
+                  {hasWrittenToday ? (
+                    <div className="text-center">
+                      <div className="w-14 h-14 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Smile className="text-emerald-400" size={28} />
+                      </div>
+                      <p className="text-sm font-medium text-emerald-400 mb-1">Done for Today!</p>
+                      <Link href="/journal" className="text-xs text-slate-400 hover:text-white transition-colors">
+                        View Entry →
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link href="/journal/new" className="block">
+                      <Button size="lg" className="bg-stoic-blue hover:bg-stoic-blue/90 text-white h-14 px-8 text-base font-bold shadow-lg shadow-stoic-blue/25 group">
+                        <Edit3 className="mr-2 group-hover:scale-110 transition-transform" size={20} />
+                        Start Writing
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
 
-          {/* Weekly AI Reflection */}
-          <Card className="border-l-4 border-l-purple-500 overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="text-purple-500" size={20} />
-                  <h3 className="font-bold text-slate-900">Weekly Reflection</h3>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-0 text-[10px]">
-                    AI Powered
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={generateWeeklyReflection}
-                  disabled={isLoadingReflection}
-                  className="text-xs min-h-11"
-                >
-                  {isLoadingReflection ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  <span className="ml-1.5 hidden sm:inline">
-                    {weeklyReflection ? 'Refresh' : 'Generate'}
-                  </span>
-                </Button>
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          MAIN CONTENT - Stats, Insights, Progress
+      ═══════════════════════════════════════════════════════════════════════════ */}
+      <div className="bg-slate-50 rounded-t-[2rem] -mt-4 pt-8 pb-12">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* Main Column */}
+            <div className="lg:col-span-8 space-y-6">
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Total Entries */}
+                <Card className="border-0 shadow-sm bg-white">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Entries</span>
+                      <Calendar className="text-stoic-blue" size={18} />
+                    </div>
+                    <div className="text-3xl font-extrabold text-slate-900">
+                      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : entryCount}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">Lifetime reflections</p>
+                  </CardContent>
+                </Card>
+
+                {/* Mood Trend */}
+                <Card className="border-0 shadow-sm bg-white">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">5-Day Mood</span>
+                      <TrendingUp className="text-emerald-500" size={18} />
+                    </div>
+                    {recentEntries.length === 0 ? (
+                      <div className="text-center py-2">
+                        <Meh size={24} className="text-slate-300 mx-auto mb-1" />
+                        <p className="text-xs text-slate-400">No data yet</p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Mini Line Chart */}
+                        <div className="relative h-12">
+                          <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
+                            <path
+                              d={`M0,${40 - (moodData[0].value / 5) * 35} L25,${40 - (moodData[1].value / 5) * 35} L50,${40 - (moodData[2].value / 5) * 35} L75,${40 - (moodData[3].value / 5) * 35} L100,${40 - (moodData[4].value / 5) * 35}`}
+                              fill="none"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            {moodData.map((point, i) => (
+                              <circle
+                                key={i}
+                                cx={i * 25}
+                                cy={40 - (point.value / 5) * 35}
+                                r="3"
+                                fill="white"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth="2"
+                              />
+                            ))}
+                          </svg>
+                        </div>
+                        <p className="text-xs text-slate-400 text-right">
+                          Avg: {(moodData.reduce((a, b) => a + b.value, 0) / moodData.length).toFixed(1)}/5
+                        </p>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
 
-              {isLoadingReflection ? (
-                <div className="flex flex-col items-center justify-center py-8 gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-                  <p className="text-sm text-slate-500">Analyzing your week...</p>
-                </div>
-              ) : reflectionError ? (
-                <div className="text-center py-6">
-                  <p className="text-sm text-slate-500 mb-3">{reflectionError}</p>
-                  <Button asChild variant="outline" size="sm" className="min-h-11">
-                    <Link href="/journal/new">
-                      Write an Entry
-                      <ChevronRight size={16} className="ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              ) : weeklyReflection ? (
-                <div className="space-y-4">
-                  {/* Summary */}
-                  <div className="bg-purple-50 p-4 rounded-xl">
-                    <p className="text-sm text-slate-700 leading-relaxed">{weeklyReflection.summary}</p>
+              {/* Quote of the Day Card */}
+              <Card className="border-0 shadow-sm bg-white overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-stoic-blue to-purple-500" />
+                <CardContent className="p-6">
+                  <div className="mb-4">
+                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-0">
+                      Daily Stoic Quote
+                    </Badge>
+                  </div>
+                  {dailyQuote ? (
+                    <>
+                      <blockquote className="text-xl md:text-2xl font-serif text-slate-800 italic mb-4 leading-relaxed">
+                        &ldquo;{dailyQuote.quote}&rdquo;
+                      </blockquote>
+                      <p className="text-sm font-bold text-slate-900 mb-6">&mdash; {dailyQuote.author}</p>
+
+                      {/* ChadGPT Speech Bubble */}
+                      <div className="relative">
+                        <div className="flex items-start gap-3 bg-gradient-to-r from-slate-50 to-slate-100 p-4 rounded-xl border border-slate-200">
+                          <ChadGPTSvg className="w-10 h-10 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-stoic-blue uppercase tracking-wider mb-1">Chad&apos;s Take</p>
+                            <p className="text-sm text-slate-700 leading-relaxed">
+                              {dailyQuote.broTranslation}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Weekly AI Reflection */}
+              <Card className="border-0 shadow-sm bg-white overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-500" />
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="text-purple-500" size={20} />
+                      <h3 className="font-bold text-slate-900">Weekly Reflection</h3>
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-0 text-[10px]">
+                        AI Powered
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={generateWeeklyReflection}
+                      disabled={isLoadingReflection}
+                      className="text-xs min-h-11"
+                    >
+                      {isLoadingReflection ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span className="ml-1.5 hidden sm:inline">
+                        {weeklyReflection ? 'Refresh' : 'Generate'}
+                      </span>
+                    </Button>
                   </div>
 
-                  {/* Key Themes */}
-                  {weeklyReflection.keyThemes && weeklyReflection.keyThemes.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {weeklyReflection.keyThemes.slice(0, 4).map((theme, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {theme}
-                        </Badge>
+                  {isLoadingReflection ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                      <p className="text-sm text-slate-500">Analyzing your week...</p>
+                    </div>
+                  ) : reflectionError ? (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-slate-500 mb-3">{reflectionError}</p>
+                      <Button asChild variant="outline" size="sm" className="min-h-11">
+                        <Link href="/journal/new">
+                          Write an Entry
+                          <ChevronRight size={16} className="ml-1" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : weeklyReflection ? (
+                    <div className="space-y-4">
+                      {/* Summary */}
+                      <div className="bg-purple-50 p-4 rounded-xl">
+                        <p className="text-sm text-slate-700 leading-relaxed">{weeklyReflection.summary}</p>
+                      </div>
+
+                      {/* Key Themes */}
+                      {weeklyReflection.keyThemes && weeklyReflection.keyThemes.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {weeklyReflection.keyThemes.slice(0, 4).map((theme, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {theme}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Insights */}
+                      {weeklyReflection.insights && weeklyReflection.insights.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Lightbulb size={14} />
+                            Key Insights
+                          </h4>
+                          <ul className="space-y-1">
+                            {weeklyReflection.insights.slice(0, 3).map((insight, index) => (
+                              <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                                <span className="text-purple-500 mt-1">•</span>
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Recommendations */}
+                      {weeklyReflection.recommendations && weeklyReflection.recommendations.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Target size={14} />
+                            Focus Areas
+                          </h4>
+                          <ul className="space-y-1">
+                            {weeklyReflection.recommendations.slice(0, 2).map((rec, index) => (
+                              <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                                <ArrowUpRight size={14} className="text-primary mt-0.5 flex-shrink-0" />
+                                {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <ChadGPTSvg className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm text-slate-500 mb-3">
+                        Get AI-powered insights from your journal entries
+                      </p>
+                      <Button
+                        onClick={generateWeeklyReflection}
+                        disabled={isLoadingReflection || !userProfile?.pillarFocus}
+                        size="sm"
+                        className="min-h-11 bg-purple-600 hover:bg-purple-700"
+                      >
+                        <Sparkles size={16} className="mr-2" />
+                        Generate Reflection
+                      </Button>
+                      {!userProfile?.pillarFocus && (
+                        <p className="text-xs text-slate-400 mt-2">
+                          Complete onboarding to unlock AI reflections
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Entries */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-slate-900">Recent Entries</h3>
+                    <Button variant="ghost" className="text-xs" asChild>
+                      <Link href="/journal">View All</Link>
+                    </Button>
+                  </div>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : recentEntries.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Edit3 className="text-slate-400" size={24} />
+                      </div>
+                      <p className="text-slate-500 mb-4">No entries yet. Start your Stoic journey!</p>
+                      <Button asChild>
+                        <Link href="/journal/new">Write Your First Entry</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentEntries.slice(0, 3).map((entry) => (
+                        <Link
+                          href={`/journal/${entry.id}`}
+                          key={entry.id}
+                          className="block p-4 rounded-xl border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all cursor-pointer group"
+                        >
+                          <div className="flex justify-between mb-2">
+                            <span className="text-xs font-bold text-slate-400 uppercase">{formatEntryDate(entry)}</span>
+                            <span className="text-sm text-slate-400">{getMoodIcon(entry.mood)}</span>
+                          </div>
+                          <h4 className="font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
+                            {getEntryLabel(entry)}
+                          </h4>
+                          <p className="text-sm text-slate-500 truncate">{getEntryPreview(entry)}</p>
+                        </Link>
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
 
-                  {/* Insights */}
-                  {weeklyReflection.insights && weeklyReflection.insights.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Lightbulb size={14} />
-                        Key Insights
-                      </h4>
-                      <ul className="space-y-1">
-                        {weeklyReflection.insights.slice(0, 3).map((insight, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                            <span className="text-purple-500 mt-1">•</span>
-                            {insight}
-                          </li>
-                        ))}
-                      </ul>
+            {/* Sidebar */}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Subscription Banner */}
+              {!isSubscribed && (
+                <Card className="border-0 shadow-sm bg-gradient-to-br from-stoic-blue to-purple-600 text-white overflow-hidden">
+                  <CardContent className="p-5 relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative">
+                      <Badge className="bg-white/20 text-white border-0 mb-3 text-[10px]">Free Plan</Badge>
+                      <p className="text-2xl font-bold mb-2">
+                        {access.entriesRemaining === 'unlimited' ? '∞' : access.entriesRemaining}
+                        <span className="text-sm font-normal opacity-80"> entries left</span>
+                      </p>
+                      <p className="text-sm opacity-80 mb-4">
+                        {access.aiInsightsRemaining === 'unlimited' ? '∞' : access.aiInsightsRemaining} AI insights remaining
+                      </p>
+                      <Button className="w-full bg-white text-stoic-blue hover:bg-white/90 font-bold" asChild>
+                        <Link href="/settings?tab=Subscription">
+                          Upgrade to Pro
+                          <ChevronRight size={16} className="ml-1" />
+                        </Link>
+                      </Button>
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              )}
 
-                  {/* Recommendations */}
-                  {weeklyReflection.recommendations && weeklyReflection.recommendations.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Target size={14} />
-                        Focus Areas
-                      </h4>
-                      <ul className="space-y-1">
-                        {weeklyReflection.recommendations.slice(0, 2).map((rec, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                            <ArrowUpRight size={14} className="text-primary mt-0.5 flex-shrink-0" />
-                            {rec}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <ChadGPTSvg className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm text-slate-500 mb-3">
-                    Get AI-powered insights from your journal entries
-                  </p>
-                  <Button
-                    onClick={generateWeeklyReflection}
-                    disabled={isLoadingReflection || !userProfile?.pillarFocus}
-                    size="sm"
-                    className="min-h-11 bg-purple-600 hover:bg-purple-700"
-                  >
-                    <Sparkles size={16} className="mr-2" />
-                    Generate Reflection
-                  </Button>
-                  {!userProfile?.pillarFocus && (
-                    <p className="text-xs text-slate-400 mt-2">
-                      Complete onboarding to unlock AI reflections
+              {/* Pillar Progress */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-slate-900 mb-6">Pillar Progress</h3>
+                  <div className="space-y-5">
+                    {[
+                      { label: 'Money', key: 'money' as Pillar, color: 'bg-emerald-500', lightColor: 'bg-emerald-100' },
+                      { label: 'Ego', key: 'ego' as Pillar, color: 'bg-purple-500', lightColor: 'bg-purple-100' },
+                      { label: 'Relationships', key: 'relationships' as Pillar, color: 'bg-pink-500', lightColor: 'bg-pink-100' },
+                      { label: 'Discipline', key: 'discipline' as Pillar, color: 'bg-amber-500', lightColor: 'bg-amber-100' },
+                    ].map((v) => (
+                      <div key={v.label}>
+                        <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
+                          <span>{v.label}</span>
+                          <span>{pillarProgress[v.key]}%</span>
+                        </div>
+                        <div className={`h-2.5 ${v.lightColor} rounded-full overflow-hidden`}>
+                          <div
+                            style={{ width: `${pillarProgress[v.key]}%` }}
+                            className={`h-full rounded-full ${v.color} transition-all duration-700 ease-out`}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {entryCount === 0 && (
+                    <p className="text-xs text-slate-400 mt-4 text-center">
+                      Tag entries with pillars to track progress
                     </p>
                   )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Recent Entries */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-slate-900">Recent Entries</h3>
-                <Button variant="ghost" className="text-xs" asChild>
-                  <Link href="/journal">View All</Link>
-                </Button>
-              </div>
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : recentEntries.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-slate-500 mb-4">No entries yet. Start your Stoic journey!</p>
-                  <Button asChild>
-                    <Link href="/journal/new">Write Your First Entry</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentEntries.slice(0, 3).map((entry) => (
-                    <Link
-                      href={`/journal/${entry.id}`}
-                      key={entry.id}
-                      className="block p-4 rounded-lg border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all cursor-pointer group"
-                    >
-                      <div className="flex justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase">{formatEntryDate(entry)}</span>
-                        <span className="text-sm text-slate-400">{getMoodIcon(entry.mood)}</span>
-                      </div>
-                      <h4 className="font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-                        {getEntryLabel(entry)}
-                      </h4>
-                      <p className="text-sm text-slate-500 truncate">{getEntryPreview(entry)}</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar Widgets */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Subscription Banner */}
-          {!isSubscribed && (
-            <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-center">
-              <p className="text-xs font-bold text-primary uppercase mb-1">Free Plan</p>
-              <p className="text-sm text-slate-700 mb-1">
-                {access.entriesRemaining === 'unlimited' ? 'Unlimited' : access.entriesRemaining} entries remaining
-              </p>
-              <p className="text-xs text-slate-500 mb-3">
-                {access.aiInsightsRemaining === 'unlimited' ? 'Unlimited' : access.aiInsightsRemaining} AI insights remaining
-              </p>
-              <Button className="w-full py-1.5 text-xs" asChild>
-                <Link href="/settings?tab=Subscription">Upgrade to Pro</Link>
-              </Button>
-            </div>
-          )}
-          {/* Pillar Progress */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-bold text-slate-900 mb-6">Pillar Progress</h3>
-              <div className="space-y-5">
-                {[
-                  { label: 'Money', key: 'money' as Pillar, color: 'bg-emerald-500' },
-                  { label: 'Ego', key: 'ego' as Pillar, color: 'bg-purple-500' },
-                  { label: 'Relationships', key: 'relationships' as Pillar, color: 'bg-pink-500' },
-                  { label: 'Discipline', key: 'discipline' as Pillar, color: 'bg-amber-500' },
-                ].map((v) => (
-                  <div key={v.label}>
-                    <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-                      <span>{v.label}</span>
-                      <span>{pillarProgress[v.key]}%</span>
+              {/* Quick Tip Card */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="text-amber-600" size={18} />
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        style={{ width: `${pillarProgress[v.key]}%` }}
-                        className={`h-full rounded-full ${v.color} transition-all duration-500`}
-                      ></div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm mb-1">Pro Tip</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        Try the &quot;Dichotomy of Control&quot; block to separate what you can and can&apos;t control. It&apos;s Stoicism 101.
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-              {entryCount === 0 && (
-                <p className="text-xs text-slate-400 mt-4 text-center">
-                  Tag entries with pillars to track progress
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
 

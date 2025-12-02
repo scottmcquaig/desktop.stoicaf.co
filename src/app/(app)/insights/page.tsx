@@ -3,7 +3,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Share2,
   Download,
-  Bot,
   Loader2,
   TrendingUp,
   Flame,
@@ -11,27 +10,49 @@ import {
   User,
   Heart,
   Target,
+  Calendar,
+  Trophy,
+  Zap,
+  Star,
+  Award,
+  CheckCircle2,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ChadGPTSvg } from '@/components/ChadGPTSvg';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getMoodDataForDays,
   getPillarDistribution,
   calculateStreak,
   getEntryCount,
-  getEntriesForLastNDays,
 } from '@/lib/firebase/journal';
 import type { Pillar } from '@/lib/types';
 
-const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string; bgColor: string }> = {
-  money: { icon: DollarSign, label: 'Money', color: 'bg-emerald-500', bgColor: 'bg-emerald-100' },
-  ego: { icon: User, label: 'Ego', color: 'bg-purple-500', bgColor: 'bg-purple-100' },
-  relationships: { icon: Heart, label: 'Relationships', color: 'bg-pink-500', bgColor: 'bg-pink-100' },
-  discipline: { icon: Target, label: 'Discipline', color: 'bg-amber-500', bgColor: 'bg-amber-100' },
+const PILLAR_CONFIG: Record<Pillar, { icon: React.ElementType; label: string; color: string; bgColor: string; textColor: string }> = {
+  money: { icon: DollarSign, label: 'Money', color: 'bg-emerald-500', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
+  ego: { icon: User, label: 'Ego', color: 'bg-purple-500', bgColor: 'bg-purple-100', textColor: 'text-purple-600' },
+  relationships: { icon: Heart, label: 'Relationships', color: 'bg-pink-500', bgColor: 'bg-pink-100', textColor: 'text-pink-600' },
+  discipline: { icon: Target, label: 'Discipline', color: 'bg-amber-500', bgColor: 'bg-amber-100', textColor: 'text-amber-600' },
+};
+
+// Achievement badges based on stats
+const getAchievements = (streak: number, entryCount: number) => {
+  const achievements = [];
+
+  if (streak >= 7) achievements.push({ label: 'Week Warrior', icon: Zap, color: 'text-blue-500', bgColor: 'bg-blue-100' });
+  if (streak >= 30) achievements.push({ label: 'Monthly Master', icon: Star, color: 'text-purple-500', bgColor: 'bg-purple-100' });
+  if (streak >= 100) achievements.push({ label: 'Centurion', icon: Trophy, color: 'text-yellow-500', bgColor: 'bg-yellow-100' });
+  if (entryCount >= 10) achievements.push({ label: 'First Ten', icon: Award, color: 'text-emerald-500', bgColor: 'bg-emerald-100' });
+  if (entryCount >= 50) achievements.push({ label: 'Fifty Strong', icon: CheckCircle2, color: 'text-indigo-500', bgColor: 'bg-indigo-100' });
+
+  return achievements;
 };
 
 const InsightsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [moodData, setMoodData] = useState<{ date: string; mood: number | null }[]>([]);
   const [pillarDistribution, setPillarDistribution] = useState<Record<string, number>>({
@@ -44,6 +65,8 @@ const InsightsPage: React.FC = () => {
   const [entryCount, setEntryCount] = useState(0);
   const [avgMood, setAvgMood] = useState<number | null>(null);
   const [topPillar, setTopPillar] = useState<Pillar | null>(null);
+
+  const firstName = userProfile?.displayName?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Stoic';
 
   const loadInsightsData = useCallback(async () => {
     if (!user) return;
@@ -116,240 +139,371 @@ const InsightsPage: React.FC = () => {
     percentage: totalPillarEntries > 0 ? Math.round((count / totalPillarEntries) * 100) : 0,
   }));
 
+  const achievements = getAchievements(streak, entryCount);
+
   if (isLoading) {
     return (
-      <div className="p-4 md:p-8 max-w-6xl mx-auto flex items-center justify-center min-h-[60vh]">
+      <div className="min-h-full bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-slate-500">Loading your insights...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-slate-500 font-medium">Analyzing your journey...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900">Insights</h1>
-        <div className="flex gap-2">
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg border border-transparent hover:border-slate-200 flex items-center">
-            <Share2 size={20} />
-          </button>
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg border border-transparent hover:border-slate-200 flex items-center">
-            <Download size={20} />
-          </button>
-        </div>
-      </div>
+    <div className="min-h-full bg-gradient-to-b from-slate-900 to-slate-800">
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          HERO SECTION
+      ═══════════════════════════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Flame className={streak > 0 ? 'text-orange-500' : 'text-slate-400'} size={24} />
+        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-12 md:pt-12 md:pb-16">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
+                Your Insights
+              </h1>
+              <p className="text-slate-400">
+                Track your progress on the path to emotional resilience
+              </p>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{streak}</p>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">Day Streak</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="text-primary" size={24} />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700">
+                <Share2 size={16} className="mr-2" />
+                Share
+              </Button>
+              <Button variant="outline" size="sm" className="bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700">
+                <Download size={16} className="mr-2" />
+                Export
+              </Button>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{entryCount}</p>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">Total Entries</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="text-emerald-600 text-sm">☺</span>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">
-              {avgMood !== null ? avgMood.toFixed(1) : '-'}
-            </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Mood</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            {topPillar ? (
-              <>
-                <div className="flex items-center justify-center mb-2">
-                  {React.createElement(PILLAR_CONFIG[topPillar].icon, {
-                    size: 24,
-                    className: `text-${PILLAR_CONFIG[topPillar].color.replace('bg-', '')}`
-                  })}
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Streak */}
+            <Card className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30 backdrop-blur-sm">
+              <CardContent className="p-5 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <Flame className={streak > 0 ? 'text-orange-400 animate-pulse' : 'text-slate-500'} size={28} />
                 </div>
-                <p className="text-2xl font-bold text-slate-900 capitalize">{topPillar}</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Top Pillar</p>
-              </>
-            ) : (
-              <>
-                <div className="w-6 h-6 rounded-full bg-slate-100 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-slate-400">-</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Top Pillar</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                <p className="text-4xl font-black text-white mb-1">{streak}</p>
+                <p className="text-xs font-bold text-orange-300/80 uppercase tracking-wider">Day Streak</p>
+              </CardContent>
+            </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Mood Heatmap */}
-        <div className="md:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-900">30-Day Mood Heatmap</h3>
-            <div className="flex gap-3 text-xs font-medium text-slate-500">
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-slate-100 rounded-sm"></div> No Data
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-400 rounded-sm"></div> Low
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> High
-              </span>
-            </div>
-          </div>
+            {/* Total Entries */}
+            <Card className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border-blue-500/30 backdrop-blur-sm">
+              <CardContent className="p-5 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <Calendar className="text-blue-400" size={28} />
+                </div>
+                <p className="text-4xl font-black text-white mb-1">{entryCount}</p>
+                <p className="text-xs font-bold text-blue-300/80 uppercase tracking-wider">Entries</p>
+              </CardContent>
+            </Card>
 
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-              <div key={d} className="text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                {d}
-              </div>
-            ))}
-          </div>
+            {/* Avg Mood */}
+            <Card className="bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-emerald-500/30 backdrop-blur-sm">
+              <CardContent className="p-5 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <TrendingUp className="text-emerald-400" size={28} />
+                </div>
+                <p className="text-4xl font-black text-white mb-1">
+                  {avgMood !== null ? avgMood.toFixed(1) : '—'}
+                </p>
+                <p className="text-xs font-bold text-emerald-300/80 uppercase tracking-wider">Avg Mood</p>
+              </CardContent>
+            </Card>
 
-          {/* Calculate first day offset */}
-          {(() => {
-            const firstDate = moodData.length > 0 ? new Date(moodData[0].date) : new Date();
-            const firstDayOffset = firstDate.getDay(); // 0 = Sunday, adjust to Monday-start
-            const adjustedOffset = firstDayOffset === 0 ? 6 : firstDayOffset - 1;
-
-            return (
-              <div className="grid grid-cols-7 gap-2">
-                {/* Empty cells for offset */}
-                {Array.from({ length: adjustedOffset }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square"></div>
-                ))}
-
-                {/* Mood cells */}
-                {moodData.map((day, i) => {
-                  const date = new Date(day.date);
-                  const dayNum = date.getDate();
-
-                  return (
-                    <div
-                      key={i}
-                      className={`aspect-square rounded-md ${getMoodColor(day.mood)} hover:scale-110 transition-transform cursor-pointer relative group`}
-                    >
-                      <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap pointer-events-none z-10">
-                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {getMoodLabel(day.mood)}
-                      </div>
-                      <span className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-600 font-medium opacity-0 hover:opacity-100">
-                        {dayNum}
-                      </span>
+            {/* Top Pillar */}
+            <Card className={`bg-gradient-to-br ${topPillar ? 'from-purple-500/20 to-pink-500/20 border-purple-500/30' : 'from-slate-700/50 to-slate-800/50 border-slate-600'} backdrop-blur-sm`}>
+              <CardContent className="p-5 text-center">
+                {topPillar ? (
+                  <>
+                    <div className="flex items-center justify-center mb-3">
+                      {React.createElement(PILLAR_CONFIG[topPillar].icon, {
+                        size: 28,
+                        className: 'text-purple-400'
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+                    <p className="text-lg font-black text-white mb-1 capitalize">{topPillar}</p>
+                    <p className="text-xs font-bold text-purple-300/80 uppercase tracking-wider">Top Pillar</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center mb-3">
+                      <Target className="text-slate-500" size={28} />
+                    </div>
+                    <p className="text-lg font-black text-slate-400 mb-1">—</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Top Pillar</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </div>
 
-        {/* Pillar Breakdown */}
-        <div className="md:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-          <h3 className="font-bold text-slate-900 mb-6">Pillar Focus</h3>
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          MAIN CONTENT
+      ═══════════════════════════════════════════════════════════════════════════ */}
+      <div className="bg-slate-50 rounded-t-[2rem] -mt-4 pt-8 pb-12">
+        <div className="max-w-6xl mx-auto px-4">
 
-          {totalPillarEntries === 0 ? (
-            <div className="flex-grow flex items-center justify-center text-center">
-              <div>
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="text-slate-400" size={32} />
-                </div>
-                <p className="text-slate-500 text-sm">No pillar data yet</p>
-                <p className="text-slate-400 text-xs mt-1">Start journaling to see your focus</p>
+          {/* Achievements Section (if any) */}
+          {achievements.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Trophy className="text-yellow-500" size={20} />
+                Achievements Unlocked
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {achievements.map((achievement, i) => (
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className={`${achievement.bgColor} ${achievement.color} border-0 py-2 px-4 text-sm font-bold`}
+                  >
+                    <achievement.icon size={16} className="mr-2" />
+                    {achievement.label}
+                  </Badge>
+                ))}
               </div>
             </div>
-          ) : (
-            <>
-              {/* Donut Chart Visual */}
-              <div className="flex-grow flex items-center justify-center relative mb-6">
-                <div className="w-40 h-40 rounded-full relative" style={{
-                  background: `conic-gradient(
-                    #10B981 0deg ${pillarPercentages[0]?.percentage * 3.6}deg,
-                    #8B5CF6 ${pillarPercentages[0]?.percentage * 3.6}deg ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage) * 3.6}deg,
-                    #EC4899 ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage) * 3.6}deg ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage + pillarPercentages[2]?.percentage) * 3.6}deg,
-                    #F59E0B ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage + pillarPercentages[2]?.percentage) * 3.6}deg 360deg
-                  )`
-                }}>
-                  <div className="absolute inset-4 bg-white rounded-full flex flex-col items-center justify-center">
-                    {topPillar && (
-                      <>
-                        <span className="text-2xl font-black text-slate-900 capitalize">{topPillar}</span>
-                        <span className="text-sm font-medium text-slate-500">{pillarPercentages.find(p => p.pillar === topPillar)?.percentage}%</span>
-                      </>
-                    )}
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* Mood Heatmap */}
+            <Card className="lg:col-span-8 border-0 shadow-sm bg-white overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500" />
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-slate-900">30-Day Mood Journey</h3>
+                  <div className="flex gap-3 text-xs font-medium text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-slate-100 rounded-sm"></div> None
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-red-400 rounded-sm"></div> Low
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-amber-400 rounded-sm"></div> Mid
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> High
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Pillar Legend */}
-              <div className="space-y-3">
-                {pillarPercentages.map(({ pillar, count, percentage }) => {
-                  const config = PILLAR_CONFIG[pillar];
-                  return (
-                    <div key={pillar} className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-2 font-medium">
-                        <div className={`w-3 h-3 ${config.color} rounded-full`}></div>
-                        {config.label}
-                      </span>
-                      <span className="font-bold">
-                        {percentage}% <span className="text-slate-400 font-normal">({count})</span>
-                      </span>
+                {moodData.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Calendar className="text-slate-400" size={28} />
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+                    <p className="text-slate-500 font-medium mb-2">No mood data yet</p>
+                    <p className="text-slate-400 text-sm">Start journaling to see your mood patterns</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-7 gap-2 mb-3">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                        <div key={d} className="text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
 
-        {/* Weekly Summary Card */}
-        <div className="md:col-span-12 bg-gradient-to-r from-slate-900 to-indigo-900 rounded-2xl p-8 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-5 rounded-full blur-3xl"></div>
+                    {(() => {
+                      const firstDate = moodData.length > 0 ? new Date(moodData[0].date) : new Date();
+                      const firstDayOffset = firstDate.getDay();
+                      const adjustedOffset = firstDayOffset === 0 ? 6 : firstDayOffset - 1;
 
-          <div className="flex flex-col md:flex-row gap-6 relative z-10">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl backdrop-blur-sm flex-shrink-0">
-              <Bot size={24} className="text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-3">Weekly Summary</h3>
-              {entryCount === 0 ? (
-                <p className="text-indigo-100 leading-relaxed max-w-3xl text-lg">
-                  Start journaling to get personalized insights about your Stoic journey. We&apos;ll analyze your entries and help you identify patterns in your emotional resilience.
-                </p>
-              ) : (
-                <p className="text-indigo-100 leading-relaxed mb-6 max-w-3xl text-lg">
-                  You&apos;ve written <strong>{entryCount}</strong> journal entries and maintained a <strong>{streak}-day streak</strong>.
-                  {topPillar && (
-                    <> Your primary focus has been on <strong className="capitalize">{topPillar}</strong> ({pillarPercentages.find(p => p.pillar === topPillar)?.percentage}% of entries).</>
-                  )}
-                  {avgMood !== null && (
-                    <> Your average mood score is <strong>{avgMood.toFixed(1)}/5</strong>.</>
-                  )}
-                </p>
-              )}
-              {entryCount > 0 && (
-                <p className="text-indigo-200 text-sm">
-                  AI-powered deep insights coming soon...
-                </p>
-              )}
-            </div>
+                      return (
+                        <div className="grid grid-cols-7 gap-2">
+                          {Array.from({ length: adjustedOffset }).map((_, i) => (
+                            <div key={`empty-${i}`} className="aspect-square"></div>
+                          ))}
+
+                          {moodData.map((day, i) => {
+                            const date = new Date(day.date);
+                            const dayNum = date.getDate();
+                            const isToday = new Date().toDateString() === date.toDateString();
+
+                            return (
+                              <div
+                                key={i}
+                                className={`aspect-square rounded-lg ${getMoodColor(day.mood)} hover:scale-105 transition-all cursor-pointer relative group ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                              >
+                                <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs py-1.5 px-3 rounded-lg whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                                  {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {getMoodLabel(day.mood)}
+                                </div>
+                                <span className="absolute inset-0 flex items-center justify-center text-[11px] text-white/70 font-bold">
+                                  {dayNum}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Mood summary */}
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+                      <span className="text-slate-500">
+                        {moodData.filter(m => m.mood !== null).length} days with entries
+                      </span>
+                      {avgMood !== null && (
+                        <span className="font-bold text-slate-700">
+                          Average: {avgMood.toFixed(1)}/5 ({getMoodLabel(avgMood)})
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pillar Distribution */}
+            <Card className="lg:col-span-4 border-0 shadow-sm bg-white overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-emerald-500 via-purple-500 to-amber-500" />
+              <CardContent className="p-6 h-full flex flex-col">
+                <h3 className="font-bold text-slate-900 mb-6">Pillar Focus</h3>
+
+                {totalPillarEntries === 0 ? (
+                  <div className="flex-grow flex items-center justify-center text-center py-8">
+                    <div>
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Target className="text-slate-400" size={28} />
+                      </div>
+                      <p className="text-slate-500 font-medium mb-2">No pillar data yet</p>
+                      <p className="text-slate-400 text-sm">Tag entries with pillars to track focus</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Donut Chart */}
+                    <div className="flex-grow flex items-center justify-center relative mb-6">
+                      <div className="w-44 h-44 rounded-full relative shadow-lg" style={{
+                        background: `conic-gradient(
+                          #10B981 0deg ${pillarPercentages[0]?.percentage * 3.6}deg,
+                          #8B5CF6 ${pillarPercentages[0]?.percentage * 3.6}deg ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage) * 3.6}deg,
+                          #EC4899 ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage) * 3.6}deg ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage + pillarPercentages[2]?.percentage) * 3.6}deg,
+                          #F59E0B ${(pillarPercentages[0]?.percentage + pillarPercentages[1]?.percentage + pillarPercentages[2]?.percentage) * 3.6}deg 360deg
+                        )`
+                      }}>
+                        <div className="absolute inset-3 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                          {topPillar && (
+                            <>
+                              <span className="text-xs text-slate-400 uppercase tracking-wider mb-1">Top Focus</span>
+                              <span className="text-xl font-black text-slate-900 capitalize">{topPillar}</span>
+                              <span className="text-lg font-bold text-primary">{pillarPercentages.find(p => p.pillar === topPillar)?.percentage}%</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="space-y-3">
+                      {pillarPercentages.map(({ pillar, count, percentage }) => {
+                        const config = PILLAR_CONFIG[pillar];
+                        const Icon = config.icon;
+                        return (
+                          <div key={pillar} className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                              <div className={`w-8 h-8 ${config.bgColor} rounded-lg flex items-center justify-center`}>
+                                <Icon size={16} className={config.textColor} />
+                              </div>
+                              {config.label}
+                            </span>
+                            <span className="text-sm">
+                              <span className="font-bold text-slate-900">{percentage}%</span>
+                              <span className="text-slate-400 ml-1">({count})</span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ChadGPT Weekly Summary */}
+            <Card className="lg:col-span-12 border-0 shadow-lg bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 text-white overflow-hidden">
+              <CardContent className="p-0">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+
+                <div className="flex flex-col md:flex-row">
+                  {/* Left: ChadGPT Analysis */}
+                  <div className="flex-1 p-6 md:p-8 relative">
+                    <div className="flex items-center gap-3 mb-4">
+                      <ChadGPTSvg className="w-12 h-12" />
+                      <div>
+                        <h3 className="text-xl font-bold">Chad&apos;s Analysis</h3>
+                        <Badge className="bg-white/20 text-white border-0 text-[10px]">AI Powered</Badge>
+                      </div>
+                    </div>
+
+                    {entryCount === 0 ? (
+                      <p className="text-indigo-100 leading-relaxed text-lg">
+                        Hey {firstName}! Start journaling and I&apos;ll break down your patterns, call out what&apos;s working, and keep you accountable on your Stoic path. Let&apos;s get after it!
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        <p className="text-indigo-100 leading-relaxed text-lg">
+                          {firstName}, you&apos;ve logged <strong className="text-white">{entryCount} entries</strong> and built a <strong className="text-white">{streak}-day streak</strong>.
+                          {streak >= 7 && " That's real discipline right there."}
+                          {topPillar && (
+                            <> You&apos;ve been grinding on <strong className="text-white capitalize">{topPillar}</strong> ({pillarPercentages.find(p => p.pillar === topPillar)?.percentage}% focus).</>
+                          )}
+                          {avgMood !== null && (
+                            <> Your mood&apos;s averaging <strong className="text-white">{avgMood.toFixed(1)}/5</strong> — {avgMood >= 4 ? "you're crushing it!" : avgMood >= 3 ? "solid baseline, room to grow." : "let's work on that together."}</>
+                          )}
+                        </p>
+
+                        {streak < 7 && (
+                          <div className="bg-white/10 rounded-xl p-4 flex items-start gap-3">
+                            <ArrowUpRight className="text-amber-400 flex-shrink-0 mt-0.5" size={18} />
+                            <p className="text-sm text-indigo-200">
+                              <strong className="text-white">Next Goal:</strong> Hit a 7-day streak to unlock the &quot;Week Warrior&quot; badge. You got this!
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Quick Stats */}
+                  <div className="md:w-64 p-6 md:p-8 bg-white/5 border-t md:border-t-0 md:border-l border-white/10">
+                    <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-4">Quick Stats</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-indigo-200 text-sm">Best Streak</span>
+                        <span className="text-white font-bold">{streak} days</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-indigo-200 text-sm">Total Entries</span>
+                        <span className="text-white font-bold">{entryCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-indigo-200 text-sm">Avg Mood</span>
+                        <span className="text-white font-bold">{avgMood !== null ? `${avgMood.toFixed(1)}/5` : '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-indigo-200 text-sm">Badges</span>
+                        <span className="text-white font-bold">{achievements.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
